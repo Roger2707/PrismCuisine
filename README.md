@@ -4,7 +4,7 @@ Modular monolith backend (.NET 9) and React frontend.
 
 ## Structure
 
-- `Backend/` — ASP.NET Core API, Clean Architecture, CQRS, RabbitMQ, Redis, PostgreSQL (schema per module)
+- `Backend/` — ASP.NET Core API, Clean Architecture, Unit of Work + Repository + Service, RabbitMQ, Redis, SQL Server (schema per module)
 - `Frontend/prism-cuisine-web/` — React + Vite + Redux Toolkit
 
 ## Modules (database schemas)
@@ -16,6 +16,14 @@ Modular monolith backend (.NET 9) and React frontend.
 | Purchasing| `purchasing`  |
 | SalesOrder| `sales_order` |
 
+## Application flow
+
+```
+Controller → Service (use case) → UnitOfWork / Repository → DbContext
+  Read:  repository with AsNoTracking()
+  Write: repository with tracking + domain behavior + SaveChanges()
+```
+
 ## Run with Docker
 
 ```bash
@@ -24,6 +32,7 @@ docker compose up --build
 
 - API: http://localhost:8080
 - Web: http://localhost:3000
+- SQL Server: `localhost,1433` (sa / `Your_password123`)
 - RabbitMQ management: http://localhost:15672 (guest/guest)
 
 ## Local development
@@ -35,7 +44,21 @@ cd Backend
 dotnet run --project src/Api/PrismCuisine.Api
 ```
 
-Requires PostgreSQL, Redis, and RabbitMQ (or use `docker compose up postgres redis rabbitmq`).
+Requires SQL Server, Redis, and RabbitMQ (or use `docker compose up sqlserver redis rabbitmq`).
+
+### EF migrations
+
+```powershell
+cd Backend
+dotnet ef migrations add <Name> `
+  -Project src/BuildingBlocks/PrismCuisine.BuildingBlocks.Infrastructure `
+  -StartupProject src/Api/PrismCuisine.Api `
+  -OutputDir Persistence/Migrations
+
+dotnet ef database update `
+  -Project src/BuildingBlocks/PrismCuisine.BuildingBlocks.Infrastructure `
+  -StartupProject src/Api/PrismCuisine.Api
+```
 
 ### Frontend
 

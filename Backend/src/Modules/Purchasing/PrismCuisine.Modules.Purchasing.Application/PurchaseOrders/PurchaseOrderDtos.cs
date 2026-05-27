@@ -1,8 +1,4 @@
-using PrismCuisine.BuildingBlocks.Application.Abstractions.Cqrs;
-
-namespace PrismCuisine.Modules.Purchasing.Application.PurchaseOrders.Queries.GetPurchaseOrderById;
-
-public sealed record GetPurchaseOrderByIdQuery(Guid PurchaseOrderId) : IQuery<PurchaseOrderDto?>;
+namespace PrismCuisine.Modules.Purchasing.Application.PurchaseOrders;
 
 public sealed record PurchaseOrderDto(
     Guid Id,

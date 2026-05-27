@@ -7,6 +7,7 @@ using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 using PrismCuisine.Modules.Identity.Application.Abstractions.Persistence;
 using PrismCuisine.Modules.Identity.Application.Abstractions.Services;
 using PrismCuisine.Modules.Identity.Application.Auth;
+using PrismCuisine.Modules.Identity.Application.Users;
 using PrismCuisine.Modules.Identity.Infrastructure.Auth;
 using PrismCuisine.Modules.Identity.Infrastructure.Persistence;
 using System.Text;
@@ -47,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher>(sp => sp.GetRequiredService<Pbkdf2PasswordHasher>());
         services.AddScoped<IJwtTokenProvider, JwtTokenProvider>();
         services.AddScoped<IIdentityAuthService, IdentityAuthService>();
+        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IIdentityDataSeeder, IdentityDataSeeder>();
 
         return services;

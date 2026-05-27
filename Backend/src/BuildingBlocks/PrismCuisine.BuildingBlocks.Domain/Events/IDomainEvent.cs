@@ -1,8 +1,6 @@
-using MediatR;
-
 namespace PrismCuisine.BuildingBlocks.Domain.Events;
 
-public interface IDomainEvent : INotification
+public interface IDomainEvent
 {
     Guid EventId { get; }
     DateTime OccurredOn { get; }

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 using PrismCuisine.Modules.Identity.Domain.Entities;
 using PrismCuisine.Modules.Identity.Infrastructure.Auth;
@@ -14,31 +14,52 @@ internal sealed class IdentityDataSeeder(PrismCuisineDbContext db, Pbkdf2Passwor
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        var superAdminRole = await db.Roles
-            .FirstOrDefaultAsync(x => x.NormalizedName == "SUPER_ADMIN", cancellationToken);
-
-        if (superAdminRole is null)
+        var seedConfig = new[]
         {
-            superAdminRole = Role.Create("super_admin");
-            db.Roles.Add(superAdminRole);
-        }
+            new { Role = "super_admin", Prefix = "admin", Name = "System Admin", Count = 1 },
+            new { Role = "manager", Prefix = "manager", Name = "Manager", Count = 3 },
+            new { Role = "leader", Prefix = "leader", Name = "Leader", Count = 3 },
+            new { Role = "staff", Prefix = "staff", Name = "Staff", Count = 3 }
+        };
 
-        var user = await db.Users
-            .FirstOrDefaultAsync(x => x.Email == "admin@prism.local", cancellationToken);
-
-        if (user is null)
+        foreach (var config in seedConfig)
         {
-            user = User.Register("admin@prism.local", "System Admin", passwordHasher.Hash("Admin@123"));
-            db.Users.Add(user);
-        }
+            var role = await db.Roles
+                .FirstOrDefaultAsync(x => x.NormalizedName == config.Role.ToUpper(), cancellationToken);
 
-        var existingUserRole = await db.UserRoles.AnyAsync(
-            x => x.UserId == user.Id && x.RoleId == superAdminRole.Id,
-            cancellationToken);
+            if (role is null)
+            {
+                role = Role.Create(config.Role);
+                db.Roles.Add(role);
+            }
 
-        if (!existingUserRole)
-        {
-            db.UserRoles.Add(UserRole.Create(user.Id, superAdminRole.Id));
+            for (int i = 1; i <= config.Count; i++)
+            {
+                // Định dạng Email, Tên hiển thị và Mật khẩu theo chuẩn chung
+                // Nếu Count = 1 (mục admin) -> Email là admin@prism.local, Tên là System Admin
+                // Nếu Count > 1 -> Email là manager1@prism.local, Tên là Manager 1
+                var email = config.Count == 1 ? $"{config.Prefix}@prism.local" : $"{config.Prefix}{i}@prism.local";
+                var fullName = config.Count == 1 ? config.Name : $"{config.Name} {i}";
+                var defaultPassword = config.Count == 1 ? "Admin@123" : $"{config.Name}@123";
+
+                var user = await db.Users
+                    .FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
+
+                if (user is null)
+                {
+                    user = User.Register(email, fullName, passwordHasher.Hash(defaultPassword));
+                    db.Users.Add(user);
+                }
+
+                var existingUserRole = await db.UserRoles.AnyAsync(
+                    x => x.UserId == user.Id && x.RoleId == role.Id,
+                    cancellationToken);
+
+                if (!existingUserRole)
+                {
+                    db.UserRoles.Add(UserRole.Create(user.Id, role.Id));
+                }
+            }
         }
 
         await db.SaveChangesAsync(cancellationToken);

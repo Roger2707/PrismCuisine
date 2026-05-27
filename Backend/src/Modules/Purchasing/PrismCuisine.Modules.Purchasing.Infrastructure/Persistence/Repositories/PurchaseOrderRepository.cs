@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 using PrismCuisine.Modules.Purchasing.Application.Abstractions;
-using PrismCuisine.Modules.Purchasing.Application.PurchaseOrders.Queries.GetPurchaseOrderById;
+using PrismCuisine.Modules.Purchasing.Application.PurchaseOrders;
 using PrismCuisine.Modules.Purchasing.Domain.Entities;
 
 namespace PrismCuisine.Modules.Purchasing.Infrastructure.Persistence.Repositories;

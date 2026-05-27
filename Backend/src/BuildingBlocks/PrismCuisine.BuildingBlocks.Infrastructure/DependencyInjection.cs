@@ -16,14 +16,14 @@ public static class DependencyInjection
         IConfiguration configuration,
         Action<IBusRegistrationConfigurator>? configureMassTransit = null)
     {
-        var connectionString = configuration.GetConnectionString("Database")
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'Database' is not configured.");
 
         services.AddDbContext<PrismCuisineDbContext>(options =>
         {
-            options.UseNpgsql(connectionString, npgsql =>
+            options.UseSqlServer(connectionString, sql =>
             {
-                npgsql.MigrationsHistoryTable("__ef_migrations_history", "public");
+                sql.MigrationsHistoryTable("__EFMigrationsHistory", "dbo");
             });
         });
 
