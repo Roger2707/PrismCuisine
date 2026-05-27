@@ -1,3 +1,4 @@
+using PrismCuisine.BuildingBlocks.Application.Abstractions.Caching;
 using PrismCuisine.BuildingBlocks.Domain.Exceptions;
 using PrismCuisine.Modules.Identity.Application.Abstractions.Persistence;
 using PrismCuisine.Modules.Identity.Application.Abstractions.Services;
@@ -8,7 +9,8 @@ namespace PrismCuisine.Modules.Identity.Application.Auth;
 public sealed class IdentityAuthService(
     IIdentityUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
-    IJwtTokenProvider jwtTokenProvider) : IIdentityAuthService
+    IJwtTokenProvider jwtTokenProvider,
+    ICacheService cacheService) : IIdentityAuthService
 {
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
@@ -76,6 +78,34 @@ public sealed class IdentityAuthService(
         }
 
         user.ChangePassword(passwordHasher.Hash(request.NewPassword));
+        unitOfWork.Users.Update(user);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task ForceLogoutAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
+            ?? throw new DomainException("User was not found.");
+
+        string cacheKey = $"blacklist:user:{userId}";
+        await cacheService.SetAsync(cacheKey, true, TimeSpan.FromDays(30), cancellationToken);
+
+        user.Deactivate();
+        unitOfWork.Users.Update(user);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task ReleaseBlacklistAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
+            ?? throw new DomainException("User was not found.");
+
+        string cacheKey = $"blacklist:user:{userId}";
+        var isBlacklisted = await cacheService.ExistsAsync(cacheKey, cancellationToken);
+        if(isBlacklisted)
+            await cacheService.RemoveAsync(cacheKey, cancellationToken);
+
+        user.Activate();
         unitOfWork.Users.Update(user);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

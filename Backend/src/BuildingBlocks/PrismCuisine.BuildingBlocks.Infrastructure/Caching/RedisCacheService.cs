@@ -38,4 +38,10 @@ public sealed class RedisCacheService(IDistributedCache cache) : ICacheService
 
     public Task RemoveAsync(string key, CancellationToken cancellationToken = default) =>
         cache.RemoveAsync(key, cancellationToken);
+
+    public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var bytes = await cache.GetAsync(key);
+        return bytes is not null && bytes.Length > 0;
+    }
 }

@@ -45,6 +45,22 @@ public sealed class IdentityAuthController(IIdentityAuthService authService) : C
         return NoContent();
     }
 
+    [HttpPost("force-logout")]
+    [Authorize(Roles = "super_admin")]
+    public async Task<IActionResult> ForceLogout(Guid userId, CancellationToken cancellationToken)
+    {
+        await authService.ForceLogoutAsync(userId, cancellationToken);
+        return Ok();
+    }
+
+    [HttpPost("release-blacklist")]
+    [Authorize(Roles = "super_admin")]
+    public async Task<IActionResult> ReleaseBlacklist(Guid userId, CancellationToken cancellationToken)
+    {
+        await authService.ReleaseBlacklistAsync(userId, cancellationToken);
+        return Ok();
+    }
+
     private Guid GetUserId()
     {
         var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

@@ -52,6 +52,16 @@ public sealed class User : AggregateRoot
         Touch();
     }
 
+    public void Activate()
+    {
+        if (IsActive)
+        {
+            return;
+        }
+        IsActive = true;
+        Touch();
+    }
+
     public void Deactivate()
     {
         if (!IsActive)

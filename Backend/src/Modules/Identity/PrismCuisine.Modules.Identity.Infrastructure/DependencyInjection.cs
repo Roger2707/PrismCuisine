@@ -54,6 +54,9 @@ public static class DependencyInjection
         return services;
     }
 
+    public static IApplicationBuilder UseIdentityAuthBlacklistUsers(this IApplicationBuilder app) =>
+        app.UseMiddleware<BlockUserBlacklistMiddleware>();
+
     public static IApplicationBuilder UseIdentityPermissions(this IApplicationBuilder app) =>
         app.UseMiddleware<PermissionsEnrichmentMiddleware>();
 }
