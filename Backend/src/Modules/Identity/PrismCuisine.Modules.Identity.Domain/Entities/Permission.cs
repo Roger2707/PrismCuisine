@@ -25,4 +25,20 @@ public sealed class Permission : AggregateRoot
             Description = description.Trim()
         };
     }
+
+    public void Update(string code, string description)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            throw new DomainException("Permission code is required.");
+        }
+
+        Code = code.Trim().ToLowerInvariant();
+        Description = description.Trim();
+    }
+
+    public void Delete()
+    {
+        MarkDeleted();
+    }
 }

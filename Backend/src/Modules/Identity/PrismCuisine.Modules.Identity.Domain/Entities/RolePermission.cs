@@ -17,4 +17,11 @@ public sealed class RolePermission : Entity
             RoleId = roleId,
             PermissionId = permissionId
         };
+
+    public void Update(Guid roleId, Guid permissionId)
+    {
+        RoleId = roleId;
+        PermissionId = permissionId;
+        Touch();
+    }
 }

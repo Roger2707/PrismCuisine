@@ -7,4 +7,5 @@ public interface IIdentityUnitOfWork : IUnitOfWork
     IUserRepository Users { get; }
     IRefreshTokenRepository RefreshTokens { get; }
     IIdentityAuthorizationRepository Authorization { get; }
+    IPermissionRepository Permission { get; }
 }
