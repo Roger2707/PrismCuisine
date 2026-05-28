@@ -19,6 +19,6 @@ public sealed class RefreshTokenConfiguration : EntityConfiguration<RefreshToken
         builder.Property(x => x.ExpiresAt).IsRequired();
         builder.Property(x => x.RevokedAt);
 
-        builder.HasIndex(x => x.Token).IsUnique();
+        builder.HasIndex(x => x.UserId).IsUnique();
     }
 }

@@ -8,4 +8,5 @@ public interface IIdentityAuthService
     Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
     Task ForceLogoutAsync(Guid userId, CancellationToken cancellationToken = default);
     Task ReleaseBlacklistAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<RefreshPageResponse> RefreshPage(string refreshToken, CancellationToken cancellationToken);
 }

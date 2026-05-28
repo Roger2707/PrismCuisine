@@ -18,3 +18,9 @@ public sealed record CurrentUserResponse(
     string DisplayName,
     IReadOnlyCollection<string> Roles,
     object Permissions);
+
+public sealed record RefreshPageResponse(
+    string AccessToken,
+    string RefreshToken,
+    DateTime AccessTokenExpiresAt,
+    DateTime RefreshTokenExpiresAt);

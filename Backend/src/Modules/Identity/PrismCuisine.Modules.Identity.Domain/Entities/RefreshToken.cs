@@ -28,4 +28,11 @@ public sealed class RefreshToken : AggregateRoot
         RevokedAt = DateTime.UtcNow;
         Touch();
     }
+
+    public void UpdateToken(string token, DateTime expiresAt)
+    {
+        Token = token;
+        ExpiresAt = expiresAt;
+        Touch();
+    }
 }

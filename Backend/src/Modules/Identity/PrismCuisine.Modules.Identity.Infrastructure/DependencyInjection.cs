@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -18,26 +20,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddIdentityModule(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-        var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey));
-
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidateLifetime = true,
-                    ValidIssuer = jwt.Issuer,
-                    ValidAudience = jwt.Audience,
-                    IssuerSigningKey = key
-                };
-            });
-
-        services.AddAuthorization();
+        
 
         services.AddSingleton<IModulePersistenceConfigurator, IdentityPersistenceConfigurator>();
         services.AddScoped<IIdentityUnitOfWork, IdentityUnitOfWork>();

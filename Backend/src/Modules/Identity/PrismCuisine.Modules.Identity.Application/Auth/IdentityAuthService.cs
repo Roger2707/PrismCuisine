@@ -28,12 +28,18 @@ public sealed class IdentityAuthService(
         var (refreshTokenValue, refreshTokenExpiresAt) = jwtTokenProvider.CreateRefreshToken();
 
         user.MarkLogin();
-        var refreshToken = RefreshToken.Create(user.Id, refreshTokenValue, refreshTokenExpiresAt);
-
         unitOfWork.Users.Update(user);
-        unitOfWork.RefreshTokens.Add(refreshToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var existingRefreshTokens = await unitOfWork.RefreshTokens.GetByUserIdAsync(user.Id, cancellationToken);
+        if(existingRefreshTokens != null)
+            existingRefreshTokens.UpdateToken(refreshTokenValue, refreshTokenExpiresAt);
+        else
+        {
+            var refreshToken = RefreshToken.Create(user.Id, refreshTokenValue, refreshTokenExpiresAt);
+            unitOfWork.RefreshTokens.Add(refreshToken);
+        }
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return new LoginResponse(accessToken, refreshTokenValue, accessTokenExpiresAt, refreshTokenExpiresAt);
     }
 
@@ -108,5 +114,27 @@ public sealed class IdentityAuthService(
         user.Activate();
         unitOfWork.Users.Update(user);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<RefreshPageResponse> RefreshPage(string refreshToken, CancellationToken cancellationToken)
+    {
+        var entity = await unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken, cancellationToken)
+            ?? throw new DomainException("Refresh token is invalid.");
+
+        var user = await unitOfWork.Users.GetByIdAsync(entity.UserId, cancellationToken)
+            ?? throw new DomainException("User was not found.");
+
+        var roles = await unitOfWork.Authorization.GetRoleNamesByUserIdAsync(user.Id, cancellationToken);
+
+        var (accessToken, accessTokenExpiresAt) = jwtTokenProvider.CreateAccessToken(user.Id, user.Email, roles);
+        var (refreshTokenValue, refreshTokenExpiresAt) = jwtTokenProvider.CreateRefreshToken();
+
+        var existingRefreshToken = await unitOfWork.RefreshTokens.GetByUserIdAsync(user.Id, cancellationToken);
+        if (existingRefreshToken != null)
+            existingRefreshToken.UpdateToken(refreshTokenValue, refreshTokenExpiresAt);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new RefreshPageResponse(accessToken, refreshTokenValue, accessTokenExpiresAt, refreshTokenExpiresAt);
     }
 }

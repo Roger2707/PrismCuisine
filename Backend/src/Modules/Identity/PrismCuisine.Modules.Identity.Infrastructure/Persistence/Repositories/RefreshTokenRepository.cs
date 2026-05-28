@@ -13,4 +13,9 @@ internal sealed class RefreshTokenRepository(PrismCuisineDbContext db) : IRefres
     public void Add(RefreshToken refreshToken) => db.RefreshTokens.Add(refreshToken);
 
     public void Update(RefreshToken refreshToken) => db.RefreshTokens.Update(refreshToken);
+
+    public Task<RefreshToken?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return db.RefreshTokens.FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+    }
 }
