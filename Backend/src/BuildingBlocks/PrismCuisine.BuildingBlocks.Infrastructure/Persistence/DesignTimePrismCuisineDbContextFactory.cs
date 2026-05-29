@@ -9,7 +9,7 @@ public sealed class DesignTimePrismCuisineDbContextFactory : IDesignTimeDbContex
     public PrismCuisineDbContext CreateDbContext(string[] args)
     {
         var connectionString = Environment.GetEnvironmentVariable("PRISM_DB_CONNECTION")
-            ?? "Server=localhost\\ROGER;Database=prism_cuisine;Trusted_Connection=True;TrustServerCertificate=True";
+            ?? "Server=localhost\\ROGER;Database=PrismCuisine;Trusted_Connection=True;TrustServerCertificate=True";
 
         var optionsBuilder = new DbContextOptionsBuilder<PrismCuisineDbContext>();
         optionsBuilder.UseSqlServer(connectionString);

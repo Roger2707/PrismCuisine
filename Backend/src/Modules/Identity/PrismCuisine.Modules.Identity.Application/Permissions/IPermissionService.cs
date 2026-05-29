@@ -9,7 +9,7 @@ namespace PrismCuisine.Modules.Identity.Application.Permissions
         Task<IReadOnlyCollection<Permission>> GetPermissionsReadOnlyByRoleAsync(Guid roleId, CancellationToken cancellationToken = default);
         Task<Permission?> GetPermissionByCodeAsync(string code, CancellationToken cancellationToken = default);
         Task<Permission?> GetPermissionReadOnlyByCodeAsync(string code, CancellationToken cancellationToken = default);
-        void Add(CreatePermissionRequest permission);
+        Task Add(CreatePermissionRequest permission);
         Task Update(UpdatePermissionRequest permission);
         Task Delete(string permissionCode);
     }

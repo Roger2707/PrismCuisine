@@ -27,7 +27,7 @@ public sealed class PermissionController(IPermissionService permissionService) :
     [Authorize]
     public async Task<IActionResult> Create(CreatePermissionRequest request, CancellationToken cancellationToken)
     {
-        permissionService.Add(request);
+        await permissionService.Add(request);
         return CreatedAtAction(nameof(GetByCode), new { id = request.Code }, request);
     }
 
