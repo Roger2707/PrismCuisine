@@ -14,6 +14,11 @@ public sealed class ProductConfiguration : EntityConfiguration<Product>
 
         builder.ToTable("Products", ModuleSchemas.Inventory);
 
+        builder.Property(p => p.CategoryId)
+            .IsRequired();
+
+        builder.HasIndex(p => p.CategoryId);
+
         builder.Property(p => p.Sku)
             .HasMaxLength(64)
             .IsRequired();
@@ -27,6 +32,12 @@ public sealed class ProductConfiguration : EntityConfiguration<Product>
 
         builder.Property(p => p.Unit)
             .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(p => p.Description)
+            .HasMaxLength(1000);
+
+        builder.Property(p => p.IsActive)
             .IsRequired();
     }
 }

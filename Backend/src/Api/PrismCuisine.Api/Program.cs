@@ -10,6 +10,7 @@ using PrismCuisine.Modules.Identity.Infrastructure;
 using PrismCuisine.Modules.Identity.Infrastructure.Auth;
 using PrismCuisine.Modules.Identity.Infrastructure.Persistence;
 using PrismCuisine.Modules.Inventory.Infrastructure;
+using PrismCuisine.Modules.Inventory.Infrastructure.Persistence;
 using PrismCuisine.Modules.Purchasing.Infrastructure;
 using PrismCuisine.Modules.SalesOrder.Infrastructure;
 using Scalar.AspNetCore;
@@ -128,4 +129,7 @@ static async Task EnsureDatabaseAsync(WebApplication app)
 
     var identitySeeder = scope.ServiceProvider.GetRequiredService<IIdentityDataSeeder>();
     await identitySeeder.SeedAsync();
+
+    var inventorySeeder = scope.ServiceProvider.GetRequiredService<IInventoryDataSeeder>();
+    await inventorySeeder.SeedAsync();
 }

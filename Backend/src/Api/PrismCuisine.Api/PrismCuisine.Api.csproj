@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\Modules\Identity\PrismCuisine.Modules.Identity.Infrastructure\PrismCuisine.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Identity\PrismCuisine.Modules.Identity.Application\PrismCuisine.Modules.Identity.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Inventory\PrismCuisine.Modules.Inventory.Infrastructure\PrismCuisine.Modules.Inventory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Inventory\PrismCuisine.Modules.Inventory.Application\PrismCuisine.Modules.Inventory.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Purchasing\PrismCuisine.Modules.Purchasing.Infrastructure\PrismCuisine.Modules.Purchasing.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Purchasing\PrismCuisine.Modules.Purchasing.Application\PrismCuisine.Modules.Purchasing.Application.csproj" />
     <ProjectReference Include="..\..\Modules\SalesOrder\PrismCuisine.Modules.SalesOrder.Infrastructure\PrismCuisine.Modules.SalesOrder.Infrastructure.csproj" />

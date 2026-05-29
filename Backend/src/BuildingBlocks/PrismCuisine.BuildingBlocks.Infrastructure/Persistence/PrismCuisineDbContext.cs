@@ -30,8 +30,13 @@ public sealed class PrismCuisineDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // Inventory
+    public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Product> Products => Set<Product>();
-    public DbSet<StockItem> StockItems => Set<StockItem>();
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<InventoryBalance> InventoryBalances => Set<InventoryBalance>();
+    public DbSet<InventoryMovement> InventoryMovements => Set<InventoryMovement>();
+    public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
+    public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
 
     // Purchasing
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
