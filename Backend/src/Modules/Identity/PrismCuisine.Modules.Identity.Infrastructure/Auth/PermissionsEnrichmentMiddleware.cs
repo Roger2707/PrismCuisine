@@ -17,7 +17,7 @@ public sealed class PermissionsEnrichmentMiddleware(RequestDelegate next)
         var sub = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? context.User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(sub, out var userId))
+        if (!int.TryParse(sub, out var userId))
         {
             await next(context);
             return;

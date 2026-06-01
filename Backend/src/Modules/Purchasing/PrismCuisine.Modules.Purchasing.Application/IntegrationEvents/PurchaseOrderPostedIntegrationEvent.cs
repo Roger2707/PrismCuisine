@@ -3,7 +3,7 @@ using PrismCuisine.BuildingBlocks.Application.Abstractions.Messaging;
 namespace PrismCuisine.Modules.Purchasing.IntegrationEvents;
 
 public sealed record PurchaseOrderPostedIntegrationEvent(
-    Guid PurchaseOrderId,
+    int PurchaseOrderId,
     string OrderNumber) : IIntegrationEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();

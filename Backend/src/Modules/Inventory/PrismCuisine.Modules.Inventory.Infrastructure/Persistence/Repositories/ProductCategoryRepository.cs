@@ -7,7 +7,7 @@ namespace PrismCuisine.Modules.Inventory.Infrastructure.Persistence.Repositories
 
 internal sealed class ProductCategoryRepository(PrismCuisineDbContext db) : IProductCategoryRepository
 {
-    public Task<ProductCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<ProductCategory?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         db.ProductCategories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
     public Task<ProductCategory?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) =>

@@ -10,7 +10,7 @@ public sealed class PurchaseOrder : AggregateRoot
     private readonly List<PurchaseOrderLine> _lines = [];
 
     public string OrderNumber { get; private set; } = null!;
-    public Guid SupplierId { get; private set; }
+    public int SupplierId { get; private set; }
     public PurchaseOrderStatus Status { get; private set; }
     public DateTime? PostedAt { get; private set; }
     public IReadOnlyCollection<PurchaseOrderLine> Lines => _lines.AsReadOnly();
@@ -19,14 +19,14 @@ public sealed class PurchaseOrder : AggregateRoot
     {
     }
 
-    public static PurchaseOrder CreateDraft(string orderNumber, Guid supplierId)
+    public static PurchaseOrder CreateDraft(string orderNumber, int supplierId)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
         {
             throw new DomainException("Order number is required.");
         }
 
-        if (supplierId == Guid.Empty)
+        if (supplierId <= 0)
         {
             throw new DomainException("SupplierId is required.");
         }
@@ -39,7 +39,7 @@ public sealed class PurchaseOrder : AggregateRoot
         };
     }
 
-    public void AddLine(Guid productId, decimal quantity, decimal unitPrice)
+    public void AddLine(int productId, decimal quantity, decimal unitPrice)
     {
         if (Status != PurchaseOrderStatus.Draft)
         {

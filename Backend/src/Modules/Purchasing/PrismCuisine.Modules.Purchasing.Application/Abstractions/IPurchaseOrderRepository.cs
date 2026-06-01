@@ -5,8 +5,8 @@ namespace PrismCuisine.Modules.Purchasing.Application.Abstractions;
 
 public interface IPurchaseOrderRepository
 {
-    Task<PurchaseOrder?> GetByIdWithLinesForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<PurchaseOrderDto?> GetByIdWithLinesAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<PurchaseOrder?> GetByIdWithLinesForUpdateAsync(int id, CancellationToken cancellationToken = default);
+    Task<PurchaseOrderDto?> GetByIdWithLinesAsync(int id, CancellationToken cancellationToken = default);
     void Add(PurchaseOrder order);
     void Update(PurchaseOrder order);
 }

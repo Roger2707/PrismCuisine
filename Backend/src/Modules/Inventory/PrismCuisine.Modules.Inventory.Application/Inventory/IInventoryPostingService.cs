@@ -2,20 +2,20 @@ namespace PrismCuisine.Modules.Inventory.Application.Inventory;
 
 public interface IInventoryPostingService
 {
-    Task<InventoryBalanceDto?> GetBalanceByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<InventoryBalanceDto?> GetBalanceByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<InventoryBalanceDto?> GetBalanceAsync(
-        Guid productId,
-        Guid warehouseId,
+        int productId,
+        int warehouseId,
         CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<InventoryBalanceDto>> GetLowStockAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<InventoryMovementDto>> GetMovementsAsync(
-        Guid balanceId,
+        int balanceId,
         CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<InventoryCostLayerDto>> GetCostLayersAsync(
-        Guid balanceId,
+        int balanceId,
         CancellationToken cancellationToken = default);
     Task<InventoryReservationDto?> GetReservationByIdAsync(
-        Guid id,
+        int id,
         CancellationToken cancellationToken = default);
 
     Task<InventoryBalanceDto> EnsureBalanceAsync(
@@ -33,9 +33,9 @@ public interface IInventoryPostingService
     Task<InventoryReservationDto> ReserveAsync(
         CreateReservationRequest request,
         CancellationToken cancellationToken = default);
-    Task ReleaseReservationAsync(Guid reservationId, CancellationToken cancellationToken = default);
+    Task ReleaseReservationAsync(int reservationId, CancellationToken cancellationToken = default);
     Task<InventoryMovementDto> FulfillReservationAsync(
-        Guid reservationId,
+        int reservationId,
         FulfillReservationRequest request,
         CancellationToken cancellationToken = default);
 }

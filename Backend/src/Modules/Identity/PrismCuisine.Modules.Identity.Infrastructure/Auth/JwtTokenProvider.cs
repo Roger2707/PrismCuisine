@@ -12,7 +12,7 @@ internal sealed class JwtTokenProvider(IOptions<JwtOptions> options) : IJwtToken
 {
     private readonly JwtOptions _jwt = options.Value;
 
-    public (string token, DateTime expiresAt) CreateAccessToken(Guid userId, string email, IReadOnlyCollection<string> roles)
+    public (string token, DateTime expiresAt) CreateAccessToken(int userId, string email, IReadOnlyCollection<string> roles)
     {
         var expiresAt = DateTime.UtcNow.AddMinutes(_jwt.AccessTokenMinutes);
         var claims = new List<Claim>

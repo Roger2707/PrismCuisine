@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 using PrismCuisine.Modules.Identity.Domain.Entities;
 using PrismCuisine.Modules.Identity.Infrastructure.Auth;
@@ -105,13 +105,11 @@ internal sealed class IdentityDataSeeder(PrismCuisineDbContext db, Pbkdf2Passwor
             {
                 role = Role.Create(config.Role);
                 db.Roles.Add(role);
+                await db.SaveChangesAsync(cancellationToken);
             }
 
             for (int i = 1; i <= config.Count; i++)
             {
-                // Định dạng Email, Tên hiển thị và Mật khẩu theo chuẩn chung
-                // Nếu Count = 1 (mục admin) -> Email là admin@prism.local, Tên là System Admin
-                // Nếu Count > 1 -> Email là manager1@prism.local, Tên là Manager 1
                 var email = config.Count == 1 ? $"{config.Prefix}@prism.local" : $"{config.Prefix}{i}@prism.local";
                 var fullName = config.Count == 1 ? config.Name : $"{config.Name} {i}";
                 var defaultPassword = config.Count == 1 ? "Admin@123" : $"{config.Name}@123";
@@ -123,6 +121,7 @@ internal sealed class IdentityDataSeeder(PrismCuisineDbContext db, Pbkdf2Passwor
                 {
                     user = User.Register(email, fullName, passwordHasher.Hash(defaultPassword));
                     db.Users.Add(user);
+                    await db.SaveChangesAsync(cancellationToken);
                 }
 
                 var existingUserRole = await db.UserRoles.AnyAsync(
@@ -132,6 +131,7 @@ internal sealed class IdentityDataSeeder(PrismCuisineDbContext db, Pbkdf2Passwor
                 if (!existingUserRole)
                 {
                     db.UserRoles.Add(UserRole.Create(user.Id, role.Id));
+                    await db.SaveChangesAsync(cancellationToken);
                 }
             }
         }
@@ -151,7 +151,7 @@ internal sealed class IdentityDataSeeder(PrismCuisineDbContext db, Pbkdf2Passwor
         var staffRole = allRoles.First(r => r.NormalizedName == "STAFF");
 
         // Define which permission codes belong to which role
-        var rolePermissionMapping = new Dictionary<Guid, List<string>>();
+        var rolePermissionMapping = new Dictionary<int, List<string>>();
 
         // -------------------------------------------------------------
         // 1. Staff Permissions (Execution Only)

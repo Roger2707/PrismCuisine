@@ -7,15 +7,15 @@ namespace PrismCuisine.Modules.Inventory.Infrastructure.Persistence.Repositories
 
 internal sealed class InventoryBalanceRepository(PrismCuisineDbContext db) : IInventoryBalanceRepository
 {
-    public Task<InventoryBalance?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<InventoryBalance?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         db.InventoryBalances.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
-    public Task<InventoryBalance?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<InventoryBalance?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         db.InventoryBalances.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
     public Task<InventoryBalance?> GetByProductAndWarehouseAsync(
-        Guid productId,
-        Guid warehouseId,
+        int productId,
+        int warehouseId,
         CancellationToken cancellationToken = default) =>
         db.InventoryBalances.FirstOrDefaultAsync(
             b => b.ProductId == productId && b.WarehouseId == warehouseId,

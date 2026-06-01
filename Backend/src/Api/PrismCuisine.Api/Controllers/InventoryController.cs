@@ -14,8 +14,8 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
         return Ok(balances);
     }
 
-    [HttpGet("balances/{id:guid}")]
-    public async Task<IActionResult> GetBalanceById(Guid id, CancellationToken cancellationToken)
+    [HttpGet("balances/{id:int}")]
+    public async Task<IActionResult> GetBalanceById(int id, CancellationToken cancellationToken)
     {
         var balance = await inventoryPostingService.GetBalanceByIdAsync(id, cancellationToken);
         return balance is null ? NotFound() : Ok(balance);
@@ -23,8 +23,8 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
 
     [HttpGet("balances")]
     public async Task<IActionResult> GetBalance(
-        [FromQuery] Guid productId,
-        [FromQuery] Guid warehouseId,
+        [FromQuery] int productId,
+        [FromQuery] int warehouseId,
         CancellationToken cancellationToken)
     {
         var balance = await inventoryPostingService.GetBalanceAsync(productId, warehouseId, cancellationToken);
@@ -40,15 +40,15 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
         return Ok(balance);
     }
 
-    [HttpGet("balances/{id:guid}/movements")]
-    public async Task<IActionResult> GetMovements(Guid id, CancellationToken cancellationToken)
+    [HttpGet("balances/{id}/movements")]
+    public async Task<IActionResult> GetMovements(int id, CancellationToken cancellationToken)
     {
         var movements = await inventoryPostingService.GetMovementsAsync(id, cancellationToken);
         return Ok(movements);
     }
 
-    [HttpGet("balances/{id:guid}/cost-layers")]
-    public async Task<IActionResult> GetCostLayers(Guid id, CancellationToken cancellationToken)
+    [HttpGet("balances/{id}/cost-layers")]
+    public async Task<IActionResult> GetCostLayers(int id, CancellationToken cancellationToken)
     {
         var layers = await inventoryPostingService.GetCostLayersAsync(id, cancellationToken);
         return Ok(layers);
@@ -81,8 +81,8 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
         return Ok(movement);
     }
 
-    [HttpGet("reservations/{id:guid}")]
-    public async Task<IActionResult> GetReservation(Guid id, CancellationToken cancellationToken)
+    [HttpGet("reservations/{id}")]
+    public async Task<IActionResult> GetReservation(int id, CancellationToken cancellationToken)
     {
         var reservation = await inventoryPostingService.GetReservationByIdAsync(id, cancellationToken);
         return reservation is null ? NotFound() : Ok(reservation);
@@ -97,16 +97,16 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
         return CreatedAtAction(nameof(GetReservation), new { id = reservation.Id }, reservation);
     }
 
-    [HttpPost("reservations/{id:guid}/release")]
-    public async Task<IActionResult> ReleaseReservation(Guid id, CancellationToken cancellationToken)
+    [HttpPost("reservations/{id}/release")]
+    public async Task<IActionResult> ReleaseReservation(int id, CancellationToken cancellationToken)
     {
         await inventoryPostingService.ReleaseReservationAsync(id, cancellationToken);
         return NoContent();
     }
 
-    [HttpPost("reservations/{id:guid}/fulfill")]
+    [HttpPost("reservations/{id}/fulfill")]
     public async Task<IActionResult> FulfillReservation(
-        Guid id,
+        int id,
         [FromBody] FulfillReservationRequest request,
         CancellationToken cancellationToken)
     {

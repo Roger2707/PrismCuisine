@@ -14,8 +14,8 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
         return Ok(warehouses);
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var warehouse = await warehouseService.GetByIdAsync(id, cancellationToken);
         return warehouse is null ? NotFound() : Ok(warehouse);
@@ -30,9 +30,9 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
         return CreatedAtAction(nameof(GetById), new { id = warehouse.Id }, warehouse);
     }
 
-    [HttpPut("{id:guid}")]
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(
-        Guid id,
+        int id,
         [FromBody] UpdateWarehouseRequest request,
         CancellationToken cancellationToken)
     {

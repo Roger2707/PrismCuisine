@@ -8,8 +8,11 @@ namespace PrismCuisine.Modules.Inventory.Application.Inventory;
 
 public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : IInventoryPostingService
 {
+
+    #region Balance
+
     public async Task<InventoryBalanceDto?> GetBalanceByIdAsync(
-        Guid id,
+        int id,
         CancellationToken cancellationToken = default)
     {
         var balance = await unitOfWork.Balances.GetByIdAsync(id, cancellationToken);
@@ -17,50 +20,12 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
     }
 
     public async Task<InventoryBalanceDto?> GetBalanceAsync(
-        Guid productId,
-        Guid warehouseId,
+        int productId,
+        int warehouseId,
         CancellationToken cancellationToken = default)
     {
         var balance = await unitOfWork.Balances.GetByProductAndWarehouseAsync(productId, warehouseId, cancellationToken);
         return balance is null ? null : await MapBalanceAsync(balance, cancellationToken);
-    }
-
-    public async Task<IReadOnlyCollection<InventoryBalanceDto>> GetLowStockAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var balances = await unitOfWork.Balances.GetLowStockAsync(cancellationToken);
-        var result = new List<InventoryBalanceDto>(balances.Count);
-
-        foreach (var balance in balances)
-        {
-            result.Add(await MapBalanceAsync(balance, cancellationToken));
-        }
-
-        return result;
-    }
-
-    public async Task<IReadOnlyCollection<InventoryMovementDto>> GetMovementsAsync(
-        Guid balanceId,
-        CancellationToken cancellationToken = default)
-    {
-        var movements = await unitOfWork.Movements.GetByBalanceIdAsync(balanceId, cancellationToken);
-        return movements.Select(MapMovement).ToList();
-    }
-
-    public async Task<IReadOnlyCollection<InventoryCostLayerDto>> GetCostLayersAsync(
-        Guid balanceId,
-        CancellationToken cancellationToken = default)
-    {
-        var layers = await unitOfWork.CostLayers.GetAvailableLayersForUpdateAsync(balanceId, cancellationToken);
-        return layers.Select(MapLayer).ToList();
-    }
-
-    public async Task<InventoryReservationDto?> GetReservationByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
-    {
-        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(id, cancellationToken);
-        return reservation is null ? null : MapReservation(reservation);
     }
 
     public async Task<InventoryBalanceDto> EnsureBalanceAsync(
@@ -87,6 +52,171 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return await MapBalanceAsync(balance, cancellationToken);
     }
+
+    private async Task<InventoryBalance> GetOrCreateBalanceForUpdateAsync(
+        int productId,
+        int warehouseId,
+        CancellationToken cancellationToken)
+    {
+        var balance = await unitOfWork.Balances.GetByProductAndWarehouseAsync(productId, warehouseId, cancellationToken);
+
+        if (balance is not null)
+        {
+            return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
+                ?? throw new DomainException("Inventory balance was not found.");
+        }
+
+        await EnsureProductAndWarehouseExistAsync(productId, warehouseId, cancellationToken);
+        balance = InventoryBalance.Create(productId, warehouseId, 0m);
+        unitOfWork.Balances.Add(balance);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
+            ?? throw new DomainException("Inventory balance was not found.");
+    }
+
+    private async Task<InventoryBalance> GetBalanceForUpdateByProductWarehouseAsync(
+        int productId,
+        int warehouseId,
+        CancellationToken cancellationToken)
+    {
+        var balance = await unitOfWork.Balances.GetByProductAndWarehouseAsync(productId, warehouseId, cancellationToken)
+            ?? throw new DomainException(
+                $"No inventory balance for product '{productId}' at warehouse '{warehouseId}'. Create balance first.");
+
+        return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
+            ?? throw new DomainException("Inventory balance was not found.");
+    }
+
+    #endregion
+
+    #region Stock
+
+    public async Task<IReadOnlyCollection<InventoryBalanceDto>> GetLowStockAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var balances = await unitOfWork.Balances.GetLowStockAsync(cancellationToken);
+        var result = new List<InventoryBalanceDto>(balances.Count);
+
+        foreach (var balance in balances)
+        {
+            result.Add(await MapBalanceAsync(balance, cancellationToken));
+        }
+
+        return result;
+    }
+
+    #endregion
+
+    #region Movement (History Transaction)
+
+    public async Task<IReadOnlyCollection<InventoryMovementDto>> GetMovementsAsync(
+        int balanceId,
+        CancellationToken cancellationToken = default)
+    {
+        var movements = await unitOfWork.Movements.GetByBalanceIdAsync(balanceId, cancellationToken);
+        return movements.Select(MapMovement).ToList();
+    }
+
+    #endregion
+
+    #region Cost Layer (For FIFO Costing)
+
+    public async Task<IReadOnlyCollection<InventoryCostLayerDto>> GetCostLayersAsync(
+        int balanceId,
+        CancellationToken cancellationToken = default)
+    {
+        var layers = await unitOfWork.CostLayers.GetAvailableLayersForUpdateAsync(balanceId, cancellationToken);
+        return layers.Select(MapLayer).ToList();
+    }
+
+    #endregion
+
+    #region Reservation
+
+    public async Task<InventoryReservationDto?> GetReservationByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(id, cancellationToken);
+        return reservation is null ? null : MapReservation(reservation);
+    }
+
+    public async Task<InventoryReservationDto> ReserveAsync(
+        CreateReservationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var balance = await GetBalanceForUpdateByProductWarehouseAsync(
+            request.ProductId,
+            request.WarehouseId,
+            cancellationToken);
+
+        // Prevent multiple active reservations for the SAME reference to avoid over-reserving
+        var existing = await unitOfWork.Reservations.GetActiveByReferenceAsync(
+            InventoryReferenceType.SalesOrder,
+            request.ReferenceId,
+            cancellationToken);
+
+        if (existing is not null)
+        {
+            throw new DomainException("An active reservation already exists for this reference.");
+        }
+
+        await EnsureAvailableAsync(balance.Id, request.Quantity, cancellationToken);
+
+        var reservation = InventoryReservation.Create(
+            balance.Id,
+            request.Quantity,
+            InventoryReferenceType.SalesOrder,
+            request.ReferenceId,
+            request.Notes);
+
+        unitOfWork.Reservations.Add(reservation);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return MapReservation(reservation);
+    }
+
+    public async Task ReleaseReservationAsync(int reservationId, CancellationToken cancellationToken = default)
+    {
+        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(reservationId, cancellationToken)
+            ?? throw new DomainException($"Reservation '{reservationId}' was not found.");
+
+        reservation.Release();
+        unitOfWork.Reservations.Update(reservation);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<InventoryMovementDto> FulfillReservationAsync(
+        int reservationId,
+        FulfillReservationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(reservationId, cancellationToken)
+            ?? throw new DomainException($"Reservation '{reservationId}' was not found.");
+
+        var fulfillQty = request.Quantity ?? reservation.RemainingQuantity;
+        reservation.RecordFulfillment(fulfillQty);
+        unitOfWork.Reservations.Update(reservation);
+
+        var balance = await unitOfWork.Balances.GetByIdForUpdateAsync(reservation.InventoryBalanceId, cancellationToken)
+            ?? throw new DomainException("Inventory balance for reservation was not found.");
+
+        var movement = await IssueFromBalanceAsync(
+            balance,
+            fulfillQty,
+            InventoryReferenceType.SalesOrder,
+            request.Reference ?? reservation.ReferenceId.ToString(),
+            reservation.ReferenceId,
+            request.Notes,
+            cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return MapMovement(movement);
+    }
+
+    #endregion
+
+    #region Action Methods (Import / Export / Adjust)
 
     public async Task<InventoryMovementDto> ReceiveAsync(
         ReceiveInventoryRequest request,
@@ -140,6 +270,42 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return MapMovement(movement);
+    }   
+
+    private async Task<InventoryMovement> IssueFromBalanceAsync(
+        InventoryBalance balance,
+        decimal quantity,
+        InventoryReferenceType referenceType,
+        string? reference,
+        int? referenceId,
+        string? notes,
+        CancellationToken cancellationToken)
+    {
+        var layers = await unitOfWork.CostLayers.GetAvailableLayersForUpdateAsync(balance.Id, cancellationToken);
+        var consumptions = FifoCosting.Consume(layers, quantity);
+
+        var consumedLayerIds = consumptions.Select(c => c.CostLayerId).ToHashSet();
+        foreach (var layer in layers.Where(l => consumedLayerIds.Contains(l.Id)))
+        {
+            unitOfWork.CostLayers.Update(layer);
+        }
+
+        var unitCost = FifoCosting.CalculateWeightedUnitCost(consumptions);
+        balance.Decrease(quantity);
+        unitOfWork.Balances.Update(balance);
+
+        var movement = InventoryMovement.Create(
+            balance.Id,
+            InventoryMovementType.Issue,
+            quantity,
+            unitCost,
+            referenceType,
+            reference,
+            referenceId,
+            notes);
+
+        unitOfWork.Movements.Add(movement);
+        return movement;
     }
 
     public async Task<InventoryMovementDto> AdjustAsync(
@@ -203,115 +369,12 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         return MapMovement(movement);
     }
 
-    public async Task<InventoryReservationDto> ReserveAsync(
-        CreateReservationRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var balance = await GetBalanceForUpdateByProductWarehouseAsync(
-            request.ProductId,
-            request.WarehouseId,
-            cancellationToken);
+    #endregion
 
-        var existing = await unitOfWork.Reservations.GetActiveByReferenceAsync(
-            InventoryReferenceType.SalesOrder,
-            request.ReferenceId,
-            cancellationToken);
-
-        if (existing is not null)
-        {
-            throw new DomainException("An active reservation already exists for this reference.");
-        }
-
-        await EnsureAvailableAsync(balance.Id, request.Quantity, cancellationToken);
-
-        var reservation = InventoryReservation.Create(
-            balance.Id,
-            request.Quantity,
-            InventoryReferenceType.SalesOrder,
-            request.ReferenceId,
-            request.Notes);
-
-        unitOfWork.Reservations.Add(reservation);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-        return MapReservation(reservation);
-    }
-
-    public async Task ReleaseReservationAsync(Guid reservationId, CancellationToken cancellationToken = default)
-    {
-        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(reservationId, cancellationToken)
-            ?? throw new DomainException($"Reservation '{reservationId}' was not found.");
-
-        reservation.Release();
-        unitOfWork.Reservations.Update(reservation);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<InventoryMovementDto> FulfillReservationAsync(
-        Guid reservationId,
-        FulfillReservationRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(reservationId, cancellationToken)
-            ?? throw new DomainException($"Reservation '{reservationId}' was not found.");
-
-        var fulfillQty = request.Quantity ?? reservation.RemainingQuantity;
-        reservation.RecordFulfillment(fulfillQty);
-        unitOfWork.Reservations.Update(reservation);
-
-        var balance = await unitOfWork.Balances.GetByIdForUpdateAsync(reservation.InventoryBalanceId, cancellationToken)
-            ?? throw new DomainException("Inventory balance for reservation was not found.");
-
-        var movement = await IssueFromBalanceAsync(
-            balance,
-            fulfillQty,
-            InventoryReferenceType.SalesOrder,
-            request.Reference ?? reservation.ReferenceId.ToString(),
-            reservation.ReferenceId,
-            request.Notes,
-            cancellationToken);
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-        return MapMovement(movement);
-    }
-
-    private async Task<InventoryMovement> IssueFromBalanceAsync(
-        InventoryBalance balance,
-        decimal quantity,
-        InventoryReferenceType referenceType,
-        string? reference,
-        Guid? referenceId,
-        string? notes,
-        CancellationToken cancellationToken)
-    {
-        var layers = await unitOfWork.CostLayers.GetAvailableLayersForUpdateAsync(balance.Id, cancellationToken);
-        var consumptions = FifoCosting.Consume(layers, quantity);
-
-        var consumedLayerIds = consumptions.Select(c => c.CostLayerId).ToHashSet();
-        foreach (var layer in layers.Where(l => consumedLayerIds.Contains(l.Id)))
-        {
-            unitOfWork.CostLayers.Update(layer);
-        }
-
-        var unitCost = FifoCosting.CalculateWeightedUnitCost(consumptions);
-        balance.Decrease(quantity);
-        unitOfWork.Balances.Update(balance);
-
-        var movement = InventoryMovement.Create(
-            balance.Id,
-            InventoryMovementType.Issue,
-            quantity,
-            unitCost,
-            referenceType,
-            reference,
-            referenceId,
-            notes);
-
-        unitOfWork.Movements.Add(movement);
-        return movement;
-    }
+    #region Private Helper Methods
 
     private async Task EnsureAvailableAsync(
-        Guid balanceId,
+        int balanceId,
         decimal quantity,
         CancellationToken cancellationToken)
     {
@@ -326,46 +389,11 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             throw new DomainException(
                 $"Insufficient available quantity. On-hand: {balance.QuantityOnHand}, reserved: {reserved}, requested: {quantity}.");
         }
-    }
-
-    private async Task<InventoryBalance> GetOrCreateBalanceForUpdateAsync(
-        Guid productId,
-        Guid warehouseId,
-        CancellationToken cancellationToken)
-    {
-        var balance = await unitOfWork.Balances.GetByProductAndWarehouseAsync(productId, warehouseId, cancellationToken);
-
-        if (balance is not null)
-        {
-            return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
-                ?? throw new DomainException("Inventory balance was not found.");
-        }
-
-        await EnsureProductAndWarehouseExistAsync(productId, warehouseId, cancellationToken);
-        balance = InventoryBalance.Create(productId, warehouseId, 0m);
-        unitOfWork.Balances.Add(balance);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
-            ?? throw new DomainException("Inventory balance was not found.");
-    }
-
-    private async Task<InventoryBalance> GetBalanceForUpdateByProductWarehouseAsync(
-        Guid productId,
-        Guid warehouseId,
-        CancellationToken cancellationToken)
-    {
-        var balance = await unitOfWork.Balances.GetByProductAndWarehouseAsync(productId, warehouseId, cancellationToken)
-            ?? throw new DomainException(
-                $"No inventory balance for product '{productId}' at warehouse '{warehouseId}'. Create balance first.");
-
-        return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
-            ?? throw new DomainException("Inventory balance was not found.");
-    }
+    }   
 
     private async Task EnsureProductAndWarehouseExistAsync(
-        Guid productId,
-        Guid warehouseId,
+        int productId,
+        int warehouseId,
         CancellationToken cancellationToken)
     {
         _ = await unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
@@ -424,4 +452,6 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             reservation.ReferenceType.ToString(),
             reservation.ReferenceId,
             reservation.Notes);
+
+    #endregion
 }

@@ -6,7 +6,7 @@ public sealed class UserService(
     IUserRepository users,
     IIdentityAuthorizationRepository authorization) : IUserService
 {
-    public async Task<UserDto?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<UserDto?> GetByIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await users.GetByIdAsync(userId, cancellationToken);
         if (user is null)

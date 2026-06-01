@@ -1,8 +1,8 @@
 namespace PrismCuisine.Modules.Inventory.Application.Products;
 
 public sealed record ProductDto(
-    Guid Id,
-    Guid CategoryId,
+    int Id,
+    int CategoryId,
     string Sku,
     string Name,
     string Unit,
@@ -10,14 +10,14 @@ public sealed record ProductDto(
     bool IsActive);
 
 public sealed record CreateProductRequest(
-    Guid CategoryId,
+    int CategoryId,
     string Sku,
     string Name,
     string Unit,
     string? Description);
 
 public sealed record UpdateProductRequest(
-    Guid CategoryId,
+    int CategoryId,
     string Name,
     string Unit,
     string? Description);

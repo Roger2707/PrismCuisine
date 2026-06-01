@@ -1,7 +1,7 @@
 namespace PrismCuisine.Modules.Inventory.Application.Warehouses;
 
 public sealed record WarehouseDto(
-    Guid Id,
+    int Id,
     string Code,
     string Name,
     string? Location,

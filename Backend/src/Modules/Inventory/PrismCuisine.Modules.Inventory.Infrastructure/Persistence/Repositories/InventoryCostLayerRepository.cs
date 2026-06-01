@@ -8,7 +8,7 @@ namespace PrismCuisine.Modules.Inventory.Infrastructure.Persistence.Repositories
 internal sealed class InventoryCostLayerRepository(PrismCuisineDbContext db) : IInventoryCostLayerRepository
 {
     public async Task<IReadOnlyCollection<InventoryCostLayer>> GetAvailableLayersForUpdateAsync(
-        Guid inventoryBalanceId,
+        int inventoryBalanceId,
         CancellationToken cancellationToken = default) =>
         await db.InventoryCostLayers
             .Where(l => l.InventoryBalanceId == inventoryBalanceId && l.QuantityRemaining > 0)

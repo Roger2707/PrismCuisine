@@ -7,7 +7,7 @@ namespace PrismCuisine.Modules.Identity.Infrastructure.Persistence.Repositories;
 internal sealed class IdentityAuthorizationRepository(PrismCuisineDbContext db) : IIdentityAuthorizationRepository
 {
     public async Task<IReadOnlyCollection<string>> GetRoleNamesByUserIdAsync(
-        Guid userId,
+        int userId,
         CancellationToken cancellationToken = default)
     {
         var roleIds = await db.UserRoles
@@ -30,7 +30,7 @@ internal sealed class IdentityAuthorizationRepository(PrismCuisineDbContext db) 
     }
 
     public async Task<IReadOnlyCollection<string>> GetPermissionCodesByUserIdAsync(
-        Guid userId,
+        int userId,
         CancellationToken cancellationToken = default)
     {
         var roleIds = await db.UserRoles
@@ -64,7 +64,7 @@ internal sealed class IdentityAuthorizationRepository(PrismCuisineDbContext db) 
         return permissions.Select(p => p.Code).ToList();
     }
 
-    public async Task<bool> IsSuperAdminAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsSuperAdminAsync(int userId, CancellationToken cancellationToken = default)
     {
         var roleIds = await db.UserRoles
             .AsNoTracking()

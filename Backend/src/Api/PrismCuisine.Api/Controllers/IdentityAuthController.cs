@@ -52,7 +52,7 @@ public sealed class IdentityAuthController(IIdentityAuthService authService, IWe
 
     [HttpPost("force-logout")]
     [Authorize(Roles = "super_admin")]
-    public async Task<IActionResult> ForceLogout(Guid userId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ForceLogout(int userId, CancellationToken cancellationToken)
     {
         await authService.ForceLogoutAsync(userId, cancellationToken);
         return Ok();
@@ -60,7 +60,7 @@ public sealed class IdentityAuthController(IIdentityAuthService authService, IWe
 
     [HttpPost("release-blacklist")]
     [Authorize(Roles = "super_admin")]
-    public async Task<IActionResult> ReleaseBlacklist(Guid userId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ReleaseBlacklist(int userId, CancellationToken cancellationToken)
     {
         await authService.ReleaseBlacklistAsync(userId, cancellationToken);
         return Ok();
@@ -92,10 +92,10 @@ public sealed class IdentityAuthController(IIdentityAuthService authService, IWe
         }
     }
 
-    private Guid GetUserId()
+    private int GetUserId()
     {
         var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(sub, out var userId))
+        if (!int.TryParse(sub, out var userId))
         {
             throw new UnauthorizedAccessException("Invalid access token.");
         }

@@ -7,7 +7,7 @@ namespace PrismCuisine.Modules.Inventory.Infrastructure.Persistence.Repositories
 
 internal sealed class WarehouseRepository(PrismCuisineDbContext db) : IWarehouseRepository
 {
-    public Task<Warehouse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<Warehouse?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         db.Warehouses.FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
 
     public Task<Warehouse?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) =>

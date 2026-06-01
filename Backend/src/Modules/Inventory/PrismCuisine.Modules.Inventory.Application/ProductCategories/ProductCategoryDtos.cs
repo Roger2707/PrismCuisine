@@ -1,7 +1,7 @@
 namespace PrismCuisine.Modules.Inventory.Application.ProductCategories;
 
 public sealed record ProductCategoryDto(
-    Guid Id,
+    int Id,
     string Code,
     string Name,
     string? Description,

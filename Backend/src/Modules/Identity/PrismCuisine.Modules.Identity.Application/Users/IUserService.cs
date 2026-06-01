@@ -2,5 +2,5 @@ namespace PrismCuisine.Modules.Identity.Application.Users;
 
 public interface IUserService
 {
-    Task<UserDto?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<UserDto?> GetByIdAsync(int userId, CancellationToken cancellationToken = default);
 }

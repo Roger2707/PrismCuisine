@@ -9,7 +9,7 @@ public sealed class SalesOrder : AggregateRoot
     private readonly List<SalesOrderLine> _lines = [];
 
     public string OrderNumber { get; private set; } = null!;
-    public Guid CustomerId { get; private set; }
+    public int CustomerId { get; private set; }
     public SalesOrderStatus Status { get; private set; }
     public IReadOnlyCollection<SalesOrderLine> Lines => _lines.AsReadOnly();
 
@@ -17,14 +17,14 @@ public sealed class SalesOrder : AggregateRoot
     {
     }
 
-    public static SalesOrder CreateDraft(string orderNumber, Guid customerId)
+    public static SalesOrder CreateDraft(string orderNumber, int customerId)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
         {
             throw new DomainException("Order number is required.");
         }
 
-        if (customerId == Guid.Empty)
+        if (customerId <= 0)
         {
             throw new DomainException("CustomerId is required.");
         }
@@ -37,7 +37,7 @@ public sealed class SalesOrder : AggregateRoot
         };
     }
 
-    public void AddLine(Guid productId, decimal quantity, decimal unitPrice)
+    public void AddLine(int productId, decimal quantity, decimal unitPrice)
     {
         if (Status != SalesOrderStatus.Draft)
         {

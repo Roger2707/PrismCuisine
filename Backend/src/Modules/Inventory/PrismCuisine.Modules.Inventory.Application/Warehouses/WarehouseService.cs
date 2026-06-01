@@ -12,7 +12,7 @@ public sealed class WarehouseService(IInventoryUnitOfWork unitOfWork) : IWarehou
         return warehouses.Select(Map).ToList();
     }
 
-    public async Task<WarehouseDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<WarehouseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var warehouse = await unitOfWork.Warehouses.GetByIdAsync(id, cancellationToken);
         return warehouse is null ? null : Map(warehouse);
@@ -36,7 +36,7 @@ public sealed class WarehouseService(IInventoryUnitOfWork unitOfWork) : IWarehou
     }
 
     public async Task UpdateAsync(
-        Guid id,
+        int id,
         UpdateWarehouseRequest request,
         CancellationToken cancellationToken = default)
     {

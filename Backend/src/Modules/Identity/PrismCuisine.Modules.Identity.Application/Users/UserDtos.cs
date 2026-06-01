@@ -1,7 +1,7 @@
 namespace PrismCuisine.Modules.Identity.Application.Users;
 
 public sealed record UserDto(
-    Guid Id,
+    int Id,
     string Email,
     string DisplayName,
     bool IsActive,

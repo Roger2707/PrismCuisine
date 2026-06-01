@@ -5,8 +5,8 @@ namespace PrismCuisine.Modules.Inventory.Domain.Entities;
 
 public sealed class InventoryBalance : AggregateRoot
 {
-    public Guid ProductId { get; private set; }
-    public Guid WarehouseId { get; private set; }
+    public int ProductId { get; private set; }
+    public int WarehouseId { get; private set; }
     public decimal QuantityOnHand { get; private set; }
     public decimal ReorderLevel { get; private set; }
 
@@ -14,14 +14,14 @@ public sealed class InventoryBalance : AggregateRoot
     {
     }
 
-    public static InventoryBalance Create(Guid productId, Guid warehouseId, decimal reorderLevel)
+    public static InventoryBalance Create(int productId, int warehouseId, decimal reorderLevel)
     {
-        if (productId == Guid.Empty)
+        if (productId <= 0)
         {
             throw new DomainException("ProductId is required.");
         }
 
-        if (warehouseId == Guid.Empty)
+        if (warehouseId <= 0)
         {
             throw new DomainException("WarehouseId is required.");
         }

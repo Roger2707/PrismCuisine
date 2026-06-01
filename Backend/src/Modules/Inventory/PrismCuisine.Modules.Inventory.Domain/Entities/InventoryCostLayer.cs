@@ -5,7 +5,7 @@ namespace PrismCuisine.Modules.Inventory.Domain.Entities;
 
 public sealed class InventoryCostLayer : Entity
 {
-    public Guid InventoryBalanceId { get; private set; }
+    public int InventoryBalanceId { get; private set; }
     public decimal QuantityReceived { get; private set; }
     public decimal QuantityRemaining { get; private set; }
     public decimal UnitCost { get; private set; }
@@ -16,12 +16,12 @@ public sealed class InventoryCostLayer : Entity
     }
 
     public static InventoryCostLayer Create(
-        Guid inventoryBalanceId,
+        int inventoryBalanceId,
         decimal quantity,
         decimal unitCost,
         DateTime? receivedAt = null)
     {
-        if (inventoryBalanceId == Guid.Empty)
+        if (inventoryBalanceId <= 0)
         {
             throw new DomainException("InventoryBalanceId is required.");
         }

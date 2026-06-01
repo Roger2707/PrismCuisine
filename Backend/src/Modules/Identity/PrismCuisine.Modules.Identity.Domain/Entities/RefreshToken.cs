@@ -4,7 +4,7 @@ namespace PrismCuisine.Modules.Identity.Domain.Entities;
 
 public sealed class RefreshToken : AggregateRoot
 {
-    public Guid UserId { get; private set; }
+    public int UserId { get; private set; }
     public string Token { get; private set; } = null!;
     public DateTime ExpiresAt { get; private set; }
     public DateTime? RevokedAt { get; private set; }
@@ -13,7 +13,7 @@ public sealed class RefreshToken : AggregateRoot
     {
     }
 
-    public static RefreshToken Create(Guid userId, string token, DateTime expiresAt) =>
+    public static RefreshToken Create(int userId, string token, DateTime expiresAt) =>
         new()
         {
             UserId = userId,

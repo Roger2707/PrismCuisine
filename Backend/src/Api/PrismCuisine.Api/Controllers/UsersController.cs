@@ -7,8 +7,8 @@ namespace PrismCuisine.Api.Controllers;
 [Route("api/identity/users")]
 public sealed class UsersController(IUserService userService) : ControllerBase
 {
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var user = await userService.GetByIdAsync(id, cancellationToken);
         return user is null ? NotFound() : Ok(user);

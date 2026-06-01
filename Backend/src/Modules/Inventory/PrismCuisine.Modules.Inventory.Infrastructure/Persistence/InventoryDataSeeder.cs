@@ -54,8 +54,8 @@ internal sealed class InventoryDataSeeder(
     }
 
     private async Task EnsureSampleProductAsync(
-        Guid categoryId,
-        Guid warehouseId,
+        int categoryId,
+        int warehouseId,
         CancellationToken cancellationToken)
     {
         var product = await db.Products

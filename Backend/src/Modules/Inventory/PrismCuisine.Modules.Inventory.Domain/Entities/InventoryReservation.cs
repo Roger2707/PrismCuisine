@@ -6,12 +6,12 @@ namespace PrismCuisine.Modules.Inventory.Domain.Entities;
 
 public sealed class InventoryReservation : Entity
 {
-    public Guid InventoryBalanceId { get; private set; }
+    public int InventoryBalanceId { get; private set; }
     public decimal Quantity { get; private set; }
     public decimal FulfilledQuantity { get; private set; }
     public InventoryReservationStatus Status { get; private set; }
     public InventoryReferenceType ReferenceType { get; private set; }
-    public Guid ReferenceId { get; private set; }
+    public int ReferenceId { get; private set; }
     public string? Notes { get; private set; }
 
     private InventoryReservation()
@@ -21,13 +21,13 @@ public sealed class InventoryReservation : Entity
     public decimal RemainingQuantity => Quantity - FulfilledQuantity;
 
     public static InventoryReservation Create(
-        Guid inventoryBalanceId,
+        int inventoryBalanceId,
         decimal quantity,
         InventoryReferenceType referenceType,
-        Guid referenceId,
+        int referenceId,
         string? notes = null)
     {
-        if (inventoryBalanceId == Guid.Empty)
+        if (inventoryBalanceId <= 0)
         {
             throw new DomainException("InventoryBalanceId is required.");
         }
@@ -37,7 +37,7 @@ public sealed class InventoryReservation : Entity
             throw new DomainException("Reservation quantity must be greater than zero.");
         }
 
-        if (referenceId == Guid.Empty)
+        if (referenceId <= 0)
         {
             throw new DomainException("ReferenceId is required.");
         }

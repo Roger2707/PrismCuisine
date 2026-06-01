@@ -14,8 +14,8 @@ public sealed class ProductCategoriesController(IProductCategoryService productC
         return Ok(categories);
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var category = await productCategoryService.GetByIdAsync(id, cancellationToken);
         return category is null ? NotFound() : Ok(category);
@@ -30,9 +30,9 @@ public sealed class ProductCategoriesController(IProductCategoryService productC
         return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
     }
 
-    [HttpPut("{id:guid}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
-        Guid id,
+        int id,
         [FromBody] UpdateProductCategoryRequest request,
         CancellationToken cancellationToken)
     {

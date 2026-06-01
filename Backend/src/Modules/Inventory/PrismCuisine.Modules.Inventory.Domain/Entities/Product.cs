@@ -5,7 +5,7 @@ namespace PrismCuisine.Modules.Inventory.Domain.Entities;
 
 public sealed class Product : AggregateRoot
 {
-    public Guid CategoryId { get; private set; }
+    public int CategoryId { get; private set; }
     public string Sku { get; private set; } = null!;
     public string Name { get; private set; } = null!;
     public string Unit { get; private set; } = null!;
@@ -17,13 +17,13 @@ public sealed class Product : AggregateRoot
     }
 
     public static Product Create(
-        Guid categoryId,
+        int categoryId,
         string sku,
         string name,
         string unit,
         string? description = null)
     {
-        if (categoryId == Guid.Empty)
+        if (categoryId <= 0)
         {
             throw new DomainException("CategoryId is required.");
         }
@@ -49,9 +49,9 @@ public sealed class Product : AggregateRoot
         };
     }
 
-    public void Update(Guid categoryId, string name, string unit, string? description)
+    public void Update(int categoryId, string name, string unit, string? description)
     {
-        if (categoryId == Guid.Empty)
+        if (categoryId <= 0)
         {
             throw new DomainException("CategoryId is required.");
         }

@@ -12,7 +12,7 @@ public sealed class ProductService(IInventoryUnitOfWork unitOfWork) : IProductSe
         return products.Select(Map).ToList();
     }
 
-    public async Task<ProductDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ProductDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var product = await unitOfWork.Products.GetByIdAsync(id, cancellationToken);
         return product is null ? null : Map(product);
@@ -48,7 +48,7 @@ public sealed class ProductService(IInventoryUnitOfWork unitOfWork) : IProductSe
         return Map(product);
     }
 
-    public async Task UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken = default)
     {
         _ = await unitOfWork.ProductCategories.GetByIdAsync(request.CategoryId, cancellationToken)
             ?? throw new DomainException($"Product category '{request.CategoryId}' was not found.");
@@ -61,7 +61,7 @@ public sealed class ProductService(IInventoryUnitOfWork unitOfWork) : IProductSe
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeactivateAsync(int id, CancellationToken cancellationToken = default)
     {
         var product = await unitOfWork.Products.GetByIdForUpdateAsync(id, cancellationToken)
             ?? throw new DomainException($"Product '{id}' was not found.");

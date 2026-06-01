@@ -8,12 +8,12 @@ namespace PrismCuisine.Modules.Purchasing.Infrastructure.Persistence.Repositorie
 
 internal sealed class PurchaseOrderRepository(PrismCuisineDbContext db) : IPurchaseOrderRepository
 {
-    public Task<PurchaseOrder?> GetByIdWithLinesForUpdateAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<PurchaseOrder?> GetByIdWithLinesForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         db.PurchaseOrders
             .Include(o => o.Lines)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
-    public async Task<PurchaseOrderDto?> GetByIdWithLinesAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<PurchaseOrderDto?> GetByIdWithLinesAsync(int id, CancellationToken cancellationToken = default)
     {
         var order = await db.PurchaseOrders
             .AsNoTracking()

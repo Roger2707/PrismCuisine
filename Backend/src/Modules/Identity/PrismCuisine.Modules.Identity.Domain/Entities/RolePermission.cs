@@ -4,21 +4,21 @@ namespace PrismCuisine.Modules.Identity.Domain.Entities;
 
 public sealed class RolePermission : Entity
 {
-    public Guid RoleId { get; private set; }
-    public Guid PermissionId { get; private set; }
+    public int RoleId { get; private set; }
+    public int PermissionId { get; private set; }
 
     private RolePermission()
     {
     }
 
-    public static RolePermission Create(Guid roleId, Guid permissionId) =>
+    public static RolePermission Create(int roleId, int permissionId) =>
         new()
         {
             RoleId = roleId,
             PermissionId = permissionId
         };
 
-    public void Update(Guid roleId, Guid permissionId)
+    public void Update(int roleId, int permissionId)
     {
         RoleId = roleId;
         PermissionId = permissionId;

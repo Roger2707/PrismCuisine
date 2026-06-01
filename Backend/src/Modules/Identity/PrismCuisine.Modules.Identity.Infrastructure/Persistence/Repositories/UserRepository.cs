@@ -11,7 +11,7 @@ internal sealed class UserRepository(PrismCuisineDbContext db) : IUserRepository
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) =>
         db.Users.FirstOrDefaultAsync(u => u.Email == email.Trim().ToLowerInvariant(), cancellationToken);
 
-    public Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default) =>
+    public Task<User?> GetByIdAsync(int userId, CancellationToken cancellationToken = default) =>
         db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
     public void Add(User user) => db.Users.Add(user);

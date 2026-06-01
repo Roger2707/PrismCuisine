@@ -6,13 +6,13 @@ namespace PrismCuisine.Modules.Inventory.Domain.Entities;
 
 public sealed class InventoryMovement : Entity
 {
-    public Guid InventoryBalanceId { get; private set; }
+    public int InventoryBalanceId { get; private set; }
     public InventoryMovementType MovementType { get; private set; }
     public decimal Quantity { get; private set; }
     public decimal UnitCost { get; private set; }
     public InventoryReferenceType ReferenceType { get; private set; }
     public string? Reference { get; private set; }
-    public Guid? ReferenceId { get; private set; }
+    public int? ReferenceId { get; private set; }
     public string? Notes { get; private set; }
 
     private InventoryMovement()
@@ -20,16 +20,16 @@ public sealed class InventoryMovement : Entity
     }
 
     public static InventoryMovement Create(
-        Guid inventoryBalanceId,
+        int inventoryBalanceId,
         InventoryMovementType movementType,
         decimal quantity,
         decimal unitCost,
         InventoryReferenceType referenceType,
         string? reference = null,
-        Guid? referenceId = null,
+        int? referenceId = null,
         string? notes = null)
     {
-        if (inventoryBalanceId == Guid.Empty)
+        if (inventoryBalanceId <= 0)
         {
             throw new DomainException("InventoryBalanceId is required.");
         }

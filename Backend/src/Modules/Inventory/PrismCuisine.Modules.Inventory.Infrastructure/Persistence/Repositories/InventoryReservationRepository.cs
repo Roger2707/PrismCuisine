@@ -8,11 +8,11 @@ namespace PrismCuisine.Modules.Inventory.Infrastructure.Persistence.Repositories
 
 internal sealed class InventoryReservationRepository(PrismCuisineDbContext db) : IInventoryReservationRepository
 {
-    public Task<InventoryReservation?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<InventoryReservation?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         db.InventoryReservations.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
     public Task<decimal> GetActiveReservedQuantityAsync(
-        Guid inventoryBalanceId,
+        int inventoryBalanceId,
         CancellationToken cancellationToken = default) =>
         db.InventoryReservations
             .Where(r => r.InventoryBalanceId == inventoryBalanceId && r.Status == InventoryReservationStatus.Active)
@@ -20,7 +20,7 @@ internal sealed class InventoryReservationRepository(PrismCuisineDbContext db) :
 
     public Task<InventoryReservation?> GetActiveByReferenceAsync(
         InventoryReferenceType referenceType,
-        Guid referenceId,
+        int referenceId,
         CancellationToken cancellationToken = default) =>
         db.InventoryReservations.FirstOrDefaultAsync(
             r => r.ReferenceType == referenceType

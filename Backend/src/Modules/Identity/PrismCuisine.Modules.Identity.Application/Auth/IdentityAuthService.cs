@@ -43,7 +43,7 @@ public sealed class IdentityAuthService(
         return new LoginResponse(accessToken, refreshTokenValue, accessTokenExpiresAt, refreshTokenExpiresAt);
     }
 
-    public async Task LogoutAsync(Guid userId, LogoutRequest request, CancellationToken cancellationToken = default)
+    public async Task LogoutAsync(int userId, LogoutRequest request, CancellationToken cancellationToken = default)
     {
         var refreshToken = await unitOfWork.RefreshTokens.GetByTokenAsync(request.RefreshToken, cancellationToken)
             ?? throw new DomainException("Refresh token is invalid.");
@@ -59,7 +59,7 @@ public sealed class IdentityAuthService(
     }
 
     public async Task<CurrentUserResponse> GetCurrentUserAsync(
-        Guid userId,
+        int userId,
         object permissions,
         CancellationToken cancellationToken = default)
     {
@@ -71,7 +71,7 @@ public sealed class IdentityAuthService(
     }
 
     public async Task ChangePasswordAsync(
-        Guid userId,
+        int userId,
         ChangePasswordRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -88,7 +88,7 @@ public sealed class IdentityAuthService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ForceLogoutAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task ForceLogoutAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
             ?? throw new DomainException("User was not found.");
@@ -101,7 +101,7 @@ public sealed class IdentityAuthService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ReleaseBlacklistAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task ReleaseBlacklistAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
             ?? throw new DomainException("User was not found.");

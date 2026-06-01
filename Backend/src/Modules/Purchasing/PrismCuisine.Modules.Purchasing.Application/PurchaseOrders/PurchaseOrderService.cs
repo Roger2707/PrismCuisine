@@ -9,10 +9,10 @@ public sealed class PurchaseOrderService(
     IPurchasingUnitOfWork unitOfWork,
     IIntegrationEventPublisher eventPublisher) : IPurchaseOrderService
 {
-    public Task<PurchaseOrderDto?> GetByIdAsync(Guid purchaseOrderId, CancellationToken cancellationToken = default) =>
+    public Task<PurchaseOrderDto?> GetByIdAsync(int purchaseOrderId, CancellationToken cancellationToken = default) =>
         unitOfWork.PurchaseOrders.GetByIdWithLinesAsync(purchaseOrderId, cancellationToken);
 
-    public async Task PostAsync(Guid purchaseOrderId, CancellationToken cancellationToken = default)
+    public async Task PostAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken);
 

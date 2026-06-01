@@ -12,7 +12,7 @@ public sealed class ProductCategoryService(IInventoryUnitOfWork unitOfWork) : IP
         return categories.Select(Map).ToList();
     }
 
-    public async Task<ProductCategoryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ProductCategoryDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var category = await unitOfWork.ProductCategories.GetByIdAsync(id, cancellationToken);
         return category is null ? null : Map(category);
@@ -36,7 +36,7 @@ public sealed class ProductCategoryService(IInventoryUnitOfWork unitOfWork) : IP
     }
 
     public async Task UpdateAsync(
-        Guid id,
+        int id,
         UpdateProductCategoryRequest request,
         CancellationToken cancellationToken = default)
     {

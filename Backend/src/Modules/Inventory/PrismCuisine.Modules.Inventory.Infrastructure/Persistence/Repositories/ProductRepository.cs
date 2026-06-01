@@ -7,10 +7,10 @@ namespace PrismCuisine.Modules.Inventory.Infrastructure.Persistence.Repositories
 
 internal sealed class ProductRepository(PrismCuisineDbContext db) : IProductRepository
 {
-    public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
-    public Task<Product?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default) =>
+    public Task<Product?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         db.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
     public Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default) =>

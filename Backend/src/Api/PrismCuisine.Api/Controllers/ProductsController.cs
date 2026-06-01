@@ -14,8 +14,8 @@ public sealed class ProductsController(IProductService productService) : Control
         return Ok(products);
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var product = await productService.GetByIdAsync(id, cancellationToken);
         return product is null ? NotFound() : Ok(product);
@@ -37,9 +37,9 @@ public sealed class ProductsController(IProductService productService) : Control
         return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
     }
 
-    [HttpPut("{id:guid}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
-        Guid id,
+        int id,
         [FromBody] UpdateProductRequest request,
         CancellationToken cancellationToken)
     {
@@ -47,8 +47,8 @@ public sealed class ProductsController(IProductService productService) : Control
         return NoContent();
     }
 
-    [HttpPost("{id:guid}/deactivate")]
-    public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
+    [HttpPost("{id}/deactivate")]
+    public async Task<IActionResult> Deactivate(int id, CancellationToken cancellationToken)
     {
         await productService.DeactivateAsync(id, cancellationToken);
         return NoContent();

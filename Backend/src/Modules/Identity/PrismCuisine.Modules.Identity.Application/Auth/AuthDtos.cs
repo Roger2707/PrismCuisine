@@ -13,7 +13,7 @@ public sealed record LogoutRequest(string RefreshToken);
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 public sealed record CurrentUserResponse(
-    Guid UserId,
+    int UserId,
     string Email,
     string DisplayName,
     IReadOnlyCollection<string> Roles,

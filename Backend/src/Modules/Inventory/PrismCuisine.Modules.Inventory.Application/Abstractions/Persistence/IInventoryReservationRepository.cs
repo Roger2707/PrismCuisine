@@ -5,13 +5,13 @@ namespace PrismCuisine.Modules.Inventory.Application.Abstractions.Persistence;
 
 public interface IInventoryReservationRepository
 {
-    Task<InventoryReservation?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<InventoryReservation?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default);
     Task<decimal> GetActiveReservedQuantityAsync(
-        Guid inventoryBalanceId,
+        int inventoryBalanceId,
         CancellationToken cancellationToken = default);
     Task<InventoryReservation?> GetActiveByReferenceAsync(
         InventoryReferenceType referenceType,
-        Guid referenceId,
+        int referenceId,
         CancellationToken cancellationToken = default);
     void Add(InventoryReservation reservation);
     void Update(InventoryReservation reservation);

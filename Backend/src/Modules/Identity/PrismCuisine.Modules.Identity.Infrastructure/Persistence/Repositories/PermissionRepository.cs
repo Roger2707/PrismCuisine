@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 using PrismCuisine.Modules.Identity.Application.Abstractions.Persistence;
 using PrismCuisine.Modules.Identity.Domain.Entities;
@@ -25,7 +25,7 @@ namespace PrismCuisine.Modules.Identity.Infrastructure.Persistence.Repositories
             return permission;
         }
 
-        public async Task<IEnumerable<Permission>> GetPermissionsByRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Permission>> GetPermissionsByRoleAsync(int roleId, CancellationToken cancellationToken = default)
         {
             var permissionIds = await db.RolePermissions
                 .Where(rp => rp.RoleId == roleId)
@@ -36,7 +36,7 @@ namespace PrismCuisine.Modules.Identity.Infrastructure.Persistence.Repositories
             return permissions;
         }
 
-        public async Task<IReadOnlyCollection<Permission>> GetPermissionsReadOnlyByRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyCollection<Permission>> GetPermissionsReadOnlyByRoleAsync(int roleId, CancellationToken cancellationToken = default)
         {
             var permissionIds = await db.RolePermissions
                                     .Where(rp => rp.RoleId == roleId)

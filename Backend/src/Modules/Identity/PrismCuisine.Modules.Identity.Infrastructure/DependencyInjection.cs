@@ -9,6 +9,7 @@ using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 using PrismCuisine.Modules.Identity.Application.Abstractions.Persistence;
 using PrismCuisine.Modules.Identity.Application.Abstractions.Services;
 using PrismCuisine.Modules.Identity.Application.Auth;
+using PrismCuisine.Modules.Identity.Application.Permissions;
 using PrismCuisine.Modules.Identity.Application.Users;
 using PrismCuisine.Modules.Identity.Infrastructure.Auth;
 using PrismCuisine.Modules.Identity.Infrastructure.Persistence;
@@ -32,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenProvider, JwtTokenProvider>();
         services.AddScoped<IIdentityAuthService, IdentityAuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IIdentityDataSeeder, IdentityDataSeeder>();
 
         return services;

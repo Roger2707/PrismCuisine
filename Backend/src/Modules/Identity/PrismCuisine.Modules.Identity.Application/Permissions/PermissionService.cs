@@ -1,4 +1,4 @@
-﻿using PrismCuisine.Modules.Identity.Application.Abstractions.Persistence;
+using PrismCuisine.Modules.Identity.Application.Abstractions.Persistence;
 using PrismCuisine.Modules.Identity.Domain.Entities;
 using System.Threading.Tasks;
 
@@ -14,7 +14,7 @@ namespace PrismCuisine.Modules.Identity.Application.Permissions
             return permissions;
         }
 
-        public async Task<IReadOnlyCollection<Permission>> GetPermissionsReadOnlyByRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyCollection<Permission>> GetPermissionsReadOnlyByRoleAsync(int roleId, CancellationToken cancellationToken = default)
         {
             var permissions = await unitOfWork.Permission.GetPermissionsReadOnlyByRoleAsync(roleId, cancellationToken);
             return permissions;
@@ -34,7 +34,7 @@ namespace PrismCuisine.Modules.Identity.Application.Permissions
             return permission;
         }
 
-        public async Task<IEnumerable<Permission>> GetPermissionsByRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Permission>> GetPermissionsByRoleAsync(int roleId, CancellationToken cancellationToken = default)
         {
             var permissions = await unitOfWork.Permission.GetPermissionsByRoleAsync(roleId, cancellationToken);
             return permissions;

@@ -3,7 +3,7 @@ using PrismCuisine.Modules.Inventory.Domain.Entities;
 
 namespace PrismCuisine.Modules.Inventory.Domain.Services;
 
-public sealed record LayerConsumption(Guid CostLayerId, decimal Quantity, decimal UnitCost);
+public sealed record LayerConsumption(int CostLayerId, decimal Quantity, decimal UnitCost);
 
 public static class FifoCosting
 {

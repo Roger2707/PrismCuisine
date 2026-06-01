@@ -8,7 +8,7 @@ namespace PrismCuisine.Modules.Inventory.Infrastructure.Persistence.Repositories
 internal sealed class InventoryMovementRepository(PrismCuisineDbContext db) : IInventoryMovementRepository
 {
     public async Task<IReadOnlyCollection<InventoryMovement>> GetByBalanceIdAsync(
-        Guid inventoryBalanceId,
+        int inventoryBalanceId,
         CancellationToken cancellationToken = default) =>
         await db.InventoryMovements
             .AsNoTracking()

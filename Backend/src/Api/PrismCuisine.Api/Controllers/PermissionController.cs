@@ -5,7 +5,7 @@ using PrismCuisine.Modules.Identity.Application.Permissions;
 namespace PrismCuisine.Api.Controllers;
 
 [ApiController]
-[Route("api/identity/users")]
+[Route("api/identity/permissions")]
 public sealed class PermissionController(IPermissionService permissionService) : ControllerBase
 {
     [HttpGet]
@@ -15,7 +15,7 @@ public sealed class PermissionController(IPermissionService permissionService) :
         return Ok(permissions);
     }
 
-    [HttpGet("{id:string}")]
+    [HttpGet("{id}")]
     [Authorize]
     public async Task<IActionResult> GetByCode(string id, CancellationToken cancellationToken)
     {

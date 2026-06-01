@@ -5,8 +5,8 @@ namespace PrismCuisine.Modules.SalesOrder.Domain.Entities;
 
 public sealed class SalesOrderLine : Entity
 {
-    public Guid SalesOrderId { get; private set; }
-    public Guid ProductId { get; private set; }
+    public int SalesOrderId { get; private set; }
+    public int ProductId { get; private set; }
     public decimal Quantity { get; private set; }
     public decimal UnitPrice { get; private set; }
 
@@ -14,9 +14,9 @@ public sealed class SalesOrderLine : Entity
     {
     }
 
-    internal static SalesOrderLine Create(Guid productId, decimal quantity, decimal unitPrice)
+    internal static SalesOrderLine Create(int productId, decimal quantity, decimal unitPrice)
     {
-        if (productId == Guid.Empty)
+        if (productId <= 0)
         {
             throw new DomainException("ProductId is required.");
         }
@@ -34,5 +34,5 @@ public sealed class SalesOrderLine : Entity
         };
     }
 
-    internal void AssignToOrder(Guid salesOrderId) => SalesOrderId = salesOrderId;
+    internal void AssignToOrder(int salesOrderId) => SalesOrderId = salesOrderId;
 }

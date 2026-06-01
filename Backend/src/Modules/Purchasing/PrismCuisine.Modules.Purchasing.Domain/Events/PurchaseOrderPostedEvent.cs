@@ -2,4 +2,4 @@ using PrismCuisine.BuildingBlocks.Domain.Events;
 
 namespace PrismCuisine.Modules.Purchasing.Domain.Events;
 
-public sealed record PurchaseOrderPostedEvent(Guid PurchaseOrderId, string OrderNumber) : DomainEvent;
+public sealed record PurchaseOrderPostedEvent(int PurchaseOrderId, string OrderNumber) : DomainEvent;
