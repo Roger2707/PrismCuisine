@@ -11,15 +11,21 @@ public sealed class PurchaseOrder : AggregateRoot
 
     public string OrderNumber { get; private set; } = null!;
     public int SupplierId { get; private set; }
+    public int WarehouseId { get; private set; }
     public PurchaseOrderStatus Status { get; private set; }
-    public DateTime? PostedAt { get; private set; }
+    public DateTime? ApprovedAt { get; private set; }
+    public string? Notes { get; private set; }
     public IReadOnlyCollection<PurchaseOrderLine> Lines => _lines.AsReadOnly();
 
     private PurchaseOrder()
     {
     }
 
-    public static PurchaseOrder CreateDraft(string orderNumber, int supplierId)
+    public static PurchaseOrder CreateDraft(
+        string orderNumber,
+        int supplierId,
+        int warehouseId,
+        string? notes = null)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
         {
@@ -31,59 +37,100 @@ public sealed class PurchaseOrder : AggregateRoot
             throw new DomainException("SupplierId is required.");
         }
 
+        if (warehouseId <= 0)
+        {
+            throw new DomainException("WarehouseId is required.");
+        }
+
         return new PurchaseOrder
         {
             OrderNumber = orderNumber.Trim().ToUpperInvariant(),
             SupplierId = supplierId,
-            Status = PurchaseOrderStatus.Draft
+            WarehouseId = warehouseId,
+            Status = PurchaseOrderStatus.Draft,
+            Notes = notes?.Trim()
         };
     }
 
-    public void AddLine(int productId, decimal quantity, decimal unitPrice)
+    public void AddLine(int productId, decimal quantityOrdered, decimal unitPrice)
     {
         if (Status != PurchaseOrderStatus.Draft)
         {
             throw new DomainException("Cannot modify a non-draft purchase order.");
         }
 
-        var line = PurchaseOrderLine.Create(productId, quantity, unitPrice);
+        if (_lines.Any(l => l.ProductId == productId))
+        {
+            throw new DomainException("Product already exists on this purchase order.");
+        }
+
+        var line = PurchaseOrderLine.Create(productId, quantityOrdered, unitPrice);
         line.AssignToOrder(Id);
         _lines.Add(line);
         Touch();
     }
 
-    public void Post()
+    public void Approve()
     {
-        if (Status == PurchaseOrderStatus.Posted)
+        if (Status != PurchaseOrderStatus.Draft)
         {
-            throw new DomainException("Purchase order is already posted.");
-        }
-
-        if (Status == PurchaseOrderStatus.Cancelled)
-        {
-            throw new DomainException("Cancelled purchase order cannot be posted.");
+            throw new DomainException("Only draft purchase orders can be approved.");
         }
 
         if (_lines.Count == 0)
         {
-            throw new DomainException("Cannot post a purchase order without lines.");
+            throw new DomainException("Cannot approve a purchase order without lines.");
         }
 
-        Status = PurchaseOrderStatus.Posted;
-        PostedAt = DateTime.UtcNow;
+        Status = PurchaseOrderStatus.Approved;
+        ApprovedAt = DateTime.UtcNow;
         Touch();
 
-        RaiseDomainEvent(new PurchaseOrderPostedEvent(Id, OrderNumber));
+        RaiseDomainEvent(new PurchaseOrderApprovedEvent(Id, OrderNumber));
     }
 
     public void Cancel()
     {
-        if (Status == PurchaseOrderStatus.Posted)
+        if (Status is PurchaseOrderStatus.Received or PurchaseOrderStatus.PartiallyReceived)
         {
-            throw new DomainException("Posted purchase order cannot be cancelled.");
+            throw new DomainException("Purchase order with receipts cannot be cancelled.");
+        }
+
+        if (Status == PurchaseOrderStatus.Cancelled)
+        {
+            throw new DomainException("Purchase order is already cancelled.");
         }
 
         Status = PurchaseOrderStatus.Cancelled;
         Touch();
+    }
+
+    public void RecordReceipt(int purchaseOrderLineId, decimal quantityReceived)
+    {
+        if (Status is not PurchaseOrderStatus.Approved and not PurchaseOrderStatus.PartiallyReceived)
+        {
+            throw new DomainException("Cannot receive goods for a purchase order that is not approved.");
+        }
+
+        var line = _lines.FirstOrDefault(l => l.Id == purchaseOrderLineId)
+            ?? throw new DomainException($"Purchase order line '{purchaseOrderLineId}' was not found.");
+
+        line.RecordReceipt(quantityReceived);
+        RefreshReceivingStatus();
+        Touch();
+    }
+
+    private void RefreshReceivingStatus()
+    {
+        if (_lines.All(l => l.IsFullyReceived()))
+        {
+            Status = PurchaseOrderStatus.Received;
+            return;
+        }
+
+        if (_lines.Any(l => l.QuantityReceived > 0))
+        {
+            Status = PurchaseOrderStatus.PartiallyReceived;
+        }
     }
 }

@@ -7,23 +7,26 @@ public sealed class PurchaseOrderLine : Entity
 {
     public int PurchaseOrderId { get; private set; }
     public int ProductId { get; private set; }
-    public decimal Quantity { get; private set; }
+    public decimal QuantityOrdered { get; private set; }
+    public decimal QuantityReceived { get; private set; }
     public decimal UnitPrice { get; private set; }
 
     private PurchaseOrderLine()
     {
     }
 
-    internal static PurchaseOrderLine Create(int productId, decimal quantity, decimal unitPrice)
+    public decimal QuantityRemaining => QuantityOrdered - QuantityReceived;
+
+    internal static PurchaseOrderLine Create(int productId, decimal quantityOrdered, decimal unitPrice)
     {
         if (productId <= 0)
         {
             throw new DomainException("ProductId is required.");
         }
 
-        if (quantity <= 0)
+        if (quantityOrdered <= 0)
         {
-            throw new DomainException("Quantity must be greater than zero.");
+            throw new DomainException("Ordered quantity must be greater than zero.");
         }
 
         if (unitPrice < 0)
@@ -34,10 +37,28 @@ public sealed class PurchaseOrderLine : Entity
         return new PurchaseOrderLine
         {
             ProductId = productId,
-            Quantity = quantity,
+            QuantityOrdered = quantityOrdered,
+            QuantityReceived = 0m,
             UnitPrice = unitPrice
         };
     }
 
     internal void AssignToOrder(int purchaseOrderId) => PurchaseOrderId = purchaseOrderId;
+
+    internal void RecordReceipt(decimal quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new DomainException("Receipt quantity must be greater than zero.");
+        }
+
+        if (quantity > QuantityRemaining)
+        {
+            throw new DomainException("Receipt quantity exceeds remaining ordered quantity.");
+        }
+
+        QuantityReceived += quantity;
+    }
+
+    internal bool IsFullyReceived() => QuantityReceived >= QuantityOrdered;
 }

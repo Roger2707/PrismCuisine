@@ -39,8 +39,11 @@ public sealed class PrismCuisineDbContext : DbContext
     public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
 
     // Purchasing
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
     public DbSet<PurchaseOrderLine> PurchaseOrderLines => Set<PurchaseOrderLine>();
+    public DbSet<GoodsReceipt> GoodsReceipts => Set<GoodsReceipt>();
+    public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
 
     // SalesOrder
     public DbSet<SalesOrderEntity> SalesOrders => Set<SalesOrderEntity>();

@@ -21,15 +21,16 @@ public sealed class PurchaseOrderConfiguration : EntityConfiguration<PurchaseOrd
         builder.HasIndex(o => o.OrderNumber)
             .IsUnique();
 
-        builder.Property(o => o.SupplierId)
-            .IsRequired();
+        builder.Property(o => o.SupplierId).IsRequired();
+        builder.Property(o => o.WarehouseId).IsRequired();
 
         builder.Property(o => o.Status)
             .HasConversion<string>()
             .HasMaxLength(32)
             .IsRequired();
 
-        builder.Property(o => o.PostedAt);
+        builder.Property(o => o.ApprovedAt);
+        builder.Property(o => o.Notes).HasMaxLength(1000);
 
         builder.HasMany(o => o.Lines)
             .WithOne()

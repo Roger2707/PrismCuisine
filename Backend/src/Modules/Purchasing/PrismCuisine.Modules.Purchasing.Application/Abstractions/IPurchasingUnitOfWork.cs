@@ -4,5 +4,7 @@ namespace PrismCuisine.Modules.Purchasing.Application.Abstractions;
 
 public interface IPurchasingUnitOfWork : IUnitOfWork
 {
+    ISupplierRepository Suppliers { get; }
     IPurchaseOrderRepository PurchaseOrders { get; }
+    IGoodsReceiptRepository GoodsReceipts { get; }
 }
