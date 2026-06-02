@@ -40,6 +40,17 @@ public sealed class GoodsReceipt : AggregateRoot
         };
     }
 
+    public void UpdateDraft(string? notes)
+    {
+        if (Status != GoodsReceiptStatus.Draft)
+        {
+            throw new DomainException("Only draft goods receipts can be updated.");
+        }
+
+        Notes = notes?.Trim();
+        Touch();
+    }
+
     public void AddLine(int purchaseOrderLineId, int productId, decimal quantity, decimal unitCost)
     {
         if (Status != GoodsReceiptStatus.Draft)
@@ -56,6 +67,22 @@ public sealed class GoodsReceipt : AggregateRoot
         line.AssignToReceipt(Id);
         _lines.Add(line);
         Touch();
+    }
+
+    public void ReplaceLines(
+        IReadOnlyCollection<(int PurchaseOrderLineId, int ProductId, decimal Quantity, decimal UnitCost)> lines)
+    {
+        if (Status != GoodsReceiptStatus.Draft)
+        {
+            throw new DomainException("Cannot modify a non-draft goods receipt.");
+        }
+
+        _lines.Clear();
+
+        foreach (var line in lines)
+        {
+            AddLine(line.PurchaseOrderLineId, line.ProductId, line.Quantity, line.UnitCost);
+        }
     }
 
     public void Post()

@@ -25,9 +25,15 @@ public sealed record GoodsReceiptLineDto(
 
 public sealed record CreateGoodsReceiptRequest(
     int PurchaseOrderId,
-    string? Notes);
+    string? Notes,
+    IReadOnlyList<AddGoodsReceiptLineRequest> Lines,
+    bool PostImmediately = false);
 
 public sealed record AddGoodsReceiptLineRequest(
     int PurchaseOrderLineId,
     decimal Quantity,
     decimal? UnitCost);
+
+public sealed record UpdateGoodsReceiptRequest(
+    string? Notes,
+    IReadOnlyList<AddGoodsReceiptLineRequest> Lines);

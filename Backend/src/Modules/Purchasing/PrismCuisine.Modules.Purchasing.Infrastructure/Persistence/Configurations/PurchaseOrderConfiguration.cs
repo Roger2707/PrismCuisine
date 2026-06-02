@@ -23,6 +23,7 @@ public sealed class PurchaseOrderConfiguration : EntityConfiguration<PurchaseOrd
 
         builder.Property(o => o.SupplierId).IsRequired();
         builder.Property(o => o.WarehouseId).IsRequired();
+        builder.Property(o => o.AmendedFromPurchaseOrderId);
 
         builder.Property(o => o.Status)
             .HasConversion<string>()

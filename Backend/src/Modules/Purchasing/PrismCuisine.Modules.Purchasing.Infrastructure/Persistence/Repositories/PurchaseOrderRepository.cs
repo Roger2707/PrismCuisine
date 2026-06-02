@@ -38,6 +38,7 @@ internal sealed class PurchaseOrderRepository(PrismCuisineDbContext db) : IPurch
             o.SupplierId,
             o.WarehouseId,
             o.Status.ToString(),
+            o.AmendedFromPurchaseOrderId,
             o.ApprovedAt,
             o.Lines.Sum(l => l.QuantityOrdered * l.UnitPrice))).ToList();
     }
@@ -71,6 +72,7 @@ internal sealed class PurchaseOrderRepository(PrismCuisineDbContext db) : IPurch
             order.SupplierId,
             order.WarehouseId,
             order.Status.ToString(),
+            order.AmendedFromPurchaseOrderId,
             order.ApprovedAt,
             order.Notes,
             lines);

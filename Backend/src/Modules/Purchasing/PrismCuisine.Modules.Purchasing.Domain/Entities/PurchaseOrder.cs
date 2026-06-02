@@ -13,6 +13,7 @@ public sealed class PurchaseOrder : AggregateRoot
     public int SupplierId { get; private set; }
     public int WarehouseId { get; private set; }
     public PurchaseOrderStatus Status { get; private set; }
+    public int? AmendedFromPurchaseOrderId { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
     public string? Notes { get; private set; }
     public IReadOnlyCollection<PurchaseOrderLine> Lines => _lines.AsReadOnly();
@@ -52,6 +53,44 @@ public sealed class PurchaseOrder : AggregateRoot
         };
     }
 
+    public static PurchaseOrder CreateAmendment(
+        string orderNumber,
+        PurchaseOrder source,
+        string? notes)
+    {
+        if (source.Status is not PurchaseOrderStatus.Approved and not PurchaseOrderStatus.PartiallyReceived)
+        {
+            throw new DomainException("Only approved or partially received purchase orders can be amended.");
+        }
+
+        var amendment = CreateDraft(orderNumber, source.SupplierId, source.WarehouseId, notes);
+        amendment.AmendedFromPurchaseOrderId = source.Id;
+        return amendment;
+    }
+
+    public void UpdateDraft(int supplierId, int warehouseId, string? notes)
+    {
+        if (Status != PurchaseOrderStatus.Draft)
+        {
+            throw new DomainException("Only draft purchase orders can be updated.");
+        }
+
+        if (supplierId <= 0)
+        {
+            throw new DomainException("SupplierId is required.");
+        }
+
+        if (warehouseId <= 0)
+        {
+            throw new DomainException("WarehouseId is required.");
+        }
+
+        SupplierId = supplierId;
+        WarehouseId = warehouseId;
+        Notes = notes?.Trim();
+        Touch();
+    }
+
     public void AddLine(int productId, decimal quantityOrdered, decimal unitPrice)
     {
         if (Status != PurchaseOrderStatus.Draft)
@@ -68,6 +107,21 @@ public sealed class PurchaseOrder : AggregateRoot
         line.AssignToOrder(Id);
         _lines.Add(line);
         Touch();
+    }
+
+    public void ReplaceLines(IReadOnlyCollection<(int ProductId, decimal QuantityOrdered, decimal UnitPrice)> lines)
+    {
+        if (Status != PurchaseOrderStatus.Draft)
+        {
+            throw new DomainException("Cannot modify lines of a non-draft purchase order.");
+        }
+
+        _lines.Clear();
+
+        foreach (var line in lines)
+        {
+            AddLine(line.ProductId, line.QuantityOrdered, line.UnitPrice);
+        }
     }
 
     public void Approve()

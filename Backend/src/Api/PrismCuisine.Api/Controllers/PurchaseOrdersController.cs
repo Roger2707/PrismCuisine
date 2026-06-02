@@ -30,6 +30,26 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
     }
 
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(
+        int id,
+        [FromBody] UpdatePurchaseOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        await purchaseOrderService.UpdateAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:int}/amendment")]
+    public async Task<IActionResult> CreateAmendment(
+        int id,
+        [FromBody] CreatePurchaseOrderAmendmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var amendment = await purchaseOrderService.CreateAmendmentAsync(id, request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = amendment.Id }, amendment);
+    }
+
     [HttpPost("{id:int}/lines")]
     public async Task<IActionResult> AddLine(
         int id,
