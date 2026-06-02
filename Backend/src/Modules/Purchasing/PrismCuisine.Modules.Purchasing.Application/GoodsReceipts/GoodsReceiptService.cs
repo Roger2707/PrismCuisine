@@ -41,7 +41,15 @@ public sealed class GoodsReceiptService(
 
         if (request.PostImmediately)
         {
-            await PostCoreAsync(receipt, order, cancellationToken);
+            await unitOfWork.ExecuteInTransactionAsync(async ct =>
+            {
+                await PostCoreAsync(receipt, order, ct);
+                unitOfWork.GoodsReceipts.Update(receipt);
+                unitOfWork.PurchaseOrders.Update(order);
+                await unitOfWork.SaveChangesAsync(ct);
+            }, cancellationToken);
+
+            return (await unitOfWork.GoodsReceipts.GetByIdWithLinesAsync(receipt.Id, cancellationToken))!;
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -113,20 +121,23 @@ public sealed class GoodsReceiptService(
 
     public async Task<GoodsReceiptDto> PostAsync(int goodsReceiptId, CancellationToken cancellationToken = default)
     {
-        var receipt = await unitOfWork.GoodsReceipts.GetByIdWithLinesForUpdateAsync(goodsReceiptId, cancellationToken)
-            ?? throw new DomainException($"Goods receipt '{goodsReceiptId}' was not found.");
+        await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            var receipt = await unitOfWork.GoodsReceipts.GetByIdWithLinesForUpdateAsync(goodsReceiptId, ct)
+                ?? throw new DomainException($"Goods receipt '{goodsReceiptId}' was not found.");
 
-        var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(
-            receipt.PurchaseOrderId,
-            cancellationToken)
-            ?? throw new DomainException("Purchase order for goods receipt was not found.");
+            var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(
+                receipt.PurchaseOrderId,
+                ct)
+                ?? throw new DomainException("Purchase order for goods receipt was not found.");
 
-        await PostCoreAsync(receipt, order, cancellationToken);
-        unitOfWork.GoodsReceipts.Update(receipt);
-        unitOfWork.PurchaseOrders.Update(order);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            await PostCoreAsync(receipt, order, ct);
+            unitOfWork.GoodsReceipts.Update(receipt);
+            unitOfWork.PurchaseOrders.Update(order);
+            await unitOfWork.SaveChangesAsync(ct);
+        }, cancellationToken);
 
-        return (await unitOfWork.GoodsReceipts.GetByIdWithLinesAsync(receipt.Id, cancellationToken))!;
+        return (await unitOfWork.GoodsReceipts.GetByIdWithLinesAsync(goodsReceiptId, cancellationToken))!;
     }
 
     private async Task<string> GenerateReceiptNumberAsync(CancellationToken cancellationToken)
