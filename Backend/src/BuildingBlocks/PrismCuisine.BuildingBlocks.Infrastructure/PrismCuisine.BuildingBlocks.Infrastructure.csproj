@@ -5,7 +5,7 @@
     <ProjectReference Include="..\..\Modules\Identity\PrismCuisine.Modules.Identity.Domain\PrismCuisine.Modules.Identity.Domain.csproj" />
     <ProjectReference Include="..\..\Modules\Inventory\PrismCuisine.Modules.Inventory.Domain\PrismCuisine.Modules.Inventory.Domain.csproj" />
     <ProjectReference Include="..\..\Modules\Purchasing\PrismCuisine.Modules.Purchasing.Domain\PrismCuisine.Modules.Purchasing.Domain.csproj" />
-    <ProjectReference Include="..\..\Modules\SalesOrder\PrismCuisine.Modules.SalesOrder.Domain\PrismCuisine.Modules.SalesOrder.Domain.csproj" />
+    <ProjectReference Include="..\..\Modules\SalesOrdering\PrismCuisine.Modules.SalesOrdering.Domain\PrismCuisine.Modules.SalesOrdering.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

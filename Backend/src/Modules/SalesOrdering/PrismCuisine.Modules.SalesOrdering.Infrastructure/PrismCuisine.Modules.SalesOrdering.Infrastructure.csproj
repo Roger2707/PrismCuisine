@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\PrismCuisine.Modules.SalesOrder.Application\PrismCuisine.Modules.SalesOrder.Application.csproj" />
+    <ProjectReference Include="..\PrismCuisine.Modules.SalesOrdering.Application\PrismCuisine.Modules.SalesOrdering.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\PrismCuisine.BuildingBlocks.Infrastructure\PrismCuisine.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 

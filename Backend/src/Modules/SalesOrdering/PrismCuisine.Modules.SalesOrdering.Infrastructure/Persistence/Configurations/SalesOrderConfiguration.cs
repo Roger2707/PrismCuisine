@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PrismCuisine.BuildingBlocks.Domain.Modules;
 using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
-using SalesOrderEntity = PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrder;
+using SalesOrderEntity = PrismCuisine.Modules.SalesOrdering.Domain.Entities.SalesOrder;
 
-namespace PrismCuisine.Modules.SalesOrder.Infrastructure.Persistence.Configurations;
+namespace PrismCuisine.Modules.SalesOrdering.Infrastructure.Persistence.Configurations;
 
 public sealed class SalesOrderConfiguration : EntityConfiguration<SalesOrderEntity>
 {
@@ -24,10 +24,26 @@ public sealed class SalesOrderConfiguration : EntityConfiguration<SalesOrderEnti
         builder.Property(o => o.CustomerId)
             .IsRequired();
 
+        builder.Property(o => o.CustomerName)
+            .HasMaxLength(256)
+            .IsRequired();
+
         builder.Property(o => o.Status)
             .HasConversion<string>()
             .HasMaxLength(32)
             .IsRequired();
+
+        builder.Property(o => o.Notes)
+            .HasMaxLength(1024);
+
+        builder.Property(o => o.SubTotal)
+            .HasPrecision(18, 2);
+        builder.Property(o => o.TotalDiscount)
+            .HasPrecision(18, 2);
+        builder.Property(o => o.TotalVAT)
+            .HasPrecision(18, 2);
+        builder.Property(o => o.TotalAmount)
+            .HasPrecision(18, 2);
 
         builder.HasMany(o => o.Lines)
             .WithOne()

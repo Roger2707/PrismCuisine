@@ -1,4 +1,4 @@
-namespace PrismCuisine.Modules.SalesOrder.Domain.Enums;
+namespace PrismCuisine.Modules.SalesOrdering.Domain.Enums;
 
 public enum SalesOrderStatus
 {

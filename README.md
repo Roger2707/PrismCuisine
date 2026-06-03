@@ -14,7 +14,7 @@ Modular monolith backend (.NET 9) and React frontend.
 | Identity  | `identity`    |
 | Inventory | `inventory`   |
 | Purchasing| `purchasing`  |
-| SalesOrder| `sales_order` |
+| SalesOrdering| `sales_order` |
 
 ## Application flow
 

@@ -24,9 +24,9 @@
     <Project Path="src/Modules/Purchasing/PrismCuisine.Modules.Purchasing.Domain/PrismCuisine.Modules.Purchasing.Domain.csproj" />
     <Project Path="src/Modules/Purchasing/PrismCuisine.Modules.Purchasing.Infrastructure/PrismCuisine.Modules.Purchasing.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/src/Modules/SalesOrder/">
-    <Project Path="src/Modules/SalesOrder/PrismCuisine.Modules.SalesOrder.Application/PrismCuisine.Modules.SalesOrder.Application.csproj" />
-    <Project Path="src/Modules/SalesOrder/PrismCuisine.Modules.SalesOrder.Domain/PrismCuisine.Modules.SalesOrder.Domain.csproj" />
-    <Project Path="src/Modules/SalesOrder/PrismCuisine.Modules.SalesOrder.Infrastructure/PrismCuisine.Modules.SalesOrder.Infrastructure.csproj" />
+  <Folder Name="/src/Modules/SalesOrdering/">
+    <Project Path="src/Modules/SalesOrdering/PrismCuisine.Modules.SalesOrdering.Application/PrismCuisine.Modules.SalesOrdering.Application.csproj" />
+    <Project Path="src/Modules/SalesOrdering/PrismCuisine.Modules.SalesOrdering.Domain/PrismCuisine.Modules.SalesOrdering.Domain.csproj" />
+    <Project Path="src/Modules/SalesOrdering/PrismCuisine.Modules.SalesOrdering.Infrastructure/PrismCuisine.Modules.SalesOrdering.Infrastructure.csproj" />
   </Folder>
 </Solution>

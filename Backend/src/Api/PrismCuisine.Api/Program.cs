@@ -13,7 +13,7 @@ using PrismCuisine.Modules.Inventory.Infrastructure;
 using PrismCuisine.Modules.Inventory.Infrastructure.Persistence;
 using PrismCuisine.Modules.Purchasing.Infrastructure;
 using PrismCuisine.Modules.Purchasing.Infrastructure.Persistence;
-using PrismCuisine.Modules.SalesOrder.Infrastructure;
+using PrismCuisine.Modules.SalesOrdering.Infrastructure;
 using Scalar.AspNetCore;
 using System.Text;
 

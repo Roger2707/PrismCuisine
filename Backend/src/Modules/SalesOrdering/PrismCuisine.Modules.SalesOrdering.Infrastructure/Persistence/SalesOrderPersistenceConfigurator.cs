@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 
-namespace PrismCuisine.Modules.SalesOrder.Infrastructure.Persistence;
+namespace PrismCuisine.Modules.SalesOrdering.Infrastructure.Persistence;
 
 internal sealed class SalesOrderPersistenceConfigurator : IModulePersistenceConfigurator
 {

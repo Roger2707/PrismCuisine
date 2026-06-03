@@ -22,4 +22,5 @@ internal sealed class SupplierRepository(PrismCuisineDbContext db) : ISupplierRe
     public void Add(Supplier supplier) => db.Suppliers.Add(supplier);
 
     public void Update(Supplier supplier) => db.Suppliers.Update(supplier);
+    public async Task<bool> IsExists(int id) => await db.Suppliers.AnyAsync(s => s.Id == id);
 }

@@ -4,8 +4,7 @@ using PrismCuisine.BuildingBlocks.Domain.Entities;
 using PrismCuisine.Modules.Identity.Domain.Entities;
 using PrismCuisine.Modules.Inventory.Domain.Entities;
 using PrismCuisine.Modules.Purchasing.Domain.Entities;
-using SalesOrderEntity = PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrder;
-using SalesOrderLineEntity = PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrderLine;
+using PrismCuisine.Modules.SalesOrdering.Domain.Entities;
 
 namespace PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
 
@@ -46,8 +45,9 @@ public sealed class PrismCuisineDbContext : DbContext
     public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
 
     // SalesOrder
-    public DbSet<SalesOrderEntity> SalesOrders => Set<SalesOrderEntity>();
-    public DbSet<SalesOrderLineEntity> SalesOrderLines => Set<SalesOrderLineEntity>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
+    public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

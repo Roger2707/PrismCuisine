@@ -914,7 +914,7 @@ namespace PrismCuisine.BuildingBlocks.Infrastructure.Migrations
                     b.ToTable("Suppliers", "purchasing");
                 });
 
-            modelBuilder.Entity("PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrder", b =>
+            modelBuilder.Entity("PrismCuisine.Modules.SalesOrdering.Domain.Entities.SalesOrder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -958,7 +958,7 @@ namespace PrismCuisine.BuildingBlocks.Infrastructure.Migrations
                     b.ToTable("SalesOrders", "sales_order");
                 });
 
-            modelBuilder.Entity("PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrderLine", b =>
+            modelBuilder.Entity("PrismCuisine.Modules.SalesOrdering.Domain.Entities.SalesOrderLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1020,9 +1020,9 @@ namespace PrismCuisine.BuildingBlocks.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrderLine", b =>
+            modelBuilder.Entity("PrismCuisine.Modules.SalesOrdering.Domain.Entities.SalesOrderLine", b =>
                 {
-                    b.HasOne("PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrder", null)
+                    b.HasOne("PrismCuisine.Modules.SalesOrdering.Domain.Entities.SalesOrder", null)
                         .WithMany("Lines")
                         .HasForeignKey("SalesOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1039,7 +1039,7 @@ namespace PrismCuisine.BuildingBlocks.Infrastructure.Migrations
                     b.Navigation("Lines");
                 });
 
-            modelBuilder.Entity("PrismCuisine.Modules.SalesOrder.Domain.Entities.SalesOrder", b =>
+            modelBuilder.Entity("PrismCuisine.Modules.SalesOrdering.Domain.Entities.SalesOrder", b =>
                 {
                     b.Navigation("Lines");
                 });

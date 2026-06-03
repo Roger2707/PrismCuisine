@@ -9,4 +9,5 @@ public interface ISupplierRepository
     Task<IReadOnlyCollection<Supplier>> GetAllAsync(CancellationToken cancellationToken = default);
     void Add(Supplier supplier);
     void Update(Supplier supplier);
+    Task<bool> IsExists(int id);
 }
