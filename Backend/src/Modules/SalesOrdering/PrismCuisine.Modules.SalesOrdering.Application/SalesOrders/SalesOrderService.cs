@@ -1,10 +1,16 @@
 ﻿using PrismCuisine.BuildingBlocks.Domain.Exceptions;
 using PrismCuisine.Modules.SalesOrdering.Application.Abtractions;
 using PrismCuisine.Modules.SalesOrdering.Domain.Entities;
+using PrismCuisine.Modules.Inventory.Application.Inventory;
 
 namespace PrismCuisine.Modules.SalesOrdering.Application.SalesOrders;
-public sealed class SalesOrderService(ISalesOrderingUnitOfWork unitOfWork) : ISalesOrderService
+public sealed class SalesOrderService(
+    ISalesOrderingUnitOfWork unitOfWork
+    , IInventoryPostingService inventoryPosting) : ISalesOrderService
 {
+
+    #region Read
+
     public async Task<IReadOnlyCollection<SalesOrderSummaryDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var orders = await unitOfWork.SalesOrders.GetAllAsync(cancellationToken);
@@ -16,6 +22,11 @@ public sealed class SalesOrderService(ISalesOrderingUnitOfWork unitOfWork) : ISa
         var order = await unitOfWork.SalesOrders.GetByIdWithLinesAsync(salesOrderId, cancellationToken);
         return order;
     }
+
+    #endregion
+
+    #region Write
+
     public async Task<SalesOrderDto> CreateAsync(CreateSalesOrderRequest request, CancellationToken cancellationToken = default)
     {
         #region Validations
@@ -27,9 +38,7 @@ public sealed class SalesOrderService(ISalesOrderingUnitOfWork unitOfWork) : ISa
             throw new ArgumentException($"Customer with id '{request.CustomerId}' does not exist.");
 
         if (request.Lines is null || request.Lines.Count == 0)
-        {
             throw new DomainException("Sales order must have at least one line.");
-        }
 
         string customerName = request?.CustomerName ?? "";
         if (!string.IsNullOrWhiteSpace(customerName))
@@ -74,14 +83,35 @@ public sealed class SalesOrderService(ISalesOrderingUnitOfWork unitOfWork) : ISa
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    #endregion
+
+    #region Business Actions
+
     public async Task ApproveAsync(int salesOrderId, CancellationToken cancellationToken = default)
     {
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, cancellationToken)
             ?? throw new DomainException($"Sales order with id '{salesOrderId}' was not found.");
 
-        salesOrder.Approve();
-        unitOfWork.SalesOrders.Update(salesOrder);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            const int warehouseId = 1; // TODO: assign warehouse based on product or sales order
+
+            foreach (var line in salesOrder.Lines)
+            {
+                await inventoryPosting.ReserveAsync(
+                    new CreateReservationRequest(
+                        line.ProductId,
+                        warehouseId,
+                        line.QuantityOrdered,
+                        line.Id,
+                        $"Reservation for sales order {salesOrder.OrderNumber}, line {line.Id}"),
+                    ct);
+            }
+
+            salesOrder.Approve();
+            unitOfWork.SalesOrders.Update(salesOrder);
+            await unitOfWork.SaveChangesAsync(ct);
+        }, cancellationToken);
     }
 
     public async Task CancelAsync(int salesOrderId, CancellationToken cancellationToken = default)
@@ -94,10 +124,16 @@ public sealed class SalesOrderService(ISalesOrderingUnitOfWork unitOfWork) : ISa
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    #endregion
+
+    #region Helper Methods
+
     private async Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken)
     {
         var today = DateTime.UtcNow.Date;
         var count = await unitOfWork.SalesOrders.GetCountForDateAsync(today, cancellationToken);
         return $"PO-{today:yyyyMMdd}-{(count + 1):D4}";
     }
+
+    #endregion
 }

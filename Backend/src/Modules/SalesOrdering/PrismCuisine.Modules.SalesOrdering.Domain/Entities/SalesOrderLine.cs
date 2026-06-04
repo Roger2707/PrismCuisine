@@ -72,4 +72,20 @@ public sealed class SalesOrderLine : Entity
         VATAmount = afterDiscount * (VATRate / 100m);
         LineTotal = afterDiscount + VATAmount;
     }
+
+    internal void RecordDelivery(decimal quantity)
+    {
+        if (quantity > QuantityRemaining)
+            throw new DomainException(
+                $"{ProductName}: delivery quantity exceeds remaining ({QuantityRemaining}).");
+        QuantityDelivered += quantity;
+    }
+
+    internal void RollbackDelivery(decimal quantity)
+    {
+        if (quantity > QuantityDelivered)
+            throw new DomainException(
+                $"{ProductName}: rollback quantity exceeds delivered ({QuantityDelivered}).");
+        QuantityDelivered -= quantity;
+    }
 }

@@ -2,13 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PrismCuisine.BuildingBlocks.Domain.Modules;
 using PrismCuisine.BuildingBlocks.Infrastructure.Persistence;
-using SalesOrderEntity = PrismCuisine.Modules.SalesOrdering.Domain.Entities.SalesOrder;
+using PrismCuisine.Modules.SalesOrdering.Domain.Entities;
 
 namespace PrismCuisine.Modules.SalesOrdering.Infrastructure.Persistence.Configurations;
 
-public sealed class SalesOrderConfiguration : EntityConfiguration<SalesOrderEntity>
+public sealed class SalesOrderConfiguration : EntityConfiguration<SalesOrder>
 {
-    public override void Configure(EntityTypeBuilder<SalesOrderEntity> builder)
+    public override void Configure(EntityTypeBuilder<SalesOrder> builder)
     {
         base.Configure(builder);
 
@@ -54,7 +54,7 @@ public sealed class SalesOrderConfiguration : EntityConfiguration<SalesOrderEnti
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.Metadata
-            .FindNavigation(nameof(SalesOrderEntity.Lines))!
+            .FindNavigation(nameof(SalesOrder.Lines))!
             .SetField("_lines");
     }
 }

@@ -65,9 +65,7 @@ public sealed class SalesOrder : AggregateRoot
     public void UpdateDraft(string? notes)
     {
         if (Status != SalesOrderStatus.Draft)
-        {
             throw new DomainException("Only draft sales order can be updated.");
-        }
 
         Notes = notes?.Trim();
         Touch();
@@ -77,9 +75,7 @@ public sealed class SalesOrder : AggregateRoot
         IReadOnlyCollection<(int ProductId, string ProductName, decimal QuantityOrdered, decimal UnitPrice, decimal DiscountPercent, decimal VATRate)> lines)
     {
         if (Status != SalesOrderStatus.Draft)
-        {
             throw new DomainException("Cannot modify a non-draft sales order.");
-        }
 
         _lines.Clear();
 
@@ -92,14 +88,10 @@ public sealed class SalesOrder : AggregateRoot
     public void Approve()
     {
         if (Status != SalesOrderStatus.Draft)
-        {
             throw new DomainException("Only draft sales orders can be confirmed.");
-        }
 
         if (_lines.Count == 0)
-        {
             throw new DomainException("Cannot confirm a sales order without lines.");
-        }
 
         Status = SalesOrderStatus.Confirmed;
         ApprovedAt = DateTime.UtcNow;
@@ -108,17 +100,27 @@ public sealed class SalesOrder : AggregateRoot
 
     public void Cancel()
     {
-        if (Status is SalesOrderStatus.Confirmed or SalesOrderStatus.Shipped)
-        {
+        if (Status is SalesOrderStatus.Confirmed or SalesOrderStatus.Delivered or SalesOrderStatus.PartialDelivery)
             throw new DomainException("Only draft sales orders can be cancelled.");
-        }
 
         if (Status == SalesOrderStatus.Cancelled)
-        {
             throw new DomainException("Sales order is already cancelled.");
-        }
 
         Status = SalesOrderStatus.Cancelled;
         Touch();
+    }
+
+    public void UpdateDeliveryStatus()
+    {
+        bool allDelivered = _lines.All(l => l.QuantityOrdered == l.QuantityDelivered);
+        bool anyDelivered = _lines.Any(l => l.QuantityDelivered > 0);
+        bool allNotDelivered = _lines.All(l => l.QuantityDelivered == 0);
+
+        if (allDelivered)
+            Status = SalesOrderStatus.Delivered;
+        else if (anyDelivered)
+            Status = SalesOrderStatus.PartialDelivery;
+        else if (allNotDelivered && Status != SalesOrderStatus.Confirmed)
+            Status = SalesOrderStatus.Cancelled;
     }
 }

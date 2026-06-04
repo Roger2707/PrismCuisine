@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PrismCuisine.Modules.SalesOrdering.Domain\PrismCuisine.Modules.SalesOrdering.Domain.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\PrismCuisine.BuildingBlocks.Application\PrismCuisine.BuildingBlocks.Application.csproj" />
+	  <ProjectReference Include="..\..\Inventory\PrismCuisine.Modules.Inventory.Application\PrismCuisine.Modules.Inventory.Application.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
