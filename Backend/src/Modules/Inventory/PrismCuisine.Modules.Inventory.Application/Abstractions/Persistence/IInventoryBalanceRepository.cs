@@ -6,6 +6,9 @@ public interface IInventoryBalanceRepository
 {
     Task<InventoryBalance?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<InventoryBalance?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<InventoryBalance>> GetByIdsForUpdateAsync(
+        IReadOnlyCollection<int> ids,
+        CancellationToken cancellationToken = default);
     Task<InventoryBalance?> GetByProductAndWarehouseAsync(
         int productId,
         int warehouseId,

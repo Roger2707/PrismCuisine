@@ -28,6 +28,16 @@ internal sealed class InventoryReservationRepository(PrismCuisineDbContext db) :
                 && r.Status == InventoryReservationStatus.Active,
             cancellationToken);
 
+    public async Task<List<InventoryReservation>?> GetActivesByReferencesAsync(
+        InventoryReferenceType referenceType,
+        HashSet<int> referenceIds,
+        CancellationToken cancellationToken = default) => await
+
+        db.InventoryReservations
+        .Where(r => r.ReferenceType == referenceType 
+                    && referenceIds.Contains(r.ReferenceId) 
+                    && r.Status == InventoryReservationStatus.Active).ToListAsync(cancellationToken);
+
     public void Add(InventoryReservation reservation) => db.InventoryReservations.Add(reservation);
 
     public void Update(InventoryReservation reservation) => db.InventoryReservations.Update(reservation);

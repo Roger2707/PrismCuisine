@@ -1,3 +1,5 @@
+using PrismCuisine.Modules.Inventory.Domain.Entities;
+
 namespace PrismCuisine.Modules.Inventory.Application.Inventory;
 
 public sealed record InventoryBalanceDto(
@@ -80,5 +82,11 @@ public sealed record CreateReservationRequest(
 
 public sealed record FulfillReservationRequest(
     decimal? Quantity = null,
+    string? Reference = null,
+    string? Notes = null);
+
+public sealed record FulfillReservationLine(
+    InventoryReservation Reservation,
+    decimal Quantity,
     string? Reference = null,
     string? Notes = null);

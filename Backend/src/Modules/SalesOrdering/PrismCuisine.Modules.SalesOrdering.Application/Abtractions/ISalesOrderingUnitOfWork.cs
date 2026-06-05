@@ -5,6 +5,8 @@ public interface ISalesOrderingUnitOfWork : IUnitOfWork
 {
     ICustomerRepository Customers { get; }
     ISalesOrderRepository SalesOrders { get; }
+    IDeliveryNoteRepository DeliveryNotes { get; }
+
     Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> action,
         CancellationToken cancellationToken = default

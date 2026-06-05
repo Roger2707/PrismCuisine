@@ -13,6 +13,18 @@ internal sealed class InventoryBalanceRepository(PrismCuisineDbContext db) : IIn
     public Task<InventoryBalance?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         db.InventoryBalances.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<InventoryBalance>> GetByIdsForUpdateAsync(
+        IReadOnlyCollection<int> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+            return [];
+
+        return await db.InventoryBalances
+            .Where(b => ids.Contains(b.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<InventoryBalance?> GetByProductAndWarehouseAsync(
         int productId,
         int warehouseId,

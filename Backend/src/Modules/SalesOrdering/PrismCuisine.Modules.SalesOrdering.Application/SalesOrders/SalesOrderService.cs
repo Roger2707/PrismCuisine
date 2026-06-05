@@ -1,4 +1,4 @@
-﻿using PrismCuisine.BuildingBlocks.Domain.Exceptions;
+using PrismCuisine.BuildingBlocks.Domain.Exceptions;
 using PrismCuisine.Modules.SalesOrdering.Application.Abtractions;
 using PrismCuisine.Modules.SalesOrdering.Domain.Entities;
 using PrismCuisine.Modules.Inventory.Application.Inventory;
@@ -73,7 +73,7 @@ public sealed class SalesOrderService(
         if (request.Lines is null || request.Lines.Count == 0)
             throw new DomainException("Sales order must have at least one line.");
 
-        salesOrder.UpdateDraft(request.Notes);
+        salesOrder.UpdateDraft(request.CustomerId, request.CustomerName, request.Notes);
 
         salesOrder.ReplaceLines(request.Lines
                 .Select(l => (l.ProductId, l.ProductName, l.QuantityOrdered, l.UnitPrice, l.DiscountPercent, l.VATRate))

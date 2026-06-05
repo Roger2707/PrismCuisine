@@ -46,6 +46,7 @@ public sealed class SalesOrder : AggregateRoot
             OrderNumber = orderNumber.Trim().ToUpperInvariant(),
             CustomerId = customerId,
             CustomerName = customerName.Trim(),
+            OrderDate = DateTime.UtcNow,
             Notes = notes?.Trim(),
             Status = SalesOrderStatus.Draft
         };
@@ -62,11 +63,13 @@ public sealed class SalesOrder : AggregateRoot
         Touch();
     }
 
-    public void UpdateDraft(string? notes)
+    public void UpdateDraft(int customerId, string customerName, string? notes)
     {
         if (Status != SalesOrderStatus.Draft)
             throw new DomainException("Only draft sales order can be updated.");
 
+        CustomerId = customerId;
+        CustomerName = customerName;
         Notes = notes?.Trim();
         Touch();
     }

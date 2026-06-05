@@ -1,3 +1,6 @@
+using PrismCuisine.Modules.Inventory.Domain.Entities;
+using PrismCuisine.Modules.Inventory.Domain.Enums;
+
 namespace PrismCuisine.Modules.Inventory.Application.Inventory;
 
 public interface IInventoryPostingService
@@ -16,6 +19,11 @@ public interface IInventoryPostingService
         CancellationToken cancellationToken = default);
     Task<InventoryReservationDto?> GetReservationByIdAsync(
         int id,
+        CancellationToken cancellationToken = default);
+
+    Task<List<InventoryReservation>?> GetActivesByReferencesAsync(
+        InventoryReferenceType referenceType,
+        HashSet<int> referenceIds,
         CancellationToken cancellationToken = default);
 
     Task<InventoryBalanceDto> EnsureBalanceAsync(
@@ -37,5 +45,8 @@ public interface IInventoryPostingService
     Task<InventoryMovementDto> FulfillReservationAsync(
         int reservationId,
         FulfillReservationRequest request,
+        CancellationToken cancellationToken = default);
+    Task FulfillReservationsAsync(
+        IReadOnlyList<FulfillReservationLine> lines,
         CancellationToken cancellationToken = default);
 }

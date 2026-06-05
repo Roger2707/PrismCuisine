@@ -44,10 +44,13 @@ public sealed class PrismCuisineDbContext : DbContext
     public DbSet<GoodsReceipt> GoodsReceipts => Set<GoodsReceipt>();
     public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
 
-    // SalesOrder
+    // SalesOrdering
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
+    public DbSet<DeliveryNote> DeliveryNotes => Set<DeliveryNote>();
+    public DbSet<DeliveryNoteLine> DeliveryNoteLines => Set<DeliveryNoteLine>();
+
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

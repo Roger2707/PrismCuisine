@@ -25,14 +25,13 @@ public sealed class DeliveryNote : AggregateRoot
     public IReadOnlyCollection<DeliveryNoteLine> Lines => _lines.AsReadOnly();
 
     // --- Factory ---
-    public static DeliveryNote Create(
+    public static DeliveryNote CreateDraft(
         string deliveryNumber,
         int salesOrderId,
         int customerId,
         string customerName,
         string orderNumber,
         SalesOrderStatus salesOrderStatus,
-        DateTime deliveryDate,
         string? notes = null)
     {
         if (string.IsNullOrWhiteSpace(deliveryNumber))
@@ -47,7 +46,7 @@ public sealed class DeliveryNote : AggregateRoot
             CustomerId = customerId,     // snapshot
             CustomerName = customerName,   // snapshot
             OrderNumber = orderNumber,    // snapshot
-            DeliveryDate = deliveryDate,
+            DeliveryDate = DateTime.UtcNow,
             Status = DeliveryNoteStatus.Draft,
             Notes = notes
         };
@@ -63,35 +62,45 @@ public sealed class DeliveryNote : AggregateRoot
     }
 
     public void ReplaceLines(
-        IReadOnlyCollection<(int salesOrderLineId, int productId, string productName, decimal deliveredQuantity, decimal remainingQuantity)> lines)
+        IReadOnlyCollection<(decimal DeliveredQuantity, SalesOrderLine SalesOrderLine)> lines)
     {
         if (Status != DeliveryNoteStatus.Draft)
-            throw new DomainException("Cannot modify a non-draft sales order.");
+            throw new DomainException("Cannot modify a non-draft Delivery.");
+
+        if (lines.Count == 0)
+            throw new DomainException("Delivery note must have at least one line.");
 
         _lines.Clear();
 
         foreach (var line in lines)
         {
-            AddLine(line.salesOrderLineId, line.productId, line.productName, line.deliveredQuantity, line.remainingQuantity);
+            AddLine(line.DeliveredQuantity, line.SalesOrderLine);
         }
+
+        Touch();
     }
 
     // --- Business methods ---
-    public void AddLine(int salesOrderLineId, int productId, string productName, decimal deliveredQuantity, decimal remainingQuantity)
+    public void AddLine(decimal deliveredQuantity, SalesOrderLine salesOrderLine)
     {
         if (Status != DeliveryNoteStatus.Draft)
             throw new DomainException("Only Draft delivery notes can be modified.");
         if (deliveredQuantity <= 0)
             throw new DomainException("Quantity must be greater than zero.");
-        if (deliveredQuantity > remainingQuantity)
-            throw new DomainException(
-                $"{productName}: quantity exceeds remaining ({remainingQuantity}).");
 
-        var existing = _lines.FirstOrDefault(l => l.SalesOrderLineId == salesOrderLineId);
+        var existing = _lines.FirstOrDefault(l => l.SalesOrderLineId == salesOrderLine.Id);
         if (existing is not null)
-            throw new DomainException($"{productName}: line already added.");
+            throw new DomainException($"{salesOrderLine.ProductName}: line already added.");
 
-        _lines.Add(DeliveryNoteLine.Create(salesOrderLineId, productId, productName, deliveredQuantity));
+        if (deliveredQuantity > salesOrderLine.QuantityRemaining)
+            throw new DomainException(
+                $"{salesOrderLine.ProductName}: delivery quantity exceeds remaining ({salesOrderLine.QuantityRemaining}).");
+
+        _lines.Add(DeliveryNoteLine.Create(
+            salesOrderLine.Id,
+            salesOrderLine.ProductId,
+            salesOrderLine.ProductName,
+            deliveredQuantity));
     }
 
     public void Post(SalesOrder salesOrder)
@@ -100,6 +109,8 @@ public sealed class DeliveryNote : AggregateRoot
             throw new DomainException("Only Draft delivery notes can be posted.");
         if (!_lines.Any())
             throw new DomainException("Delivery note must have at least one line.");
+        if(salesOrder.Status != SalesOrderStatus.Confirmed && salesOrder.Status != SalesOrderStatus.PartialDelivery)
+            throw new DomainException("Sales order must be Confirmed or PartialDelivery.");
 
         // Update QuantityDelivered trên từng OrderLine
         foreach (var line in _lines)

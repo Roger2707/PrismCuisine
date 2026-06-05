@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PrismCuisine.Modules.SalesOrdering.Application\PrismCuisine.Modules.SalesOrdering.Application.csproj" />
+    <ProjectReference Include="..\..\Inventory\PrismCuisine.Modules.Inventory.Application\PrismCuisine.Modules.Inventory.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\PrismCuisine.BuildingBlocks.Infrastructure\PrismCuisine.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 

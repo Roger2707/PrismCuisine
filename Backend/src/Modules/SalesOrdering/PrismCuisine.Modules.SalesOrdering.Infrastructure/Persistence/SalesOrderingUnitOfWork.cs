@@ -10,6 +10,8 @@ public sealed class SalesOrderingUnitOfWork(PrismCuisineDbContext db) : ISalesOr
 
     public ISalesOrderRepository SalesOrders { get; } = new SalesOrderRepository(db);
 
+    public IDeliveryNoteRepository DeliveryNotes { get; } = new DeliveryNoteRepository(db);
+
     public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);

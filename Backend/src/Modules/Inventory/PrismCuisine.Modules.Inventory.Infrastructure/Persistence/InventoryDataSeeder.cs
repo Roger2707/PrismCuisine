@@ -14,24 +14,44 @@ internal sealed class InventoryDataSeeder(
     PrismCuisineDbContext db,
     IInventoryPostingService postingService) : IInventoryDataSeeder
 {
+    private const string WarehouseCode = "MAIN";
+
+    private static readonly ProductSeed[] Products =
+    [
+        new("P001", "Rau muống", "KG", 20m, 15_000m, 15m, 18_000m),
+        new("P002", "Thịt ba chỉ", "KG", 10m, 120_000m, 8m, 125_000m),
+        new("P003", "Tôm sú", "KG", 5m, 350_000m, 5m, 380_000m),
+        new("P004", "Coca Cola", "THUNG", 12m, 180_000m, 8m, 190_000m),
+        new("P005", "Nước mắm Phú Quốc", "CHAI", 6m, 45_000m, 4m, 48_000m)
+    ];
+
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        if (await db.Products.AnyAsync(p => p.Sku == Products[0].Sku, cancellationToken))
+        {
+            return;
+        }
+
         var category = await EnsureCategoryAsync(cancellationToken);
         var warehouse = await EnsureWarehouseAsync(cancellationToken);
-        await EnsureSampleProductAsync(category.Id, warehouse.Id, cancellationToken);
+
+        foreach (var seed in Products)
+        {
+            await SeedProductStockAsync(category.Id, warehouse.Id, seed, cancellationToken);
+        }
     }
 
     private async Task<ProductCategory> EnsureCategoryAsync(CancellationToken cancellationToken)
     {
         var category = await db.ProductCategories
-            .FirstOrDefaultAsync(c => c.Code == "GENERAL", cancellationToken);
+            .FirstOrDefaultAsync(c => c.Code == "NGUYEN-LIEU", cancellationToken);
 
         if (category is not null)
         {
             return category;
         }
 
-        category = ProductCategory.Create("GENERAL", "General", "Default product category");
+        category = ProductCategory.Create("NGUYEN-LIEU", "Nguyên liệu", "Nguyên liệu nhà hàng");
         db.ProductCategories.Add(category);
         await db.SaveChangesAsync(cancellationToken);
         return category;
@@ -40,50 +60,60 @@ internal sealed class InventoryDataSeeder(
     private async Task<Warehouse> EnsureWarehouseAsync(CancellationToken cancellationToken)
     {
         var warehouse = await db.Warehouses
-            .FirstOrDefaultAsync(w => w.Code == "MAIN", cancellationToken);
+            .FirstOrDefaultAsync(w => w.Code == WarehouseCode, cancellationToken);
 
         if (warehouse is not null)
         {
             return warehouse;
         }
 
-        warehouse = Warehouse.Create("MAIN", "Main Warehouse", "Head office storage");
+        warehouse = Warehouse.Create(WarehouseCode, "Kho chính", "Kho bếp trung tâm");
         db.Warehouses.Add(warehouse);
         await db.SaveChangesAsync(cancellationToken);
         return warehouse;
     }
 
-    private async Task EnsureSampleProductAsync(
+    private async Task SeedProductStockAsync(
         int categoryId,
         int warehouseId,
+        ProductSeed seed,
         CancellationToken cancellationToken)
     {
-        var product = await db.Products
-            .FirstOrDefaultAsync(p => p.Sku == "DEMO-001", cancellationToken);
-
-        if (product is null)
-        {
-            product = Product.Create(categoryId, "DEMO-001", "Demo Product", "EA", "Sample inventory item");
-            db.Products.Add(product);
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        var balance = await db.InventoryBalances
-            .FirstOrDefaultAsync(
-                b => b.ProductId == product.Id && b.WarehouseId == warehouseId,
-                cancellationToken);
-
-        if (balance is not null && balance.QuantityOnHand > 0)
-        {
-            return;
-        }
+        var product = Product.Create(categoryId, seed.Sku, seed.Name, seed.Unit, $"Seed product {seed.Sku}");
+        db.Products.Add(product);
+        await db.SaveChangesAsync(cancellationToken);
 
         await postingService.EnsureBalanceAsync(
-            new CreateInventoryBalanceRequest(product.Id, warehouseId, 10m),
+            new CreateInventoryBalanceRequest(product.Id, warehouseId, 5m),
             cancellationToken);
 
         await postingService.ReceiveAsync(
-            new ReceiveInventoryRequest(product.Id, warehouseId, 100m, 5.50m, "SEED", Notes: "Initial demo stock"),
+            new ReceiveInventoryRequest(
+                product.Id,
+                warehouseId,
+                seed.Layer1Qty,
+                seed.Layer1Cost,
+                "SEED-L1",
+                Notes: $"Seed layer 1 - {seed.Sku}"),
+            cancellationToken);
+
+        await postingService.ReceiveAsync(
+            new ReceiveInventoryRequest(
+                product.Id,
+                warehouseId,
+                seed.Layer2Qty,
+                seed.Layer2Cost,
+                "SEED-L2",
+                Notes: $"Seed layer 2 - {seed.Sku}"),
             cancellationToken);
     }
+
+    private sealed record ProductSeed(
+        string Sku,
+        string Name,
+        string Unit,
+        decimal Layer1Qty,
+        decimal Layer1Cost,
+        decimal Layer2Qty,
+        decimal Layer2Cost);
 }

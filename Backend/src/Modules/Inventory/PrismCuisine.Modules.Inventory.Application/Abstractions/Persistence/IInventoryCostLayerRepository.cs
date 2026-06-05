@@ -7,6 +7,9 @@ public interface IInventoryCostLayerRepository
     Task<IReadOnlyCollection<InventoryCostLayer>> GetAvailableLayersForUpdateAsync(
         int inventoryBalanceId,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<InventoryCostLayer>> GetAvailableLayersForUpdateByBalanceIdsAsync(
+        IReadOnlyCollection<int> inventoryBalanceIds,
+        CancellationToken cancellationToken = default);
     void Add(InventoryCostLayer layer);
     void Update(InventoryCostLayer layer);
 }

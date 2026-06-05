@@ -16,14 +16,14 @@ public sealed class DeliveryNoteLine : AggregateRoot
     public string ProductName { get; private set; } = null!;
     public decimal QuantityDelivered { get; private set; }
 
-    internal static DeliveryNoteLine Create(int salesOrderLineId, int productId, string productName, decimal quantity)
+    internal static DeliveryNoteLine Create(int salesOrderLineId, int productId, string productName, decimal quantityDelivered)
     {
         return new DeliveryNoteLine
         {
             SalesOrderLineId = salesOrderLineId,
             ProductId = productId,
             ProductName = productName, // snapshot
-            QuantityDelivered = quantity
+            QuantityDelivered = quantityDelivered
         };
     }
 }
