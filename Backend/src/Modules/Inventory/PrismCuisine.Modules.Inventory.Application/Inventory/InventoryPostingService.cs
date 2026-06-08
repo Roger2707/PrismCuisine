@@ -224,6 +224,116 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         _ = await FulfillReservationsCoreAsync(lines, cancellationToken);
     }
 
+    public async Task ReturnDeliveryIssuesAsync(
+        string deliveryNumber,
+        IReadOnlyList<ReturnDeliveryLine> lines,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(deliveryNumber))
+        {
+            throw new DomainException("Delivery number is required.");
+        }
+
+        if (lines.Count == 0)
+        {
+            throw new DomainException("At least one delivery line is required to return stock.");
+        }
+
+        var referenceIds = lines.Select(l => l.SalesOrderLineId).ToHashSet();
+        var issueMovements = await unitOfWork.Movements.GetIssuesByDeliveryReferenceAsync(
+            InventoryReferenceType.SalesOrder,
+            deliveryNumber.Trim(),
+            referenceIds,
+            cancellationToken);
+
+        if (issueMovements.Count == 0)
+        {
+            throw new DomainException($"No issue movements found for delivery '{deliveryNumber}'.");
+        }
+
+        var movementsByLine = issueMovements
+            .GroupBy(m => m.ReferenceId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        foreach (var line in lines)
+        {
+            if (!movementsByLine.TryGetValue(line.SalesOrderLineId, out var lineMovements))
+            {
+                throw new DomainException(
+                    $"No issue movements found for sales order line '{line.SalesOrderLineId}' on delivery '{deliveryNumber}'.");
+            }
+
+            var issuedQty = lineMovements.Sum(m => m.Quantity);
+            if (issuedQty != line.Quantity)
+            {
+                throw new DomainException(
+                    $"Return quantity '{line.Quantity}' does not match issued quantity '{issuedQty}' for sales order line '{line.SalesOrderLineId}'.");
+            }
+        }
+
+        var layerIds = issueMovements
+            .Select(m => m.InventoryCostLayerId)
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        var layers = await unitOfWork.CostLayers.GetByIdsForUpdateAsync(layerIds, cancellationToken);
+        var layerById = layers.ToDictionary(l => l.Id);
+
+        var balanceIds = issueMovements.Select(m => m.InventoryBalanceId).Distinct().ToList();
+        var balances = await unitOfWork.Balances.GetByIdsForUpdateAsync(balanceIds, cancellationToken);
+        var balanceById = balances.ToDictionary(b => b.Id);
+
+        var reservations = await unitOfWork.Reservations.GetByReferencesForUpdateAsync(
+            InventoryReferenceType.SalesOrder,
+            referenceIds,
+            cancellationToken);
+        var reservationByLine = reservations.ToDictionary(r => r.ReferenceId);
+
+        foreach (var line in lines)
+        {
+            if (!reservationByLine.TryGetValue(line.SalesOrderLineId, out var reservation))
+            {
+                throw new DomainException(
+                    $"No reservation found for sales order line '{line.SalesOrderLineId}'.");
+            }
+
+            reservation.ReverseFulfillment(line.Quantity);
+            unitOfWork.Reservations.Update(reservation);
+        }
+
+        foreach (var movement in issueMovements)
+        {
+            if (!layerById.TryGetValue(movement.InventoryCostLayerId, out var layer))
+            {
+                throw new DomainException($"Cost layer '{movement.InventoryCostLayerId}' was not found.");
+            }
+
+            if (!balanceById.TryGetValue(movement.InventoryBalanceId, out var balance))
+            {
+                throw new DomainException($"Inventory balance '{movement.InventoryBalanceId}' was not found.");
+            }
+
+            layer.Restore(movement.Quantity);
+            unitOfWork.CostLayers.Update(layer);
+
+            balance.Increase(movement.Quantity);
+            unitOfWork.Balances.Update(balance);
+
+            var returnMovement = InventoryMovement.Create(
+                balance.Id,
+                InventoryMovementType.Return,
+                movement.Quantity,
+                movement.UnitCost,
+                InventoryReferenceType.SalesOrder,
+                layer.Id,
+                deliveryNumber.Trim(),
+                movement.ReferenceId,
+                $"Return from cancelled delivery {deliveryNumber.Trim()}");
+
+            unitOfWork.Movements.Add(returnMovement);
+        }
+    }
+
     #endregion
 
     #region Action Methods (Import / Export / Adjust)
@@ -239,6 +349,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
         var layer = InventoryCostLayer.Create(balance.Id, request.Quantity, request.UnitCost);
         unitOfWork.CostLayers.Add(layer);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         balance.Increase(request.Quantity);
         unitOfWork.Balances.Update(balance);
@@ -249,6 +360,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             request.Quantity,
             request.UnitCost,
             InventoryReferenceType.Manual,
+            layer.Id,
             request.Reference,
             request.ReferenceId,
             request.Notes);
@@ -258,7 +370,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         return MapMovement(movement);
     }
 
-    public async Task<InventoryMovementDto> IssueAsync(
+    public async Task<List<InventoryMovementDto>> IssueAsync(
         IssueInventoryRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -269,7 +381,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
         await EnsureAvailableAsync(balance.Id, request.Quantity, cancellationToken);
 
-        var movement = await IssueFromBalanceAsync(
+        var movements = await IssueFromBalanceAsync(
             balance,
             request.Quantity,
             InventoryReferenceType.Manual,
@@ -279,7 +391,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return MapMovement(movement);
+        return movements.Select(MapMovement).ToList();
     }   
 
     private async Task<List<InventoryMovement>> FulfillReservationsCoreAsync(
@@ -334,13 +446,14 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
                 reservation.ReferenceId,
                 line.Notes);
 
-            movements.Add(movement);
+            if (movement != null && movement.Count > 0)
+                movements.AddRange(movement);
         }
 
         return movements;
     }
 
-    private async Task<InventoryMovement> IssueFromBalanceAsync(
+    private async Task<List<InventoryMovement>> IssueFromBalanceAsync(
         InventoryBalance balance,
         decimal quantity,
         InventoryReferenceType referenceType,
@@ -353,7 +466,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         return IssueFromBalance(balance, quantity, layers, referenceType, reference, referenceId, notes);
     }
 
-    private InventoryMovement IssueFromBalance(
+    private List<InventoryMovement> IssueFromBalance(
         InventoryBalance balance,
         decimal quantity,
         List<InventoryCostLayer> layers,
@@ -362,6 +475,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         int? referenceId,
         string? notes)
     {
+        var movements = new List<InventoryMovement>();
         var consumptions = FifoCosting.Consume(layers, quantity);
 
         var consumedLayerIds = consumptions.Select(c => c.CostLayerId).ToHashSet();
@@ -370,25 +484,31 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             unitOfWork.CostLayers.Update(layer);
         }
 
-        var unitCost = FifoCosting.CalculateWeightedUnitCost(consumptions);
         balance.Decrease(quantity);
         unitOfWork.Balances.Update(balance);
 
-        var movement = InventoryMovement.Create(
-            balance.Id,
-            InventoryMovementType.Issue,
-            quantity,
-            unitCost,
-            referenceType,
-            reference,
-            referenceId,
-            notes);
+        foreach (var consumption in consumptions)
+        {
+            var layer = layers.First(l => l.Id == consumption.CostLayerId);
+            var movement = InventoryMovement.Create(
+                balance.Id,
+                InventoryMovementType.Issue,
+                consumption.Quantity,
+                layer.UnitCost,
+                referenceType,
+                layer.Id,
+                reference,
+                referenceId,
+                notes);
 
-        unitOfWork.Movements.Add(movement);
-        return movement;
+            unitOfWork.Movements.Add(movement);
+            movements.Add(movement);
+        }
+
+        return movements;
     }
 
-    public async Task<InventoryMovementDto> AdjustAsync(
+    public async Task<List<InventoryMovementDto>> AdjustAsync(
         AdjustInventoryRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -408,7 +528,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             throw new DomainException("Adjusted quantity is the same as current on-hand quantity.");
         }
 
-        InventoryMovement movement;
+        List<InventoryMovement> movements = new();
 
         if (delta > 0)
         {
@@ -417,20 +537,23 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             balance.Increase(delta);
             unitOfWork.Balances.Update(balance);
 
-            movement = InventoryMovement.Create(
+            var movement = InventoryMovement.Create(
                 balance.Id,
                 InventoryMovementType.Adjustment,
                 delta,
                 request.UnitCostForIncrease,
                 InventoryReferenceType.Adjustment,
+                0,
                 request.Reference,
                 notes: request.Notes);
+
+            movements.Add(movement);
         }
         else
         {
             var issueQty = Math.Abs(delta);
             await EnsureAvailableAsync(balance.Id, issueQty, cancellationToken);
-            movement = await IssueFromBalanceAsync(
+            movements = await IssueFromBalanceAsync(
                 balance,
                 issueQty,
                 InventoryReferenceType.Adjustment,
@@ -442,11 +565,14 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
         if (delta > 0)
         {
-            unitOfWork.Movements.Add(movement);
+            foreach (var movement in movements)
+            {
+                unitOfWork.Movements.Add(movement);
+            }
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return MapMovement(movement);
+        return movements.Select(MapMovement).ToList();
     }
 
     #endregion

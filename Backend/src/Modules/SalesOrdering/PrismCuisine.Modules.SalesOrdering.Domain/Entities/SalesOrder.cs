@@ -123,7 +123,7 @@ public sealed class SalesOrder : AggregateRoot
             Status = SalesOrderStatus.Delivered;
         else if (anyDelivered)
             Status = SalesOrderStatus.PartialDelivery;
-        else if (allNotDelivered && Status != SalesOrderStatus.Confirmed)
-            Status = SalesOrderStatus.Cancelled;
+        else if (allNotDelivered)
+            Status = SalesOrderStatus.Confirmed;
     }
 }

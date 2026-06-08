@@ -54,7 +54,7 @@ internal sealed class DeliveryNoteRepository(PrismCuisineDbContext db) : IDelive
     {
         var start = date.Date;
         var end = start.AddDays(1);
-        return db.SalesOrders.CountAsync(o => o.CreatedAt >= start && o.CreatedAt < end, cancellationToken);
+        return db.DeliveryNotes.CountAsync(d => d.CreatedAt >= start && d.CreatedAt < end, cancellationToken);
     }
 
     private static DeliveryNoteSummaryDto MapSummary(DeliveryNote delivery)

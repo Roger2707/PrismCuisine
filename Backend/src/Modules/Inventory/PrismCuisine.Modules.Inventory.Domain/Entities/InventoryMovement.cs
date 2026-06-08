@@ -8,6 +8,7 @@ public sealed class InventoryMovement : Entity
 {
     public int InventoryBalanceId { get; private set; }
     public InventoryMovementType MovementType { get; private set; }
+    public int InventoryCostLayerId { get; private set; }
     public decimal Quantity { get; private set; }
     public decimal UnitCost { get; private set; }
     public InventoryReferenceType ReferenceType { get; private set; }
@@ -25,6 +26,7 @@ public sealed class InventoryMovement : Entity
         decimal quantity,
         decimal unitCost,
         InventoryReferenceType referenceType,
+        int inventoryCostLayerId = 0,
         string? reference = null,
         int? referenceId = null,
         string? notes = null)
@@ -48,6 +50,7 @@ public sealed class InventoryMovement : Entity
         {
             InventoryBalanceId = inventoryBalanceId,
             MovementType = movementType,
+            InventoryCostLayerId = inventoryCostLayerId,
             Quantity = quantity,
             UnitCost = unitCost,
             ReferenceType = referenceType,

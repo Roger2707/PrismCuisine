@@ -61,4 +61,19 @@ public sealed class InventoryCostLayer : Entity
         QuantityRemaining -= quantity;
         return UnitCost;
     }
+
+    public void Restore(decimal quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new DomainException("Restore quantity must be greater than zero.");
+        }
+
+        if (QuantityRemaining + quantity > QuantityReceived)
+        {
+            throw new DomainException("Cannot restore more than was consumed from this cost layer.");
+        }
+
+        QuantityRemaining += quantity;
+    }
 }

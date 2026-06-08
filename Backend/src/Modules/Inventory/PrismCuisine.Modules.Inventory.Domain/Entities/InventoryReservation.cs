@@ -90,4 +90,29 @@ public sealed class InventoryReservation : Entity
 
         return quantity;
     }
+
+    public void ReverseFulfillment(decimal quantity)
+    {
+        if (Status is InventoryReservationStatus.Released)
+        {
+            throw new DomainException("Released reservations cannot be reversed.");
+        }
+
+        if (quantity <= 0)
+        {
+            throw new DomainException("Reversal quantity must be greater than zero.");
+        }
+
+        if (quantity > FulfilledQuantity)
+        {
+            throw new DomainException("Reversal quantity exceeds fulfilled reservation quantity.");
+        }
+
+        FulfilledQuantity -= quantity;
+
+        if (FulfilledQuantity < Quantity)
+        {
+            Status = InventoryReservationStatus.Active;
+        }
+    }
 }

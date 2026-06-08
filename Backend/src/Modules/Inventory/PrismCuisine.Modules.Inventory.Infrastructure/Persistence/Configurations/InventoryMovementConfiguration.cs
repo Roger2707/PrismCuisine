@@ -15,6 +15,7 @@ public sealed class InventoryMovementConfiguration : EntityConfiguration<Invento
         builder.ToTable("InventoryMovements", ModuleSchemas.Inventory);
 
         builder.Property(m => m.InventoryBalanceId).IsRequired();
+        builder.Property(m => m.InventoryCostLayerId).IsRequired();
 
         builder.Property(m => m.MovementType)
             .HasConversion<string>()
@@ -33,6 +34,8 @@ public sealed class InventoryMovementConfiguration : EntityConfiguration<Invento
         builder.Property(m => m.Notes).HasMaxLength(500);
 
         builder.HasIndex(m => m.InventoryBalanceId);
+        builder.HasIndex(m => m.InventoryCostLayerId);
         builder.HasIndex(m => new { m.ReferenceType, m.ReferenceId });
+        builder.HasIndex(m => new { m.ReferenceType, m.Reference, m.MovementType });
     }
 }

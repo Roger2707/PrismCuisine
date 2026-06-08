@@ -1,6 +1,4 @@
-﻿using PrismCuisine.Modules.SalesOrdering.Domain.Enums;
-
-namespace PrismCuisine.Modules.SalesOrdering.Application.Deliveries;
+﻿namespace PrismCuisine.Modules.SalesOrdering.Application.Deliveries;
 
 public sealed record DeliveryNoteSummaryDto(
     int Id,
@@ -36,22 +34,13 @@ public sealed record DeliveryNoteLineDto(
 );
 
 public sealed record CreateDeliveryNoteRequest(
-    string DeliveryNumber,
     int SalesOrderId,
-    int CustomerId,
-    string CustomerName,
-    string OrderNumber,
-    SalesOrderStatus SalesOrderStatus,
     string? Notes,
-    IReadOnlyList<CreateDeliveryNoteLineRequest> Lines
-);
+    IReadOnlyList<CreateDeliveryNoteLineRequest> Lines);
 
 public sealed record CreateDeliveryNoteLineRequest(
     int SalesOrderLineId,
-    int ProductId,
-    string ProductName,
-    decimal QuantityDelivered
-);
+    decimal QuantityDelivered);
 
 public sealed record UpdateDeliveryNoteRequest(
     string? Notes,

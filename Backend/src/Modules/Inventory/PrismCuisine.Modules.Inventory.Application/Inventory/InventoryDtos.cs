@@ -90,3 +90,7 @@ public sealed record FulfillReservationLine(
     decimal Quantity,
     string? Reference = null,
     string? Notes = null);
+
+public sealed record ReturnDeliveryLine(
+    int SalesOrderLineId,
+    decimal Quantity);

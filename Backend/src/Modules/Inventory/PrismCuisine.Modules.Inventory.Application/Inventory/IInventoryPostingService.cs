@@ -32,10 +32,10 @@ public interface IInventoryPostingService
     Task<InventoryMovementDto> ReceiveAsync(
         ReceiveInventoryRequest request,
         CancellationToken cancellationToken = default);
-    Task<InventoryMovementDto> IssueAsync(
+    Task<List<InventoryMovementDto>> IssueAsync(
         IssueInventoryRequest request,
         CancellationToken cancellationToken = default);
-    Task<InventoryMovementDto> AdjustAsync(
+    Task<List<InventoryMovementDto>> AdjustAsync(
         AdjustInventoryRequest request,
         CancellationToken cancellationToken = default);
     Task<InventoryReservationDto> ReserveAsync(
@@ -48,5 +48,9 @@ public interface IInventoryPostingService
         CancellationToken cancellationToken = default);
     Task FulfillReservationsAsync(
         IReadOnlyList<FulfillReservationLine> lines,
+        CancellationToken cancellationToken = default);
+    Task ReturnDeliveryIssuesAsync(
+        string deliveryNumber,
+        IReadOnlyList<ReturnDeliveryLine> lines,
         CancellationToken cancellationToken = default);
 }

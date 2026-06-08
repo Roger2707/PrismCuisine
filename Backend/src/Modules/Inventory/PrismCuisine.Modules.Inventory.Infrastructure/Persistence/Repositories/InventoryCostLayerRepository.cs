@@ -31,6 +31,18 @@ internal sealed class InventoryCostLayerRepository(PrismCuisineDbContext db) : I
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<InventoryCostLayer>> GetByIdsForUpdateAsync(
+        IReadOnlyCollection<int> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+            return [];
+
+        return await db.InventoryCostLayers
+            .Where(l => ids.Contains(l.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public void Add(InventoryCostLayer layer) => db.InventoryCostLayers.Add(layer);
 
     public void Update(InventoryCostLayer layer) => db.InventoryCostLayers.Update(layer);

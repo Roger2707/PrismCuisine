@@ -7,7 +7,7 @@ using PrismCuisine.Modules.SalesOrdering.Domain.Enums;
 
 namespace PrismCuisine.Modules.SalesOrdering.Application.Deliveries;
 
-internal sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IInventoryPostingService inventoryPostingService) : IDeliveryNoteService
+public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IInventoryPostingService inventoryPostingService) : IDeliveryNoteService
 {
     #region Read
 
@@ -29,15 +29,24 @@ internal sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, I
 
     public async Task<DeliveryNoteDto> CreateAsync(CreateDeliveryNoteRequest request, CancellationToken cancellationToken = default)
     {
-        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(request.SalesOrderId, cancellationToken);
-        if (salesOrder is null)
-            throw new ArgumentException($"Sales order with id '{request.SalesOrderId}' does not exist.");
+        if (request.Lines is null || request.Lines.Count == 0)
+            throw new DomainException("Delivery note must have at least one line.");
 
-        var deliveryNumber = await GenerateOrderNumberAsync(cancellationToken);
+        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(request.SalesOrderId, cancellationToken)
+            ?? throw new DomainException($"Sales order with id '{request.SalesOrderId}' does not exist.");
+
+        if (salesOrder.Status is not SalesOrderStatus.Confirmed and not SalesOrderStatus.PartialDelivery)
+            throw new DomainException("Delivery note can only be created for confirmed or partially delivered sales orders.");
+
+        var deliveryNumber = await GenerateDeliveryNumberAsync(cancellationToken);
         var deliveryNote = DeliveryNote.CreateDraft(
-            deliveryNumber
-            , request.SalesOrderId, salesOrder.CustomerId, salesOrder.CustomerName, request.OrderNumber, salesOrder.Status
-            , request.Notes);
+            deliveryNumber,
+            salesOrder.Id,
+            salesOrder.CustomerId,
+            salesOrder.CustomerName,
+            salesOrder.OrderNumber,
+            salesOrder.Status,
+            request.Notes);
 
         foreach (var line in request.Lines)
         {
@@ -145,22 +154,41 @@ internal sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, I
 
     public async Task CancelAsync(int deliveryNoteId, CancellationToken cancellationToken = default)
     {
-        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(deliveryNoteId, cancellationToken)
-            ?? throw new DomainException($"Sales order with id '{deliveryNoteId}' does not exist.");
-
         var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, cancellationToken)
-            ?? throw new DomainException($"Delivery note with id '{deliveryNoteId}' does not exist.");
+            ?? throw new DomainException($"Delivery note '{deliveryNoteId}' was not found.");
+
+        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(
+            deliveryNote.SalesOrderId,
+            cancellationToken)
+            ?? throw new DomainException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
+
+        var returnLines = deliveryNote.Lines
+            .Select(l => new ReturnDeliveryLine(l.SalesOrderLineId, l.QuantityDelivered))
+            .ToList();
+
+        await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            await inventoryPostingService.ReturnDeliveryIssuesAsync(
+                deliveryNote.DeliveryNumber,
+                returnLines,
+                ct);
+
+            deliveryNote.Cancel(salesOrder);
+            unitOfWork.DeliveryNotes.Update(deliveryNote);
+            unitOfWork.SalesOrders.Update(salesOrder);
+            await unitOfWork.SaveChangesAsync(ct);
+        }, cancellationToken);
     }
 
     #endregion
 
     #region Helper Methods
 
-    private async Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken)
+    private async Task<string> GenerateDeliveryNumberAsync(CancellationToken cancellationToken)
     {
         var today = DateTime.UtcNow.Date;
         var count = await unitOfWork.DeliveryNotes.GetCountForDateAsync(today, cancellationToken);
-        return $"PO-{today:yyyyMMdd}-{(count + 1):D4}";
+        return $"DN-{today:yyyyMMdd}-{(count + 1):D4}";
     }
 
     #endregion

@@ -18,6 +18,10 @@ public interface IInventoryReservationRepository
         InventoryReferenceType referenceType,
         HashSet<int> referenceIds,
         CancellationToken cancellationToken = default);
+    Task<List<InventoryReservation>> GetByReferencesForUpdateAsync(
+        InventoryReferenceType referenceType,
+        HashSet<int> referenceIds,
+        CancellationToken cancellationToken = default);
 
     void Add(InventoryReservation reservation);
     void Update(InventoryReservation reservation);
