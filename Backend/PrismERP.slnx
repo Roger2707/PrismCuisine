@@ -1,0 +1,32 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Api/">
+    <Project Path="src/Api/PrismERP.Api/PrismERP.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/PrismERP.BuildingBlocks.Application/PrismERP.BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/PrismERP.BuildingBlocks.Domain/PrismERP.BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/PrismERP.BuildingBlocks.Infrastructure/PrismERP.BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/PrismERP.Modules.Identity.Application/PrismERP.Modules.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/PrismERP.Modules.Identity.Domain/PrismERP.Modules.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/PrismERP.Modules.Identity.Infrastructure/PrismERP.Modules.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Inventory/">
+    <Project Path="src/Modules/Inventory/PrismERP.Modules.Inventory.Application/PrismERP.Modules.Inventory.Application.csproj" />
+    <Project Path="src/Modules/Inventory/PrismERP.Modules.Inventory.Domain/PrismERP.Modules.Inventory.Domain.csproj" />
+    <Project Path="src/Modules/Inventory/PrismERP.Modules.Inventory.Infrastructure/PrismERP.Modules.Inventory.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Purchasing/">
+    <Project Path="src/Modules/Purchasing/PrismERP.Modules.Purchasing.Application/PrismERP.Modules.Purchasing.Application.csproj" />
+    <Project Path="src/Modules/Purchasing/PrismERP.Modules.Purchasing.Domain/PrismERP.Modules.Purchasing.Domain.csproj" />
+    <Project Path="src/Modules/Purchasing/PrismERP.Modules.Purchasing.Infrastructure/PrismERP.Modules.Purchasing.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/SalesOrdering/">
+    <Project Path="src/Modules/SalesOrdering/PrismERP.Modules.SalesOrdering.Application/PrismERP.Modules.SalesOrdering.Application.csproj" />
+    <Project Path="src/Modules/SalesOrdering/PrismERP.Modules.SalesOrdering.Domain/PrismERP.Modules.SalesOrdering.Domain.csproj" />
+    <Project Path="src/Modules/SalesOrdering/PrismERP.Modules.SalesOrdering.Infrastructure/PrismERP.Modules.SalesOrdering.Infrastructure.csproj" />
+  </Folder>
+</Solution>

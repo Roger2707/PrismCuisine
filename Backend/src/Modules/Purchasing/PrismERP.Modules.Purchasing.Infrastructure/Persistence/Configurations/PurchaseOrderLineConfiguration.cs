@@ -1,0 +1,24 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using PrismERP.BuildingBlocks.Domain.Modules;
+using PrismERP.BuildingBlocks.Infrastructure.Persistence;
+using PrismERP.Modules.Purchasing.Domain.Entities;
+
+namespace PrismERP.Modules.Purchasing.Infrastructure.Persistence.Configurations;
+
+public sealed class PurchaseOrderLineConfiguration : EntityConfiguration<PurchaseOrderLine>
+{
+    public override void Configure(EntityTypeBuilder<PurchaseOrderLine> builder)
+    {
+        base.Configure(builder);
+
+        builder.ToTable("PurchaseOrderLines", ModuleSchemas.Purchasing);
+
+        builder.Property(l => l.PurchaseOrderId).IsRequired();
+        builder.Property(l => l.ProductId).IsRequired();
+
+        builder.Property(l => l.QuantityOrdered).HasPrecision(18, 4).IsRequired();
+        builder.Property(l => l.QuantityReceived).HasPrecision(18, 4).IsRequired();
+        builder.Property(l => l.UnitPrice).HasPrecision(18, 4).IsRequired();
+    }
+}

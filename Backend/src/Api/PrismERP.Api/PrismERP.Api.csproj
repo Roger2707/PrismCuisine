@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\PrismERP.BuildingBlocks.Infrastructure\PrismERP.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Identity\PrismERP.Modules.Identity.Infrastructure\PrismERP.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Identity\PrismERP.Modules.Identity.Application\PrismERP.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Inventory\PrismERP.Modules.Inventory.Infrastructure\PrismERP.Modules.Inventory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Inventory\PrismERP.Modules.Inventory.Application\PrismERP.Modules.Inventory.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Purchasing\PrismERP.Modules.Purchasing.Infrastructure\PrismERP.Modules.Purchasing.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Purchasing\PrismERP.Modules.Purchasing.Application\PrismERP.Modules.Purchasing.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\SalesOrdering\PrismERP.Modules.SalesOrdering.Infrastructure\PrismERP.Modules.SalesOrdering.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

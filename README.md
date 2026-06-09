@@ -1,11 +1,11 @@
-# Prism Cuisine
+# Prism ERP
 
 Modular monolith backend (.NET 9) and React frontend.
 
 ## Structure
 
 - `Backend/` — ASP.NET Core API, Clean Architecture, Unit of Work + Repository + Service, RabbitMQ, Redis, SQL Server (schema per module)
-- `Frontend/prism-cuisine-web/` — React + Vite + Redux Toolkit
+- `Frontend/prism-erp-web/` — React + Vite + Redux Toolkit
 
 ## Modules (database schemas)
 
@@ -41,7 +41,7 @@ docker compose up --build
 
 ```bash
 cd Backend
-dotnet run --project src/Api/PrismCuisine.Api
+dotnet run --project src/Api/PrismERP.Api
 ```
 
 Requires SQL Server, Redis, and RabbitMQ (or use `docker compose up sqlserver redis rabbitmq`).
@@ -51,19 +51,19 @@ Requires SQL Server, Redis, and RabbitMQ (or use `docker compose up sqlserver re
 ```powershell
 cd Backend
 dotnet ef migrations add <Name> `
-  -Project src/BuildingBlocks/PrismCuisine.BuildingBlocks.Infrastructure `
-  -StartupProject src/Api/PrismCuisine.Api `
+  -Project src/BuildingBlocks/PrismERP.BuildingBlocks.Infrastructure `
+  -StartupProject src/Api/PrismERP.Api `
   -OutputDir Persistence/Migrations
 
 dotnet ef database update `
-  -Project src/BuildingBlocks/PrismCuisine.BuildingBlocks.Infrastructure `
-  -StartupProject src/Api/PrismCuisine.Api
+  -Project src/BuildingBlocks/PrismERP.BuildingBlocks.Infrastructure `
+  -StartupProject src/Api/PrismERP.Api
 ```
 
 ### Frontend
 
 ```bash
-cd Frontend/prism-cuisine-web
+cd Frontend/prism-erp-web
 cp .env.example .env
 npm install
 npm run dev

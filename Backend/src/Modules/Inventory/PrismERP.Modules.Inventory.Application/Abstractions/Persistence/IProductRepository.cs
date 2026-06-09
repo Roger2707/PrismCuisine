@@ -1,0 +1,13 @@
+using PrismERP.Modules.Inventory.Domain.Entities;
+
+namespace PrismERP.Modules.Inventory.Application.Abstractions.Persistence;
+
+public interface IProductRepository
+{
+    Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Product?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default);
+    Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<Product>> GetAllAsync(CancellationToken cancellationToken = default);
+    void Add(Product product);
+    void Update(Product product);
+}

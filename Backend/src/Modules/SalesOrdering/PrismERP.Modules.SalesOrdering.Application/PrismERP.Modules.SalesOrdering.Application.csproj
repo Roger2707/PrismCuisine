@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\PrismERP.Modules.SalesOrdering.Domain\PrismERP.Modules.SalesOrdering.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\PrismERP.BuildingBlocks.Application\PrismERP.BuildingBlocks.Application.csproj" />
+	  <ProjectReference Include="..\..\Inventory\PrismERP.Modules.Inventory.Application\PrismERP.Modules.Inventory.Application.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
