@@ -96,17 +96,16 @@ public sealed class SalesOrderService(
         {
             const int warehouseId = 1; // TODO: assign warehouse based on product or sales order
 
-            foreach (var line in salesOrder.Lines)
-            {
-                await inventoryPosting.ReserveAsync(
-                    new CreateReservationRequest(
-                        line.ProductId,
-                        warehouseId,
-                        line.QuantityOrdered,
-                        line.Id,
-                        $"Reservation for sales order {salesOrder.OrderNumber}, line {line.Id}"),
-                    ct);
-            }
+            await inventoryPosting.ReserveAsync(
+                        new CreateReservationRequest(
+                            salesOrder.Lines
+                            .Select(l => new CreateReservationLine(
+                                l.ProductId,
+                                warehouseId,
+                                l.QuantityOrdered,
+                                l.Id,
+                                $"Reservation for sales order {salesOrder.OrderNumber}, line {l.Id}"))
+                            .ToList()), ct);
 
             salesOrder.Approve();
             unitOfWork.SalesOrders.Update(salesOrder);

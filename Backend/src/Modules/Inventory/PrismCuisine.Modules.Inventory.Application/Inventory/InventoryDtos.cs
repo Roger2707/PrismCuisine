@@ -73,17 +73,15 @@ public sealed record AdjustInventoryRequest(
     string? Reference = null,
     string? Notes = null);
 
-public sealed record CreateReservationRequest(
+public sealed record CreateReservationLine(
     int ProductId,
     int WarehouseId,
     decimal Quantity,
     int ReferenceId,
     string? Notes = null);
 
-public sealed record FulfillReservationRequest(
-    decimal? Quantity = null,
-    string? Reference = null,
-    string? Notes = null);
+public sealed record CreateReservationRequest(
+    List<CreateReservationLine> CreateReservationLines);
 
 public sealed record FulfillReservationLine(
     InventoryReservation Reservation,

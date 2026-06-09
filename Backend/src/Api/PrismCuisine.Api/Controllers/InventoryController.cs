@@ -93,8 +93,8 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
         [FromBody] CreateReservationRequest request,
         CancellationToken cancellationToken)
     {
-        var reservation = await inventoryPostingService.ReserveAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetReservation), new { id = reservation.Id }, reservation);
+        var reservations = await inventoryPostingService.ReserveAsync(request, cancellationToken);
+        return Ok(reservations);
     }
 
     [HttpPost("reservations/{id}/release")]
@@ -102,15 +102,5 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
     {
         await inventoryPostingService.ReleaseReservationAsync(id, cancellationToken);
         return NoContent();
-    }
-
-    [HttpPost("reservations/{id}/fulfill")]
-    public async Task<IActionResult> FulfillReservation(
-        int id,
-        [FromBody] FulfillReservationRequest request,
-        CancellationToken cancellationToken)
-    {
-        var movement = await inventoryPostingService.FulfillReservationAsync(id, request, cancellationToken);
-        return Ok(movement);
     }
 }

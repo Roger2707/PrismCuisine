@@ -101,9 +101,9 @@ internal sealed class SalesOrderingDataSeeder(
         db.SalesOrders.AddRange(orders);
         await db.SaveChangesAsync(cancellationToken);
 
-        await ApproveAndReserveAsync(so3, cancellationToken);
-        await ApproveAndReserveAsync(so4, cancellationToken);
-        await SeedPartialDeliveryAsync(so5, cancellationToken);
+        //await ApproveAndReserveAsync(so3, cancellationToken);
+        //await ApproveAndReserveAsync(so4, cancellationToken);
+        //await SeedPartialDeliveryAsync(so5, cancellationToken);
     }
 
     private static SalesOrder CreateSo(string orderNumber, Customer customer, string? notes) =>
@@ -120,17 +120,17 @@ internal sealed class SalesOrderingDataSeeder(
 
     private async Task ApproveAndReserveAsync(SalesOrder salesOrder, CancellationToken cancellationToken)
     {
-        foreach (var line in salesOrder.Lines)
-        {
-            await inventoryPosting.ReserveAsync(
+        await inventoryPosting.ReserveAsync(
                 new CreateReservationRequest(
-                    line.ProductId,
+                salesOrder.Lines.Select(l => new CreateReservationLine
+                (
+                    l.ProductId,
                     WarehouseId,
-                    line.QuantityOrdered,
-                    line.Id,
-                    $"Seed reservation for {salesOrder.OrderNumber}, line {line.Id}"),
+                    l.QuantityOrdered,
+                    l.Id,
+                    $"Seed reservation for {salesOrder.OrderNumber}, line {l.Id}")
+                ).ToList()),
                 cancellationToken);
-        }
 
         salesOrder.Approve();
         db.SalesOrders.Update(salesOrder);
