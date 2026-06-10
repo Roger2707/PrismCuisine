@@ -1,19 +1,64 @@
-import { useAppSelector } from './app/hooks';
+import { useState } from 'react';
+import Login from './components/Login';
+import Sidebar from './components/Sidebar';
+import Dashboard from './pages/Dashboard';
+import Identity from './pages/Identity';
+import Inventory from './pages/Inventory';
+import Purchasing from './pages/Purchasing';
+import SalesOrdering from './pages/SalesOrdering';
+import GoodsReceipt from './pages/GoodsReceipt';
 import './App.css';
 
 function App() {
-  const apiBaseUrl = useAppSelector((state) => state.app.apiBaseUrl);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentModule, setCurrentModule] = useState('dashboard');
+  const [userEmail, setUserEmail] = useState('');
+
+  const handleLogin = (email: string, _password: string) => {
+    setIsAuthenticated(true);
+    setUserEmail(email);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserEmail('');
+    setCurrentModule('dashboard');
+  };
+
+  const renderModule = () => {
+    switch (currentModule) {
+      case 'dashboard':
+        return <Dashboard username={userEmail.split('@')[0]} />;
+      case 'identity':
+        return <Identity />;
+      case 'inventory':
+        return <Inventory />;
+      case 'purchasing':
+        return <Purchasing />;
+      case 'salesOrdering':
+        return <SalesOrdering />;
+      case 'goodsReceipt':
+        return <GoodsReceipt />;
+      default:
+        return <Dashboard username={userEmail.split('@')[0]} />;
+    }
+  };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
-    <main className="app">
-      <header>
-        <h1>Prism Cuisine</h1>
-        <p>React + Redux Toolkit</p>
-      </header>
-      <section className="card">
-        <p>API base URL: {apiBaseUrl}</p>
-      </section>
-    </main>
+    <div className="app-container">
+      <Sidebar 
+        currentModule={currentModule} 
+        onModuleChange={setCurrentModule}
+        onLogout={handleLogout}
+      />
+      <div className="main-content">
+        {renderModule()}
+      </div>
+    </div>
   );
 }
 
