@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { api } from '../services/api';
 import './Inventory.css';
 
 interface GoodsReceipt {
@@ -19,11 +18,15 @@ export default function GoodsReceipt() {
   useEffect(() => {
     const fetchReceipts = async () => {
       try {
-        const data = await api.getGoodsReceipts();
-        setReceipts(data);
+        // Note: Backend doesn't have GetAll, only GetByPurchaseOrder and GetById
+        // Using mock data for now
+        setReceipts([
+          { id: 1, receiptNumber: 'GRN-2024-001', purchaseOrder: 'PO-2024-001', supplier: 'Da Lat Fresh Vegetables Cooperative', totalAmount: 1500000, status: 'Posted', receiptDate: '2024-01-15' },
+          { id: 2, receiptNumber: 'GRN-2024-002', purchaseOrder: 'PO-2024-002', supplier: 'An Binh Food Company', totalAmount: 2400000, status: 'Posted', receiptDate: '2024-01-16' },
+          { id: 3, receiptNumber: 'GRN-2024-003', purchaseOrder: 'PO-2024-003', supplier: 'Nha Trang Fresh Seafood', totalAmount: 5400000, status: 'Draft', receiptDate: '2024-01-17' },
+        ]);
       } catch (error) {
         console.log('API not available, using mock data');
-        // Fallback to mock data
         setReceipts([
           { id: 1, receiptNumber: 'GRN-2024-001', purchaseOrder: 'PO-2024-001', supplier: 'Da Lat Fresh Vegetables Cooperative', totalAmount: 1500000, status: 'Posted', receiptDate: '2024-01-15' },
           { id: 2, receiptNumber: 'GRN-2024-002', purchaseOrder: 'PO-2024-002', supplier: 'An Binh Food Company', totalAmount: 2400000, status: 'Posted', receiptDate: '2024-01-16' },

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { authApi } from '../services/api';
 import './Login.css';
 
 interface LoginProps {
@@ -17,27 +18,17 @@ export default function Login({ onLogin }: LoginProps) {
     setError('');
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5085';
+      // Call backend API for login using axios
+      const data = await authApi.login(email, password);
       
-      // Call backend API for login
-      const response = await fetch(`${API_BASE_URL}/api/identity/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Store token if needed
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        onLogin(email, password);
-      } else {
-        setError('Invalid email or password');
+      // Store token if needed
+      if (data.accessToken) {
+        localStorage.setItem('token', data.accessToken);
       }
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
+      onLogin(email, password);
     } catch (err) {
       // Fallback to simulation if API is not available
       console.log('API not available, using simulation');

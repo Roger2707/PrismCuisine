@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { api } from '../services/api';
 import './Identity.css';
 
 interface User {
@@ -18,11 +17,15 @@ export default function Identity() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const data = await api.getUsers();
-        setUsers(data);
+        // Note: Backend only has getById, so we'll use mock data for list
+        // In a real scenario, you'd need to add a GetAll endpoint to the backend
+        setUsers([
+          { id: 1, email: 'admin@prismerp.com', fullName: 'Admin User', role: 'Admin', status: 'Active', createdAt: '2024-01-15' },
+          { id: 2, email: 'manager@prismerp.com', fullName: 'Manager User', role: 'Manager', status: 'Active', createdAt: '2024-02-20' },
+          { id: 3, email: 'staff@prismerp.com', fullName: 'Staff User', role: 'Staff', status: 'Active', createdAt: '2024-03-10' },
+        ]);
       } catch (error) {
         console.log('API not available, using mock data');
-        // Fallback to mock data
         setUsers([
           { id: 1, email: 'admin@prismerp.com', fullName: 'Admin User', role: 'Admin', status: 'Active', createdAt: '2024-01-15' },
           { id: 2, email: 'manager@prismerp.com', fullName: 'Manager User', role: 'Manager', status: 'Active', createdAt: '2024-02-20' },

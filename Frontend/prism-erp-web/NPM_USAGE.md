@@ -1,93 +1,126 @@
-# Prism ERP Frontend - Hướng dẫn sử dụng npm
+# Prism ERP Frontend - NPM Usage Guide
 
-## Cài đặt dependencies
+## Install dependencies
 
 ```bash
 cd Frontend/prism-erp-web
 npm install
 ```
 
-## Các dependencies cần thiết
+## Required dependencies
 
-Để chạy ứng dụng, bạn cần cài đặt các packages sau:
+To run the application, you need to install the following packages:
 
 ```bash
-npm install react-router-dom lucide-react axios
+npm install axios
 ```
 
-- **react-router-dom**: Điều hướng trong ứng dụng
-- **lucide-react**: Bộ icon hiện đại
-- **axios**: Gọi API
+- **axios**: HTTP client for API calls (required for the new API service)
 
-## Chạy ứng dụng ở chế độ development
+Optional dependencies:
+```bash
+npm install react-router-dom lucide-react
+```
+
+- **react-router-dom**: Routing in the application
+- **lucide-react**: Modern icon library
+
+## Run application in development mode
 
 ```bash
 npm run dev
 ```
 
-Ứng dụng sẽ chạy tại: `http://localhost:5173`
+Application will run at: `http://localhost:5173`
 
-## Build cho production
+## Build for production
 
 ```bash
 npm run build
 ```
 
-File build sẽ được tạo trong thư mục `dist/`
+Build files will be created in the `dist/` directory
 
-## Preview bản build
+## Preview build
 
 ```bash
 npm run preview
 ```
 
-## Kiểm tra code quality
+## Check code quality
 
 ```bash
 npm run lint
 ```
 
-## Cấu hình biến môi trường
+## Environment configuration
 
-Tạo file `.env` trong thư mục `Frontend/prism-erp-web`:
+Create a `.env` file in the `Frontend/prism-erp-web` directory:
 
 ```env
 VITE_API_BASE_URL=http://localhost:5085
 ```
 
-## Cấu trúc dự án
+## Project structure
 
 ```
 src/
-├── components/      # Các component tái sử dụng
-│   ├── Login.tsx   # Trang đăng nhập
-│   └── Sidebar.tsx # Thanh điều hướng
-├── pages/          # Các trang chính
-│   ├── Dashboard.tsx      # Trang chủ
-│   ├── Identity.tsx       # Module quản lý người dùng
-│   ├── Inventory.tsx      # Module quản lý kho
-│   ├── Purchasing.tsx     # Module quản lý mua hàng
-│   └── SalesOrdering.tsx  # Module quản lý bán hàng (có CRUD)
+├── components/      # Reusable components
+│   ├── Login.tsx   # Login page
+│   └── Sidebar.tsx # Navigation sidebar
+├── pages/          # Main pages
+│   ├── Dashboard.tsx      # Home page
+│   ├── Identity.tsx       # User management module
+│   ├── Inventory.tsx      # Inventory management module
+│   ├── Purchasing.tsx     # Purchase management module
+│   ├── SalesOrdering.tsx  # Sales management module (with CRUD)
+│   └── GoodsReceipt.tsx   # Goods receipt module
+├── services/       # API services
+│   └── api.ts      # Axios-based API client with all backend endpoints
 ├── app/            # Redux store
-└── App.tsx         # Component chính
+└── App.tsx         # Main component
 ```
 
-## Tính năng
+## Features
 
-- ✅ Trang đăng nhập với email/password
-- ✅ Dashboard với thống kê tổng quan
-- ✅ Sidebar điều hướng với icon hiện đại
-- ✅ Module Identity: Hiển thị danh sách người dùng
-- ✅ Module Inventory: Hiển thị danh sách sản phẩm
-- ✅ Module Purchasing: Hiển thị danh sách đơn hàng mua
-- ✅ Module SalesOrdering: CRUD đầy đủ cho đơn hàng bán
-- ✅ UI hiện đại, sạch sẽ, dễ sử dụng
+- ✅ Login page with email/password
+- ✅ Dashboard with statistics overview
+- ✅ Sidebar navigation with modern icons
+- ✅ Identity Module: User management
+- ✅ Inventory Module: Product management with balance display
+- ✅ Purchasing Module: Purchase order management
+- ✅ Sales Ordering Module: Full CRUD for sales orders
+- ✅ Goods Receipt Module: Goods receipt management
+- ✅ Modern, clean, user-friendly UI
+- ✅ Axios-based API service with interceptors
+- ✅ Automatic token handling
+- ✅ Error handling with fallback to mock data
 
-## Lưu ý
+## API Service Structure
 
-- Ứng dụng sử dụng mock data hiện tại. Để kết nối với API backend, cần cập nhật các API calls trong các component.
-- Đăng nhập hiện tại chỉ là simulation. Cần tích hợp với API backend để xác thực thực sự.
-- Để đổi tên project trong package.json từ "prism-cuisine-web" sang "prism-erp-web", chạy:
+The new API service (`src/services/api.ts`) includes:
+
+- **authApi**: Login, logout, current user, change password, refresh
+- **usersApi**: Get user by ID
+- **productsApi**: CRUD operations for products
+- **productCategoriesApi**: CRUD operations for product categories
+- **warehousesApi**: CRUD operations for warehouses
+- **inventoryApi**: Balance management, movements, reservations
+- **suppliersApi**: CRUD operations for suppliers
+- **purchaseOrdersApi**: CRUD operations for purchase orders
+- **goodsReceiptsApi**: CRUD operations for goods receipts
+- **customersApi**: CRUD operations for customers
+- **salesOrdersApi**: CRUD operations for sales orders
+- **deliveryNotesApi**: CRUD operations for delivery notes
+
+All API endpoints match the backend controller routes exactly.
+
+## Notes
+
+- Application uses axios with interceptors for automatic token handling
+- All API calls have fallback to mock data if the backend is unavailable
+- Login currently uses the backend API endpoint `/api/identity/auth/login`
+- To rename the project in package.json from "prism-cuisine-web" to "prism-erp-web", run:
   ```bash
   npm pkg set name=prism-erp-web
   ```

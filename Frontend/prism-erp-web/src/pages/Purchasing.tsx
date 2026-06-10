@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { purchaseOrdersApi } from '../services/api';
 import './Inventory.css';
 
 interface PurchaseOrder {
@@ -18,8 +18,8 @@ export default function Purchasing() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const data = await api.getPurchaseOrders();
-        console.log('Fetched purchase orders:', data);  
+        const data = await purchaseOrdersApi.getAll();
+        console.log('Fetched purchase orders:', data);
         setOrders(data);
       } catch (error) {
         console.log('API not available, using mock data');

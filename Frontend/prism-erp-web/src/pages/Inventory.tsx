@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { productsApi } from '../services/api';
 import './Inventory.css';
 
 interface Product {
@@ -20,7 +20,7 @@ export default function Inventory() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await api.getProducts();
+        const data = await productsApi.getAll();
         setProducts(data);
       } catch (error) {
         console.log('API not available, using mock data');

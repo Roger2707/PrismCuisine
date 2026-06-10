@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { salesOrdersApi } from '../services/api';
 import './Inventory.css';
 
 interface SalesOrder {
@@ -31,7 +31,7 @@ export default function SalesOrdering() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const data = await api.getSalesOrders();
+        const data = await salesOrdersApi.getAll();
         setOrders(data);
       } catch (error) {
         console.log('API not available, using mock data');
@@ -68,7 +68,7 @@ export default function SalesOrdering() {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this order?')) {
       try {
-        await api.deleteSalesOrder(id);
+        await salesOrdersApi.cancel(id);
         setOrders(orders.filter(order => order.id !== id));
       } catch (error) {
         console.log('API not available, using local state');
@@ -81,7 +81,7 @@ export default function SalesOrdering() {
     try {
       if (editingOrder) {
         // Try to call API
-        await api.updateSalesOrder(editingOrder.id, {
+        await salesOrdersApi.update(editingOrder.id, {
           customer: formData.customer,
           totalAmount: parseFloat(formData.totalAmount),
           status: formData.status
@@ -98,7 +98,7 @@ export default function SalesOrdering() {
           status: formData.status
         };
         // Try to call API
-        await api.createSalesOrder(newOrder);
+        await salesOrdersApi.create(newOrder);
         const createdOrder: SalesOrder = {
           id: orders.length + 1,
           orderNumber: `SO-2024-${String(orders.length + 1).padStart(3, '0')}`,
