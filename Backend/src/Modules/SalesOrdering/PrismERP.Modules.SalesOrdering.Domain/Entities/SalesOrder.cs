@@ -52,6 +52,14 @@ public sealed class SalesOrder : AggregateRoot
         };
     }
 
+    public void RecalculateTotals()
+    {
+        SubTotal = _lines.Sum(l => l.QuantityOrdered * l.UnitPrice);
+        TotalDiscount = _lines.Sum(l => l.QuantityOrdered * l.UnitPrice * l.DiscountPercent / 100);
+        TotalVAT = _lines.Sum(l => (l.QuantityOrdered * l.UnitPrice - (l.QuantityOrdered * l.UnitPrice * l.DiscountPercent / 100)) * l.VATRate / 100);
+        TotalAmount = SubTotal - TotalDiscount + TotalVAT;
+    }
+
     public void AddLine(int productId, string productName, decimal quantityOrdered, decimal unitPrice, decimal discountPercent, decimal vatRate)
     {
         if (Status != SalesOrderStatus.Draft)

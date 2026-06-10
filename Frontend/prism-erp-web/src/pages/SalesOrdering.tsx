@@ -1,45 +1,58 @@
 import { useState, useEffect } from 'react';
-import { salesOrdersApi } from '../services/api';
+import { customersApi, salesOrdersApi } from '../services/salesOrderingApi';
+import type { SalesOrderSummaryDto, SalesOrderDto, CustomerDto } from '../services/types/salesOrdering.types';
+import CustomerSearch from '../components/CustomerSearch';
 import './Inventory.css';
+import './SalesOrdering.css';
 
-interface SalesOrder {
-  id: number;
-  orderNumber: string;
-  customer: string;
-  totalAmount: number;
-  status: string;
-  orderDate: string;
+interface SalesOrder extends SalesOrderSummaryDto {
+
 }
 
-interface FormData {
-  customer: string;
-  totalAmount: string;
-  status: string;
+interface OrderDetail extends SalesOrderDto {
+  customerData?: CustomerDto;
+}
+
+interface OrderLineEditable {
+  id: number;
+  productId: number;
+  productName: string;
+  quantityOrdered: number;
+  quantityDelivered: number;
+  quantityRemaining: number;
+  unitPrice: number;
+  discountPercent: number;
+  vatRate: number;
+  discountAmount: number;
+  vatAmount: number;
+  lineTotal: number;
 }
 
 export default function SalesOrdering() {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null);
-  const [formData, setFormData] = useState<FormData>({
-    customer: '',
-    totalAmount: '',
-    status: 'Draft'
-  });
+  const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [editableLines, setEditableLines] = useState<OrderLineEditable[]>([]);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const data = await salesOrdersApi.getAll();
-        setOrders(data);
+        // Map SalesOrderSummaryDto to SalesOrder interface (customerName already exists)
+        const mappedOrders: SalesOrder[] = data.map(dto => ({
+          ...dto
+        }));
+        setOrders(mappedOrders);
       } catch (error) {
         console.log('API not available, using mock data');
         // Fallback to mock data
         setOrders([
-          { id: 1, orderNumber: 'SO-2024-001', customer: 'Sen Vang Restaurant', totalAmount: 2500000, status: 'Draft', orderDate: '2024-01-15' },
-          { id: 2, orderNumber: 'SO-2024-002', customer: 'Com Nieu Restaurant', totalAmount: 1800000, status: 'Confirmed', orderDate: '2024-01-16' },
-          { id: 3, orderNumber: 'SO-2024-003', customer: 'Riverside Hotel', totalAmount: 3200000, status: 'Delivered', orderDate: '2024-01-17' },
+          { id: 1, orderNumber: 'SO-2024-001', totalAmount: 2500000, status: 'Draft', orderDate: '2024-01-15', customerId: 1, customerName: 'Sen Vang Restaurant', deliveryDate: undefined, approvedAt: undefined, notes: undefined, subTotal: 0, totalDiscount: 0, totalVAT: 0 },
+          { id: 2, orderNumber: 'SO-2024-002', totalAmount: 1800000, status: 'Confirmed', orderDate: '2024-01-16', customerId: 2, customerName: 'Com Nieu Restaurant', deliveryDate: undefined, approvedAt: undefined, notes: undefined, subTotal: 0, totalDiscount: 0, totalVAT: 0 },
+          { id: 3, orderNumber: 'SO-2024-003', totalAmount: 3200000, status: 'Delivered', orderDate: '2024-01-17', customerId: 3, customerName: 'Riverside Hotel', deliveryDate: undefined, approvedAt: undefined, notes: undefined, subTotal: 0, totalDiscount: 0, totalVAT: 0 },
         ]);
       } finally {
         setLoading(false);
@@ -50,93 +63,278 @@ export default function SalesOrdering() {
   }, []);
 
   const handleAdd = () => {
-    setEditingOrder(null);
-    setFormData({ customer: '', totalAmount: '', status: 'Draft' });
+    setOrderDetail(null);
     setShowModal(true);
   };
 
-  const handleEdit = (order: SalesOrder) => {
-    setEditingOrder(order);
-    setFormData({
-      customer: order.customer,
-      totalAmount: order.totalAmount.toString(),
-      status: order.status
-    });
+  const handleEdit = async (order: SalesOrder) => {
+    setLoadingDetail(true);
     setShowModal(true);
+    try {
+      const data = await salesOrdersApi.getById(order.id);
+      const customerData = await customersApi.getById(order.customerId);
+      const editableLines: OrderLineEditable[] = data.lines.map(line => ({
+        ...line,
+      }));
+      setEditableLines(editableLines);
+      setOrderDetail({
+        ...data,
+        customerData: customerData,
+      });
+    } catch (error) {
+      console.log('API not available, using mock detail data');
+      // Mock detail data
+      const mockLines: OrderLineEditable[] = [
+        {
+          id: 1,
+          productId: 1,
+          productName: 'Product A',
+          quantityOrdered: 10,
+          quantityDelivered: 0,
+          quantityRemaining: 10,
+          unitPrice: 100000,
+          discountPercent: 0,
+          vatRate: 10,
+          discountAmount: 0,
+          vatAmount: 100000,
+          lineTotal: 1100000,
+        },
+        {
+          id: 2,
+          productId: 2,
+          productName: 'Product B',
+          quantityOrdered: 5,
+          quantityDelivered: 0,
+          quantityRemaining: 5,
+          unitPrice: 200000,
+          discountPercent: 5,
+          vatRate: 10,
+          discountAmount: 50000,
+          vatAmount: 95000,
+          lineTotal: 1045000,
+        },
+      ];
+      setEditableLines(mockLines);
+      setOrderDetail({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        customerId: order.customerId,
+        customerName: order.customerName,
+        orderDate: order.orderDate,
+        deliveryDate: order.deliveryDate,
+        approvedAt: order.approvedAt,
+        status: order.status,
+        notes: 'Sample notes for the order',
+        subTotal: order.totalAmount * 0.9,
+        totalDiscount: order.totalAmount * 0.1,
+        totalVAT: order.totalAmount * 0.1,
+        totalAmount: order.totalAmount,
+        lines: mockLines
+      });
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!orderDetail) return;
+    try {
+      await salesOrdersApi.approve(orderDetail.id);
+      setToast({ message: 'Order approved successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
+      setShowModal(false);
+      // Refresh the list
+      const data = await salesOrdersApi.getAll();
+      const mappedOrders: SalesOrder[] = data.map(dto => ({
+        ...dto,
+        customer: dto.customerName,
+      }));
+      setOrders(mappedOrders);
+    } catch (error) {
+      console.log('API not available, using local state');
+      setToast({ message: 'Failed to approve order', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!orderDetail) return;
+    if (window.confirm('Are you sure you want to cancel this order?')) {
+      try {
+        await salesOrdersApi.cancel(orderDetail.id);
+        setToast({ message: 'Order cancelled successfully!', type: 'success' });
+        setTimeout(() => setToast(null), 3000);
+        setShowModal(false);
+        // Refresh the list
+        const data = await salesOrdersApi.getAll();
+        const mappedOrders: SalesOrder[] = data.map(dto => ({
+          ...dto,
+          customer: dto.customerName,
+        }));
+        setOrders(mappedOrders);
+      } catch (error) {
+        console.log('API not available, using local state');
+        setToast({ message: 'Failed to cancel order', type: 'error' });
+        setTimeout(() => setToast(null), 3000);
+      }
+    }
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
+    if (window.confirm('Are you sure you want to cancel this order?')) {
       try {
         await salesOrdersApi.cancel(id);
+        setToast({ message: 'Order cancelled successfully!', type: 'success' });
+        setTimeout(() => setToast(null), 3000);
         setOrders(orders.filter(order => order.id !== id));
       } catch (error) {
         console.log('API not available, using local state');
+        setToast({ message: 'Failed to cancel order', type: 'error' });
+        setTimeout(() => setToast(null), 3000);
         setOrders(orders.filter(order => order.id !== id));
       }
     }
   };
 
-  const handleSave = async () => {
+  const handleApproveInline = async (id: number) => {
     try {
-      if (editingOrder) {
-        // Try to call API
-        await salesOrdersApi.update(editingOrder.id, {
-          customer: formData.customer,
-          totalAmount: parseFloat(formData.totalAmount),
-          status: formData.status
-        });
-        setOrders(orders.map(order =>
-          order.id === editingOrder.id
-            ? { ...order, customer: formData.customer, totalAmount: parseFloat(formData.totalAmount), status: formData.status }
-            : order
-        ));
-      } else {
-        const newOrder = {
-          customer: formData.customer,
-          totalAmount: parseFloat(formData.totalAmount),
-          status: formData.status
-        };
-        // Try to call API
-        await salesOrdersApi.create(newOrder);
-        const createdOrder: SalesOrder = {
-          id: orders.length + 1,
-          orderNumber: `SO-2024-${String(orders.length + 1).padStart(3, '0')}`,
-          customer: formData.customer,
-          totalAmount: parseFloat(formData.totalAmount),
-          status: formData.status,
-          orderDate: new Date().toISOString().split('T')[0]
-        };
-        setOrders([...orders, createdOrder]);
-      }
-      setShowModal(false);
+      await salesOrdersApi.approve(id);
+      setToast({ message: 'Order approved successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
+      // Refresh the list
+      const data = await salesOrdersApi.getAll();
+      const mappedOrders: SalesOrder[] = data.map(dto => ({
+        ...dto,
+        customer: dto.customerName,
+      }));
+      setOrders(mappedOrders);
     } catch (error) {
       console.log('API not available, using local state');
-      // Fallback to local state
-      if (editingOrder) {
-        setOrders(orders.map(order =>
-          order.id === editingOrder.id
-            ? { ...order, customer: formData.customer, totalAmount: parseFloat(formData.totalAmount), status: formData.status }
-            : order
-        ));
-      } else {
-        const newOrder: SalesOrder = {
-          id: orders.length + 1,
-          orderNumber: `SO-2024-${String(orders.length + 1).padStart(3, '0')}`,
-          customer: formData.customer,
-          totalAmount: parseFloat(formData.totalAmount),
-          status: formData.status,
-          orderDate: new Date().toISOString().split('T')[0]
-        };
-        setOrders([...orders, newOrder]);
-      }
+      setToast({ message: 'Failed to approve order', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const calculateLineTotals = (lines: OrderLineEditable[]): OrderLineEditable[] => {
+    return lines.map(line => {
+      const gross = line.unitPrice * line.quantityOrdered;
+      const discountAmount = gross * (line.discountPercent / 100);
+      const afterDiscount = gross - discountAmount;
+      const vatAmount = afterDiscount * (line.vatRate / 100);
+      const lineTotal = afterDiscount + vatAmount;
+      return {
+        ...line,
+        discountAmount,
+        vatAmount,
+        lineTotal,
+      };
+    });
+  };
+
+  const calculateOrderTotals = (lines: OrderLineEditable[]) => {
+    const subTotal = lines.reduce((sum, line) => sum + (line.unitPrice * line.quantityOrdered), 0);
+    const totalDiscount = lines.reduce((sum, line) => sum + line.discountAmount, 0);
+    const totalVAT = lines.reduce((sum, line) => sum + line.vatAmount, 0);
+    const totalAmount = lines.reduce((sum, line) => sum + line.lineTotal, 0);
+    return { subTotal, totalDiscount, totalVAT, totalAmount };
+  };
+
+  const handleLineChange = (index: number, field: keyof OrderLineEditable, value: number) => {
+    const updatedLines = [...editableLines];
+    updatedLines[index] = { ...updatedLines[index], [field]: value };
+    const recalculatedLines = calculateLineTotals(updatedLines);
+    setEditableLines(recalculatedLines);
+
+    // Update order totals
+    const totals = calculateOrderTotals(recalculatedLines);
+    if (orderDetail) {
+      setOrderDetail({
+        ...orderDetail,
+        subTotal: totals.subTotal,
+        totalDiscount: totals.totalDiscount,
+        totalVAT: totals.totalVAT,
+        totalAmount: totals.totalAmount,
+        lines: recalculatedLines,
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!orderDetail) return;
+    try {
+      await salesOrdersApi.update(orderDetail.id, {
+        customerId: orderDetail.customerId,
+        customerName: orderDetail.customerName,
+        notes: orderDetail.notes,
+        lines: editableLines.map(line => ({
+          productId: line.productId,
+          productName: line.productName,
+          quantityOrdered: line.quantityOrdered,
+          unitPrice: line.unitPrice,
+          discountPercent: line.discountPercent,
+          vatRate: line.vatRate,
+        })),
+      });
+      setToast({ message: 'Order updated successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
       setShowModal(false);
+      // Refresh the list
+      const data = await salesOrdersApi.getAll();
+      const mappedOrders: SalesOrder[] = data.map(dto => ({
+        ...dto,
+        customer: dto.customerName,
+      }));
+      setOrders(mappedOrders);
+    } catch (error) {
+      console.log('API not available, using local state');
+      setToast({ message: 'Failed to update order', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
   const handleCancel = () => {
     setShowModal(false);
-    setEditingOrder(null);
+    setOrderDetail(null);
+    setEditableLines([]);
+  };
+
+  const handleCustomerChange = (customer: CustomerDto | null) => {
+    if (customer && orderDetail) {
+      setOrderDetail({
+        ...orderDetail,
+        customerId: customer.id,
+        customerName: customer.name,
+        customerData: customer,
+      });
+    }
+    if(!customer && orderDetail) {
+      setOrderDetail({
+        ...orderDetail,
+        customerId: 0,
+        customerName: '',
+        customerData: undefined,
+      });
+    }
+  };
+
+  const isReadOnly = orderDetail?.status !== 'Draft';
+
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatDate = (date: string | Date | null | undefined): string => {
+    if (!date) return 'N/A';
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date(date));
   };
 
   if (loading) {
@@ -174,17 +372,18 @@ export default function SalesOrdering() {
                 <tr key={order.id}>
                   <td>{order.id}</td>
                   <td>{order.orderNumber}</td>
-                  <td>{order.customer}</td>
-                  <td>₫{order.totalAmount.toLocaleString()}</td>
+                  <td>{order.customerName}</td>
+                  <td>{formatCurrency(order.totalAmount)}</td>
                   <td>
                     <span className={`status ${order.status.toLowerCase()}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td>{order.orderDate}</td>
+                  <td>{formatDate(order.orderDate)}</td>
                   <td>
                     <button className="action-btn edit" onClick={() => handleEdit(order)}>Edit</button>
-                    <button className="action-btn delete" onClick={() => handleDelete(order.id)}>Delete</button>
+                    <button className="action-btn approve" onClick={() => handleApproveInline(order.id)}>Approve</button>
+                    <button className="action-btn delete" onClick={() => handleDelete(order.id)}>Cancel</button>
                   </td>
                 </tr>
               ))}
@@ -195,48 +394,175 @@ export default function SalesOrdering() {
 
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div className="modal modal-large">
             <div className="modal-header">
-              <h2>{editingOrder ? 'Edit Order' : 'Create New Order'}</h2>
+              <h2>{orderDetail ? 'Order Details' : 'Create New Order'}</h2>
               <button className="close-button" onClick={handleCancel}>×</button>
             </div>
             <div className="modal-body">
-              <div className="form-group">
-                <label>Customer</label>
-                <input
-                  type="text"
-                  value={formData.customer}
-                  onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
-                  placeholder="Enter customer name"
-                />
-              </div>
-              <div className="form-group">
-                <label>Total Amount</label>
-                <input
-                  type="number"
-                  value={formData.totalAmount}
-                  onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
-                  placeholder="Enter total amount"
-                />
-              </div>
-              <div className="form-group">
-                <label>Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <option value="Draft">Draft</option>
-                  <option value="Confirmed">Confirmed</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
+              {loadingDetail ? (
+                <div className="loading">Loading order details...</div>
+              ) : orderDetail ? (
+                <div className="order-detail">
+                  <div className="order-info-section">
+                    <h3>Order Information</h3>
+                    <div className="info-grid">
+                      <div className="info-item">
+                        <label>Order Number:</label>
+                        <span>{orderDetail.orderNumber}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Customer:</label>
+                        <CustomerSearch
+                          value={orderDetail.customerData || null}
+                          onChange={handleCustomerChange}
+                          disabled={isReadOnly}
+                        />
+                      </div>
+                      <div className="info-item">
+                        <label>Order Date:</label>
+                        <span>{formatDate(orderDetail.orderDate)}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Delivery Date:</label>
+                        <span>{formatDate(orderDetail.deliveryDate)}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Status:</label>
+                        <span className={`status ${orderDetail.status.toLowerCase()}`}>{orderDetail.status}</span>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Notes:</label>
+                      <textarea
+                        value={orderDetail.notes || ''}
+                        onChange={(e) => setOrderDetail({ ...orderDetail, notes: e.target.value })}
+                        placeholder="Add notes..."
+                        rows={3}
+                        disabled={isReadOnly}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="order-lines-section">
+                    <h3>Order Lines</h3>
+                    <table className="data-table editable-table">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Qty Ordered</th>
+                          <th>Qty Delivered</th>
+                          <th>Qty Remaining</th>
+                          <th>Unit Price</th>
+                          <th>Discount %</th>
+                          <th>VAT %</th>
+                          <th>Line Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {editableLines.map((line, index) => (
+                          <tr key={line.id}>
+                            <td>{line.productName}</td>
+                            <td>
+                              <input
+                                type="number"
+                                value={line.quantityOrdered}
+                                onChange={(e) => handleLineChange(index, 'quantityOrdered', parseFloat(e.target.value) || 0)}
+                                disabled={isReadOnly}
+                                min="0"
+                                step="0.01"
+                                className="table-input"
+                              />
+                            </td>
+                            <td>{line.quantityDelivered}</td>
+                            <td>{line.quantityRemaining}</td>
+                            <td>
+                              <input
+                                type="number"
+                                value={line.unitPrice}
+                                onChange={(e) => handleLineChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                disabled={isReadOnly}
+                                min="0"
+                                step="0.01"
+                                className="table-input"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                value={line.discountPercent}
+                                onChange={(e) => handleLineChange(index, 'discountPercent', parseFloat(e.target.value) || 0)}
+                                disabled={isReadOnly}
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                className="table-input"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                value={line.vatRate}
+                                onChange={(e) => handleLineChange(index, 'vatRate', parseFloat(e.target.value) || 0)}
+                                disabled={isReadOnly}
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                className="table-input"
+                              />
+                            </td>
+                            <td className="line-total">{formatCurrency(line.lineTotal)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="order-totals-footer">
+                    <div className="totals-grid">
+                      <div className="total-item">
+                        <label>Sub Total:</label>
+                        <span>{formatCurrency(orderDetail.subTotal)}</span>
+                      </div>
+                      <div className="total-item">
+                        <label>Total Discount:</label>
+                        <span className="discount-value">-{formatCurrency(orderDetail.totalDiscount)}</span>
+                      </div>
+                      <div className="total-item">
+                        <label>Total VAT:</label>
+                        <span>{formatCurrency(orderDetail.totalVAT)}</span>
+                      </div>
+                      <div className="total-item total-amount-item">
+                        <label>Total Amount:</label>
+                        <span className="grand-total">{formatCurrency(orderDetail.totalAmount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="form-group">
+                  <label>Customer</label>
+                  <input type="text" placeholder="Enter customer name" />
+                  <p>Create order form will be implemented here</p>
+                </div>
+              )}
             </div>
-            <div className="modal-footer">
-              <button className="cancel-button" onClick={handleCancel}>Cancel</button>
-              <button className="save-button" onClick={handleSave}>Save</button>
-            </div>
+            {orderDetail && (
+              <div className="modal-footer">
+                <button className="cancel-button" onClick={handleCancelOrder}>Cancel Order</button>
+                <button className="approve-button" onClick={handleApprove} disabled={orderDetail.status !== 'Draft'}>
+                  Approve
+                </button>
+                <button className="save-button" onClick={handleSave}>Save Changes</button>
+              </div>
+            )}
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`toast toast-${toast.type}`}>
+          {toast.message}
         </div>
       )}
     </div>

@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
-import { productsApi } from '../services/api';
+import { productsApi } from '../services/inventoryApi';
+import type { ProductDto } from '../services/types/inventory.types';
 import './Inventory.css';
 
-interface Product {
-  id: number;
-  sku: string;
-  name: string;
-  unit: string;
+interface Product extends ProductDto {
   quantity: number;
   cost: number;
   category: string;
@@ -21,16 +18,24 @@ export default function Inventory() {
     const fetchProducts = async () => {
       try {
         const data = await productsApi.getAll();
-        setProducts(data);
+        // Map ProductDto to Product interface with additional fields
+        const mappedProducts: Product[] = data.map(dto => ({
+          ...dto,
+          quantity: 0, // Will be populated from balance API
+          cost: 0, // Will be populated from balance API
+          category: 'Ingredients', // Will be populated from category API
+          balance: 0, // Will be populated from balance API
+        }));
+        setProducts(mappedProducts);
       } catch (error) {
         console.log('API not available, using mock data');
         // Fallback to mock data
         setProducts([
-          { id: 1, sku: 'P001', name: 'Water Spinach', unit: 'KG', quantity: 20, cost: 15000, category: 'Ingredients', balance: 15 },
-          { id: 2, sku: 'P002', name: 'Pork Belly', unit: 'KG', quantity: 10, cost: 120000, category: 'Ingredients', balance: 8 },
-          { id: 3, sku: 'P003', name: 'Black Tiger Shrimp', unit: 'KG', quantity: 5, cost: 350000, category: 'Ingredients', balance: 5 },
-          { id: 4, sku: 'P004', name: 'Coca Cola', unit: 'CASE', quantity: 12, cost: 180000, category: 'Beverages', balance: 10 },
-          { id: 5, sku: 'P005', name: 'Phu Quoc Fish Sauce', unit: 'BOTTLE', quantity: 6, cost: 45000, category: 'Seasonings', balance: 4 },
+          { id: 1, sku: 'P001', name: 'Water Spinach', unit: 'KG', quantity: 20, cost: 15000, category: 'Ingredients', balance: 15, categoryId: 1, isActive: true },
+          { id: 2, sku: 'P002', name: 'Pork Belly', unit: 'KG', quantity: 10, cost: 120000, category: 'Ingredients', balance: 8, categoryId: 1, isActive: true },
+          { id: 3, sku: 'P003', name: 'Black Tiger Shrimp', unit: 'KG', quantity: 5, cost: 350000, category: 'Ingredients', balance: 5, categoryId: 1, isActive: true },
+          { id: 4, sku: 'P004', name: 'Coca Cola', unit: 'CASE', quantity: 12, cost: 180000, category: 'Beverages', balance: 10, categoryId: 2, isActive: true },
+          { id: 5, sku: 'P005', name: 'Phu Quoc Fish Sauce', unit: 'BOTTLE', quantity: 6, cost: 45000, category: 'Seasonings', balance: 4, categoryId: 3, isActive: true },
         ]);
       } finally {
         setLoading(false);

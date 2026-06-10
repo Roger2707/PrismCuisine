@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
-import { purchaseOrdersApi } from '../services/api';
+import { purchaseOrdersApi } from '../services/purchasingApi';
+import type { PurchaseOrderSummaryDto } from '../services/types/purchasing.types';
 import './Inventory.css';
 
-interface PurchaseOrder {
-  id: number;
-  orderNumber: string;
+interface PurchaseOrder extends PurchaseOrderSummaryDto {
   supplier: string;
-  totalAmount: number;
-  status: string;
   orderDate: string;
 }
 
@@ -20,14 +17,20 @@ export default function Purchasing() {
       try {
         const data = await purchaseOrdersApi.getAll();
         console.log('Fetched purchase orders:', data);
-        setOrders(data);
+        // Map PurchaseOrderSummaryDto to PurchaseOrder interface with additional fields
+        const mappedOrders: PurchaseOrder[] = data.map(dto => ({
+          ...dto,
+          supplier: 'Supplier Name', // Will be populated from supplier API
+          orderDate: dto.approvedAt || new Date().toISOString().split('T')[0],
+        }));
+        setOrders(mappedOrders);
       } catch (error) {
         console.log('API not available, using mock data');
         // Fallback to mock data
         setOrders([
-          { id: 1, orderNumber: 'PO-2024-001', supplier: 'Da Lat Fresh Vegetables Cooperative', totalAmount: 1500000, status: 'Draft', orderDate: '2024-01-15' },
-          { id: 2, orderNumber: 'PO-2024-002', supplier: 'An Binh Food Company', totalAmount: 2400000, status: 'Approved', orderDate: '2024-01-16' },
-          { id: 3, orderNumber: 'PO-2024-003', supplier: 'Nha Trang Fresh Seafood', totalAmount: 5400000, status: 'Received', orderDate: '2024-01-17' },
+          { id: 1, orderNumber: 'PO-2024-001', supplier: 'Da Lat Fresh Vegetables Cooperative', totalAmount: 1500000, status: 'Draft', orderDate: '2024-01-15', supplierId: 1, warehouseId: 1, amendedFromPurchaseOrderId: undefined, approvedAt: undefined },
+          { id: 2, orderNumber: 'PO-2024-002', supplier: 'An Binh Food Company', totalAmount: 2400000, status: 'Approved', orderDate: '2024-01-16', supplierId: 2, warehouseId: 1, amendedFromPurchaseOrderId: undefined, approvedAt: undefined },
+          { id: 3, orderNumber: 'PO-2024-003', supplier: 'Nha Trang Fresh Seafood', totalAmount: 5400000, status: 'Received', orderDate: '2024-01-17', supplierId: 3, warehouseId: 1, amendedFromPurchaseOrderId: undefined, approvedAt: undefined },
         ]);
       } finally {
         setLoading(false);

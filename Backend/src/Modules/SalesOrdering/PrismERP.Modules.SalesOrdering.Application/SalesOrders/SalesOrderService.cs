@@ -60,6 +60,8 @@ public sealed class SalesOrderService(
             );
         }
 
+        salesOrder.RecalculateTotals();
+
         unitOfWork.SalesOrders.Add(salesOrder);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return (await unitOfWork.SalesOrders.GetByIdWithLinesAsync(salesOrder.Id, cancellationToken))!;
@@ -70,6 +72,9 @@ public sealed class SalesOrderService(
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, cancellationToken)
             ?? throw new DomainException($"Sales order with id '{salesOrderId}' was not found.");
 
+        if(request.CustomerId == 0 || string.IsNullOrWhiteSpace(request.CustomerId.ToString()))
+            throw new ArgumentException("CustomerId is required.");
+
         if (request.Lines is null || request.Lines.Count == 0)
             throw new DomainException("Sales order must have at least one line.");
 
@@ -79,6 +84,7 @@ public sealed class SalesOrderService(
                 .Select(l => (l.ProductId, l.ProductName, l.QuantityOrdered, l.UnitPrice, l.DiscountPercent, l.VATRate))
                 .ToList());
 
+        salesOrder.RecalculateTotals();
         unitOfWork.SalesOrders.Update(salesOrder);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
