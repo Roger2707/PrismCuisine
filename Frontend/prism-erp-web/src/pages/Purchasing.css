@@ -1,0 +1,231 @@
+/* Purchasing Module Styles */
+
+.modal-large {
+  max-width: 1100px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.order-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.order-info-section h3,
+.order-lines-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-item label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.info-item span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.order-lines-section .data-table {
+  font-size: 13px;
+}
+
+.order-lines-section .data-table th,
+.order-lines-section .data-table td {
+  padding: 8px 12px;
+}
+
+.editable-table .table-input {
+  width: 90px;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+  text-align: right;
+}
+
+.editable-table .table-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.editable-table .table-input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+.editable-table .line-total {
+  font-weight: 600;
+  color: #059669;
+}
+
+.order-totals-footer {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-top: 8px;
+}
+
+.totals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.total-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.total-item label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.total-item span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.total-item .discount-value {
+  color: #ef4444;
+}
+
+.total-amount-item {
+  border-top: 2px solid #e2e8f0;
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.total-amount-item label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.total-amount-item .grand-total {
+  font-size: 24px;
+  font-weight: 800;
+  color: #059669;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.field-error {
+  display: inline-block;
+  color: #ef4444 !important;
+  font-size: 10px !important;
+  font-weight: 300;
+  font-style: italic;
+  margin-top: 1.5px;
+  line-height: 1.2;
+}
+
+.approve-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.approve-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.approve-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  z-index: 10000;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.action-btn {
+    min-width: 110px;
+}
+
+.action-btn.approve {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.action-btn.approve:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.action-btn.goods-receipt {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.action-btn.goods-receipt:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}

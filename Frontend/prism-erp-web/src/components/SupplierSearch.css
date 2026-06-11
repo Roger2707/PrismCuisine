@@ -1,0 +1,87 @@
+.supplier-search {
+  position: relative;
+  width: 100%;
+}
+
+.supplier-search-input {
+  width: 100%;
+}
+
+.selected-supplier {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.supplier-code {
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.supplier-name {
+  font-weight: 500;
+  color: #1e293b;
+  flex: 1;
+}
+
+.supplier-phone {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.clear-button {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.clear-button:hover {
+  color: #ef4444;
+}
+
+.select-supplier-button {
+  width: 100%;
+  padding: 8px 12px;
+  background: white;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.select-supplier-button:hover:not(:disabled) {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.select-supplier-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.select-supplier-button.has-error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+
+.select-supplier-button.has-error:hover:not(:disabled) {
+  background-color: #fee2e2;
+  border-color: #dc2626;
+}
