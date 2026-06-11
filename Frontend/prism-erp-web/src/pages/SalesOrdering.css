@@ -145,6 +145,16 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.field-error {
+  display: inline-block;
+  color: #ef4444 !important;
+  font-size: 10px !important;
+  font-weight: 300;
+  font-style: italic;
+  margin-top: 1.5px;
+  line-height: 1.2;
+}
+
 .approve-button {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { customersApi, salesOrdersApi } from '../services/salesOrderingApi';
 import type { SalesOrderSummaryDto, SalesOrderDto, CustomerDto } from '../services/types/salesOrdering.types';
+import { parseApiError, getToastMessage } from '../utils/errorHandler';
 import CustomerSearch from '../components/CustomerSearch';
 import './Inventory.css';
 import './SalesOrdering.css';
@@ -36,6 +37,7 @@ export default function SalesOrdering() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [editableLines, setEditableLines] = useState<OrderLineEditable[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -139,6 +141,7 @@ export default function SalesOrdering() {
   const handleApprove = async () => {
     if (!orderDetail) return;
     try {
+      await handleSave();
       await salesOrdersApi.approve(orderDetail.id);
       setToast({ message: 'Order approved successfully!', type: 'success' });
       setTimeout(() => setToast(null), 3000);
@@ -147,13 +150,12 @@ export default function SalesOrdering() {
       const data = await salesOrdersApi.getAll();
       const mappedOrders: SalesOrder[] = data.map(dto => ({
         ...dto,
-        customer: dto.customerName,
       }));
       setOrders(mappedOrders);
-    } catch (error) {
-      console.log('API not available, using local state');
-      setToast({ message: 'Failed to approve order', type: 'error' });
-      setTimeout(() => setToast(null), 3000);
+    } catch (error: any) {
+      const apiError = parseApiError(error);
+      setToast({ message: getToastMessage(apiError), type: 'error' });
+      setTimeout(() => setToast(null), 5000);
     }
   };
 
@@ -169,13 +171,12 @@ export default function SalesOrdering() {
         const data = await salesOrdersApi.getAll();
         const mappedOrders: SalesOrder[] = data.map(dto => ({
           ...dto,
-          customer: dto.customerName,
         }));
         setOrders(mappedOrders);
-      } catch (error) {
-        console.log('API not available, using local state');
-        setToast({ message: 'Failed to cancel order', type: 'error' });
-        setTimeout(() => setToast(null), 3000);
+      } catch (error: any) {
+        const apiError = parseApiError(error);
+        setToast({ message: getToastMessage(apiError), type: 'error' });
+        setTimeout(() => setToast(null), 5000);
       }
     }
   };
@@ -187,11 +188,10 @@ export default function SalesOrdering() {
         setToast({ message: 'Order cancelled successfully!', type: 'success' });
         setTimeout(() => setToast(null), 3000);
         setOrders(orders.filter(order => order.id !== id));
-      } catch (error) {
-        console.log('API not available, using local state');
-        setToast({ message: 'Failed to cancel order', type: 'error' });
-        setTimeout(() => setToast(null), 3000);
-        setOrders(orders.filter(order => order.id !== id));
+      } catch (error: any) {
+        const apiError = parseApiError(error);
+        setToast({ message: getToastMessage(apiError), type: 'error' });
+        setTimeout(() => setToast(null), 5000);
       }
     }
   };
@@ -205,13 +205,12 @@ export default function SalesOrdering() {
       const data = await salesOrdersApi.getAll();
       const mappedOrders: SalesOrder[] = data.map(dto => ({
         ...dto,
-        customer: dto.customerName,
       }));
       setOrders(mappedOrders);
-    } catch (error) {
-      console.log('API not available, using local state');
-      setToast({ message: 'Failed to approve order', type: 'error' });
-      setTimeout(() => setToast(null), 3000);
+    } catch (error: any) {
+      const apiError = parseApiError(error);
+      setToast({ message: getToastMessage(apiError), type: 'error' });
+      setTimeout(() => setToast(null), 5000);
     }
   };
 
@@ -261,6 +260,10 @@ export default function SalesOrdering() {
 
   const handleSave = async () => {
     if (!orderDetail) return;
+    
+    // Clear previous field errors
+    setFieldErrors({});
+    
     try {
       await salesOrdersApi.update(orderDetail.id, {
         customerId: orderDetail.customerId,
@@ -282,13 +285,37 @@ export default function SalesOrdering() {
       const data = await salesOrdersApi.getAll();
       const mappedOrders: SalesOrder[] = data.map(dto => ({
         ...dto,
-        customer: dto.customerName,
       }));
       setOrders(mappedOrders);
-    } catch (error) {
-      console.log('API not available, using local state');
-      setToast({ message: 'Failed to update order', type: 'error' });
-      setTimeout(() => setToast(null), 3000);
+    } catch (error: any) {
+      const apiError = parseApiError(error);
+      
+      console.log('API Error:', apiError);
+      
+      // Handle field-level validation errors
+      if (apiError.type === 'validation-error' && apiError.fieldErrors) {
+        const errors: Record<string, string> = {};
+        apiError.fieldErrors.forEach(fe => {
+          // Map backend field names to UI field names
+          const fieldName = fe.field.toLowerCase();
+          if (fieldName.includes('customer') && fieldName.includes('id')) {
+            errors.customerId = fe.messages[0];
+          } else if (fieldName.includes('customer')) {
+            errors.customerId = fe.messages[0];
+          } else {
+            errors[fe.field] = fe.messages[0];
+          }
+        });
+        console.log('Field errors:', errors);
+        setFieldErrors(errors);
+        
+        // Clear field errors after 2 seconds
+        setTimeout(() => setFieldErrors({}), 2000);
+      }
+      
+      // Show toast for all error types
+      setToast({ message: getToastMessage(apiError), type: 'error' });
+      setTimeout(() => setToast(null), 2000);
     }
   };
 
@@ -296,6 +323,7 @@ export default function SalesOrdering() {
     setShowModal(false);
     setOrderDetail(null);
     setEditableLines([]);
+    setFieldErrors({});
   };
 
   const handleCustomerChange = (customer: CustomerDto | null) => {
@@ -417,7 +445,11 @@ export default function SalesOrdering() {
                           value={orderDetail.customerData || null}
                           onChange={handleCustomerChange}
                           disabled={isReadOnly}
+                          hasError={!!fieldErrors.customerId}
                         />
+                        {fieldErrors.customerId && (
+                          <span className="field-error">{fieldErrors.customerId}</span>
+                        )}
                       </div>
                       <div className="info-item">
                         <label>Order Date:</label>

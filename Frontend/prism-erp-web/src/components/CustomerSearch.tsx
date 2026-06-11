@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { customersApi } from '../services/salesOrderingApi';
 import type { CustomerDto } from '../services/types/salesOrdering.types';
 import SearchModal from './SearchModal';
@@ -8,18 +8,19 @@ interface CustomerSearchProps {
   value?: CustomerDto | null;
   onChange: (customer: CustomerDto | null) => void;
   disabled?: boolean;
+  hasError?: boolean;
 }
 
-export default function CustomerSearch({ value, onChange, disabled }: CustomerSearchProps) {
+export default function CustomerSearch({ value, onChange, disabled, hasError }: CustomerSearchProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
-  const [loading, setLoading] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const fetchCustomers = async () => {
-      setLoading(true);
       try {
         const data = await customersApi.getAll();
+        console.log('aaaaa: ' + data);
         setCustomers(data);
       } catch (error) {
         console.log('API not available, using mock data');
@@ -28,8 +29,6 @@ export default function CustomerSearch({ value, onChange, disabled }: CustomerSe
           { id: 2, code: 'C002', name: 'Com Nieu Restaurant', phone: '0902345678', email: 'comnieu@email.com', address: '456 District 2', taxCode: '234567890', isActive: true },
           { id: 3, code: 'C003', name: 'Riverside Hotel', phone: '0903456789', email: 'riverside@email.com', address: '789 District 3', taxCode: '345678901', isActive: true },
         ]);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -43,6 +42,13 @@ export default function CustomerSearch({ value, onChange, disabled }: CustomerSe
   const handleClear = () => {
     onChange(null);
   };
+
+  // Focus on button when hasError changes to true
+  useEffect(() => {
+    if (hasError && buttonRef.current && !value) {
+      buttonRef.current.focus();
+    }
+  }, [hasError, value]);
 
   const columns = [
     { key: 'id' as keyof CustomerDto, label: 'ID', width: '80px' },
@@ -65,7 +71,8 @@ export default function CustomerSearch({ value, onChange, disabled }: CustomerSe
           </div>
         ) : (
           <button
-            className="select-customer-button"
+            ref={buttonRef}
+            className={`select-customer-button ${hasError ? 'has-error' : ''}`}
             onClick={() => !disabled && setIsModalOpen(true)}
             disabled={disabled}
           >
