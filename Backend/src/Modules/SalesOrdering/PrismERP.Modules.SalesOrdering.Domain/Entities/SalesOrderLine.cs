@@ -31,23 +31,23 @@ public sealed class SalesOrderLine : Entity
     internal static SalesOrderLine Create(int productId, string productName, decimal quantityOrdered, decimal unitPrice, decimal discountPercent, decimal vatRate)
     {
         if (productId <= 0)
-            throw new DomainException("ProductId is required.");
+            throw new BusinessException("ProductId is required.");
 
         if(string.IsNullOrWhiteSpace(productName))
-            throw new DomainException("ProductName is required.");
+            throw new BusinessException("ProductName is required.");
 
         if (quantityOrdered <= 0)
-            throw new DomainException("Quantity must be greater than zero.");
+            throw new BusinessException("Quantity must be greater than zero.");
 
         if (unitPrice <= 0)
-            throw new DomainException("UnitPrice must be greater than zero.");
+            throw new BusinessException("UnitPrice must be greater than zero.");
 
         if (discountPercent < 0 || discountPercent > 100)
-            throw new DomainException("DiscountPercent must be between 0 and 100.");
+            throw new BusinessException("DiscountPercent must be between 0 and 100.");
 
         decimal[] validVatRates = [0, 5, 8, 10];
         if (!validVatRates.Contains(vatRate))
-            throw new DomainException("VATRate must be 0, 5, 8 or 10.");
+            throw new BusinessException("VATRate must be 0, 5, 8 or 10.");
 
         var line = new SalesOrderLine
         {
@@ -76,7 +76,7 @@ public sealed class SalesOrderLine : Entity
     internal void RecordDelivery(decimal quantity)
     {
         if (quantity > QuantityRemaining)
-            throw new DomainException(
+            throw new BusinessException(
                 $"{ProductName}: delivery quantity exceeds remaining ({QuantityRemaining}).");
         QuantityDelivered += quantity;
     }
@@ -84,7 +84,7 @@ public sealed class SalesOrderLine : Entity
     internal void RollbackDelivery(decimal quantity)
     {
         if (quantity > QuantityDelivered)
-            throw new DomainException(
+            throw new BusinessException(
                 $"{ProductName}: rollback quantity exceeds delivered ({QuantityDelivered}).");
         QuantityDelivered -= quantity;
     }

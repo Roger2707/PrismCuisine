@@ -18,12 +18,12 @@ public sealed class Warehouse : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            throw new DomainException("Warehouse code is required.");
+            throw new ValidationException("code", "Warehouse code is required.");
         }
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Warehouse name is required.");
+            throw new ValidationException("name", "Warehouse name is required.");
         }
 
         return new Warehouse
@@ -39,7 +39,7 @@ public sealed class Warehouse : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Warehouse name is required.");
+            throw new ValidationException("name", "Warehouse name is required.");
         }
 
         Name = name.Trim();

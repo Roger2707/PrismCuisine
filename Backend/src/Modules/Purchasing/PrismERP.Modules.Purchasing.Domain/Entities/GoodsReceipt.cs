@@ -23,12 +23,12 @@ public sealed class GoodsReceipt : AggregateRoot
     {
         if (purchaseOrderId <= 0)
         {
-            throw new DomainException("PurchaseOrderId is required.");
+            throw new ValidationException("purchaseOrderId", "PurchaseOrderId is required.");
         }
 
         if (string.IsNullOrWhiteSpace(receiptNumber))
         {
-            throw new DomainException("Receipt number is required.");
+            throw new BusinessException("Receipt number is required.");
         }
 
         return new GoodsReceipt
@@ -44,7 +44,7 @@ public sealed class GoodsReceipt : AggregateRoot
     {
         if (Status != GoodsReceiptStatus.Draft)
         {
-            throw new DomainException("Only draft goods receipts can be updated.");
+            throw new BusinessException("Only draft goods receipts can be updated.");
         }
 
         Notes = notes?.Trim();
@@ -55,12 +55,12 @@ public sealed class GoodsReceipt : AggregateRoot
     {
         if (Status != GoodsReceiptStatus.Draft)
         {
-            throw new DomainException("Cannot modify a non-draft goods receipt.");
+            throw new BusinessException("Cannot modify a non-draft goods receipt.");
         }
 
         if (_lines.Any(l => l.PurchaseOrderLineId == purchaseOrderLineId))
         {
-            throw new DomainException("Purchase order line already exists on this goods receipt.");
+            throw new BusinessException("Purchase order line already exists on this goods receipt.");
         }
 
         var line = GoodsReceiptLine.Create(purchaseOrderLineId, productId, quantity, unitCost);
@@ -74,7 +74,7 @@ public sealed class GoodsReceipt : AggregateRoot
     {
         if (Status != GoodsReceiptStatus.Draft)
         {
-            throw new DomainException("Cannot modify a non-draft goods receipt.");
+            throw new BusinessException("Cannot modify a non-draft goods receipt.");
         }
 
         _lines.Clear();
@@ -89,12 +89,12 @@ public sealed class GoodsReceipt : AggregateRoot
     {
         if (Status != GoodsReceiptStatus.Draft)
         {
-            throw new DomainException("Only draft goods receipts can be posted.");
+            throw new BusinessException("Only draft goods receipts can be posted.");
         }
 
         if (_lines.Count == 0)
         {
-            throw new DomainException("Cannot post a goods receipt without lines.");
+            throw new BusinessException("Cannot post a goods receipt without lines.");
         }
 
         Status = GoodsReceiptStatus.Posted;

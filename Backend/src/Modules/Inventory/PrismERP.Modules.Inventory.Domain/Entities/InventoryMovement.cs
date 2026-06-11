@@ -33,17 +33,17 @@ public sealed class InventoryMovement : Entity
     {
         if (inventoryBalanceId <= 0)
         {
-            throw new DomainException("InventoryBalanceId is required.");
+            throw new BusinessException("InventoryBalanceId is required.");
         }
 
         if (quantity <= 0)
         {
-            throw new DomainException("Movement quantity must be greater than zero.");
+            throw new BusinessException("Movement quantity must be greater than zero.");
         }
 
         if (unitCost < 0)
         {
-            throw new DomainException("Unit cost cannot be negative.");
+            throw new BusinessException("Unit cost cannot be negative.");
         }
 
         return new InventoryMovement

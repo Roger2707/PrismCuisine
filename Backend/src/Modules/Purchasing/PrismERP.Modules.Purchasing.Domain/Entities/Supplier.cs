@@ -27,12 +27,12 @@ public sealed class Supplier : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            throw new DomainException("Supplier code is required.");
+            throw new ValidationException("code", "Supplier code is required.");
         }
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Supplier name is required.");
+            throw new ValidationException("name", "Supplier name is required.");
         }
 
         return new Supplier
@@ -56,7 +56,7 @@ public sealed class Supplier : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Supplier name is required.");
+            throw new ValidationException("name", "Supplier name is required.");
         }
 
         Name = name.Trim();

@@ -32,13 +32,13 @@ public sealed class SalesOrderService(
         #region Validations
 
         if (string.IsNullOrWhiteSpace(request.CustomerId.ToString()))
-            throw new ArgumentException("CustomerId is required.");
+            throw new ValidationException("customerId", "CustomerId is required.");
 
         if (!await unitOfWork.Customers.IsExists(request.CustomerId))
-            throw new ArgumentException($"Customer with id '{request.CustomerId}' does not exist.");
+            throw new ValidationException("customerId", $"Customer with id '{request.CustomerId}' does not exist.");
 
         if (request.Lines is null || request.Lines.Count == 0)
-            throw new DomainException("Sales order must have at least one line.");
+            throw new BusinessException("Sales order must have at least one line.");
 
         string customerName = request?.CustomerName ?? "";
         if (!string.IsNullOrWhiteSpace(customerName))
@@ -70,13 +70,13 @@ public sealed class SalesOrderService(
     public async Task UpdateAsync(int salesOrderId, UpdateSalesOrderRequest request, CancellationToken cancellationToken = default)
     {
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, cancellationToken)
-            ?? throw new DomainException($"Sales order with id '{salesOrderId}' was not found.");
+            ?? throw new NotFoundException($"Sales order with id '{salesOrderId}' was not found.");
 
         if(request.CustomerId == 0 || string.IsNullOrWhiteSpace(request.CustomerId.ToString()))
-            throw new ArgumentException("CustomerId is required.");
+            throw new ValidationException("customerId", "CustomerId is required.");
 
         if (request.Lines is null || request.Lines.Count == 0)
-            throw new DomainException("Sales order must have at least one line.");
+            throw new BusinessException("Sales order must have at least one line.");
 
         salesOrder.UpdateDraft(request.CustomerId, request.CustomerName, request.Notes);
 
@@ -96,7 +96,7 @@ public sealed class SalesOrderService(
     public async Task ApproveAsync(int salesOrderId, CancellationToken cancellationToken = default)
     {
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, cancellationToken)
-            ?? throw new DomainException($"Sales order with id '{salesOrderId}' was not found.");
+            ?? throw new NotFoundException($"Sales order with id '{salesOrderId}' was not found.");
 
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
@@ -122,7 +122,7 @@ public sealed class SalesOrderService(
     public async Task CancelAsync(int salesOrderId, CancellationToken cancellationToken = default)
     {
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, cancellationToken)
-            ?? throw new DomainException($"Sales order with id '{salesOrderId}' was not found.");
+            ?? throw new NotFoundException($"Sales order with id '{salesOrderId}' was not found.");
 
         salesOrder.Cancel();
         unitOfWork.SalesOrders.Update(salesOrder);

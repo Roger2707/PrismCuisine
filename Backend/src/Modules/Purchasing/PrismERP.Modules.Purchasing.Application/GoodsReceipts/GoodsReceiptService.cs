@@ -24,7 +24,7 @@ public sealed class GoodsReceiptService(
     {
         if (request.Lines is null || request.Lines.Count == 0)
         {
-            throw new DomainException("Goods receipt must contain at least one line.");
+            throw new BusinessException("Goods receipt must contain at least one line.");
         }
 
         var order = await GetOrderForReceivingAsync(request.PurchaseOrderId, cancellationToken);
@@ -63,31 +63,31 @@ public sealed class GoodsReceiptService(
         CancellationToken cancellationToken = default)
     {
         var receipt = await unitOfWork.GoodsReceipts.GetByIdWithLinesForUpdateAsync(goodsReceiptId, cancellationToken)
-            ?? throw new DomainException($"Goods receipt '{goodsReceiptId}' was not found.");
+            ?? throw new NotFoundException($"Goods receipt '{goodsReceiptId}' was not found.");
 
         if (request.Lines is null || request.Lines.Count == 0)
         {
-            throw new DomainException("Goods receipt must contain at least one line.");
+            throw new BusinessException("Goods receipt must contain at least one line.");
         }
 
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(
             receipt.PurchaseOrderId,
             cancellationToken)
-            ?? throw new DomainException("Purchase order for goods receipt was not found.");
+            ?? throw new NotFoundException("Purchase order for goods receipt was not found.");
 
         if (order.Status is not PurchaseOrderStatus.Approved and not PurchaseOrderStatus.PartiallyReceived)
         {
-            throw new DomainException("Goods receipt can only be updated for approved purchase orders.");
+            throw new BusinessException("Goods receipt can only be updated for approved purchase orders.");
         }
 
         var preparedLines = request.Lines.Select(line =>
         {
             var poLine = order.Lines.FirstOrDefault(l => l.Id == line.PurchaseOrderLineId)
-                ?? throw new DomainException($"Purchase order line '{line.PurchaseOrderLineId}' was not found.");
+                ?? throw new BusinessException($"Purchase order line '{line.PurchaseOrderLineId}' was not found.");
 
             if (line.Quantity > poLine.QuantityRemaining)
             {
-                throw new DomainException(
+                throw new BusinessException(
                     $"Receipt quantity '{line.Quantity}' exceeds remaining PO quantity '{poLine.QuantityRemaining}' for line '{poLine.Id}'.");
             }
 
@@ -107,12 +107,12 @@ public sealed class GoodsReceiptService(
         CancellationToken cancellationToken = default)
     {
         var receipt = await unitOfWork.GoodsReceipts.GetByIdWithLinesForUpdateAsync(goodsReceiptId, cancellationToken)
-            ?? throw new DomainException($"Goods receipt '{goodsReceiptId}' was not found.");
+            ?? throw new NotFoundException($"Goods receipt '{goodsReceiptId}' was not found.");
 
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(
             receipt.PurchaseOrderId,
             cancellationToken)
-            ?? throw new DomainException("Purchase order for goods receipt was not found.");
+            ?? throw new NotFoundException("Purchase order for goods receipt was not found.");
 
         AddLineCore(receipt, order, request);
         unitOfWork.GoodsReceipts.Update(receipt);
@@ -124,12 +124,12 @@ public sealed class GoodsReceiptService(
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
             var receipt = await unitOfWork.GoodsReceipts.GetByIdWithLinesForUpdateAsync(goodsReceiptId, ct)
-                ?? throw new DomainException($"Goods receipt '{goodsReceiptId}' was not found.");
+                ?? throw new NotFoundException($"Goods receipt '{goodsReceiptId}' was not found.");
 
             var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(
                 receipt.PurchaseOrderId,
                 ct)
-                ?? throw new DomainException("Purchase order for goods receipt was not found.");
+                ?? throw new NotFoundException("Purchase order for goods receipt was not found.");
 
             await PostCoreAsync(receipt, order, ct);
             unitOfWork.GoodsReceipts.Update(receipt);
@@ -153,11 +153,11 @@ public sealed class GoodsReceiptService(
         AddGoodsReceiptLineRequest request)
     {
         var poLine = order.Lines.FirstOrDefault(l => l.Id == request.PurchaseOrderLineId)
-            ?? throw new DomainException($"Purchase order line '{request.PurchaseOrderLineId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order line '{request.PurchaseOrderLineId}' was not found.");
 
         if (request.Quantity > poLine.QuantityRemaining)
         {
-            throw new DomainException(
+            throw new BusinessException(
                 $"Receipt quantity '{request.Quantity}' exceeds remaining PO quantity '{poLine.QuantityRemaining}' for line '{poLine.Id}'.");
         }
 
@@ -196,11 +196,11 @@ public sealed class GoodsReceiptService(
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(
             purchaseOrderId,
             cancellationToken)
-            ?? throw new DomainException($"Purchase order '{purchaseOrderId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
         if (order.Status is not PurchaseOrderStatus.Approved and not PurchaseOrderStatus.PartiallyReceived)
         {
-            throw new DomainException("Goods receipt can only be created for approved purchase orders.");
+            throw new BusinessException("Goods receipt can only be created for approved purchase orders.");
         }
 
         return order;

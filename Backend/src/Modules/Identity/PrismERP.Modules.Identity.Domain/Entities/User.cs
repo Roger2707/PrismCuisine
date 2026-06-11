@@ -19,11 +19,11 @@ public sealed class User : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(email))
         {
-            throw new DomainException("Email is required.");
+            throw new ValidationException("email", "Email is required.");
         }
         if (string.IsNullOrWhiteSpace(passwordHash))
         {
-            throw new DomainException("Password hash is required.");
+            throw new ValidationException("password", "Password hash is required.");
         }
 
         return new User
@@ -39,7 +39,7 @@ public sealed class User : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(passwordHash))
         {
-            throw new DomainException("Password hash is required.");
+            throw new ValidationException("password", "Password hash is required.");
         }
 
         PasswordHash = passwordHash;

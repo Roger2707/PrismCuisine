@@ -30,17 +30,17 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
         {
-            throw new DomainException("Order number is required.");
+            throw new BusinessException("Order number is required.");
         }
 
         if (supplierId <= 0)
         {
-            throw new DomainException("SupplierId is required.");
+            throw new ValidationException("supplierId", "SupplierId is required.");
         }
 
         if (warehouseId <= 0)
         {
-            throw new DomainException("WarehouseId is required.");
+            throw new ValidationException("warehouseId", "WarehouseId is required.");
         }
 
         return new PurchaseOrder
@@ -60,7 +60,7 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (source.Status is not PurchaseOrderStatus.Approved and not PurchaseOrderStatus.PartiallyReceived)
         {
-            throw new DomainException("Only approved or partially received purchase orders can be amended.");
+            throw new BusinessException("Only approved or partially received purchase orders can be amended.");
         }
 
         var amendment = CreateDraft(orderNumber, source.SupplierId, source.WarehouseId, notes);
@@ -72,17 +72,17 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (Status != PurchaseOrderStatus.Draft)
         {
-            throw new DomainException("Only draft purchase orders can be updated.");
+            throw new BusinessException("Only draft purchase orders can be updated.");
         }
 
         if (supplierId <= 0)
         {
-            throw new DomainException("SupplierId is required.");
+            throw new ValidationException("supplierId", "SupplierId is required.");
         }
 
         if (warehouseId <= 0)
         {
-            throw new DomainException("WarehouseId is required.");
+            throw new ValidationException("warehouseId", "WarehouseId is required.");
         }
 
         SupplierId = supplierId;
@@ -95,12 +95,12 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (Status != PurchaseOrderStatus.Draft)
         {
-            throw new DomainException("Cannot modify a non-draft purchase order.");
+            throw new BusinessException("Cannot modify a non-draft purchase order.");
         }
 
         if (_lines.Any(l => l.ProductId == productId))
         {
-            throw new DomainException("Product already exists on this purchase order.");
+            throw new BusinessException("Product already exists on this purchase order.");
         }
 
         var line = PurchaseOrderLine.Create(productId, quantityOrdered, unitPrice);
@@ -113,7 +113,7 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (Status != PurchaseOrderStatus.Draft)
         {
-            throw new DomainException("Cannot modify lines of a non-draft purchase order.");
+            throw new BusinessException("Cannot modify lines of a non-draft purchase order.");
         }
 
         _lines.Clear();
@@ -128,12 +128,12 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (Status != PurchaseOrderStatus.Draft)
         {
-            throw new DomainException("Only draft purchase orders can be approved.");
+            throw new BusinessException("Only draft purchase orders can be approved.");
         }
 
         if (_lines.Count == 0)
         {
-            throw new DomainException("Cannot approve a purchase order without lines.");
+            throw new BusinessException("Cannot approve a purchase order without lines.");
         }
 
         Status = PurchaseOrderStatus.Approved;
@@ -147,12 +147,12 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (Status is PurchaseOrderStatus.Received or PurchaseOrderStatus.PartiallyReceived)
         {
-            throw new DomainException("Purchase order with receipts cannot be cancelled.");
+            throw new BusinessException("Purchase order with receipts cannot be cancelled.");
         }
 
         if (Status == PurchaseOrderStatus.Cancelled)
         {
-            throw new DomainException("Purchase order is already cancelled.");
+            throw new BusinessException("Purchase order is already cancelled.");
         }
 
         Status = PurchaseOrderStatus.Cancelled;
@@ -163,11 +163,11 @@ public sealed class PurchaseOrder : AggregateRoot
     {
         if (Status is not PurchaseOrderStatus.Approved and not PurchaseOrderStatus.PartiallyReceived)
         {
-            throw new DomainException("Cannot receive goods for a purchase order that is not approved.");
+            throw new BusinessException("Cannot receive goods for a purchase order that is not approved.");
         }
 
         var line = _lines.FirstOrDefault(l => l.Id == purchaseOrderLineId)
-            ?? throw new DomainException($"Purchase order line '{purchaseOrderLineId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order line '{purchaseOrderLineId}' was not found.");
 
         line.RecordReceipt(quantityReceived);
         RefreshReceivingStatus();

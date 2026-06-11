@@ -33,13 +33,13 @@ public sealed class SalesOrder : AggregateRoot
     public static SalesOrder CreateDraft(string orderNumber, int customerId, string customerName, string? notes = null)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
-            throw new DomainException("Order number is required.");
+            throw new BusinessException("Order number is required.");
 
         if (customerId <= 0)
-            throw new DomainException("CustomerId is required.");
+            throw new ValidationException("customerId", "CustomerId is required.");
 
         if (string.IsNullOrWhiteSpace(customerName))
-            throw new DomainException("CustomerName is required.");
+            throw new ValidationException("customerName", "CustomerName is required.");
 
         return new SalesOrder
         {
@@ -63,7 +63,7 @@ public sealed class SalesOrder : AggregateRoot
     public void AddLine(int productId, string productName, decimal quantityOrdered, decimal unitPrice, decimal discountPercent, decimal vatRate)
     {
         if (Status != SalesOrderStatus.Draft)
-            throw new DomainException("Cannot modify a non-draft sales order.");
+            throw new BusinessException("Cannot modify a non-draft sales order.");
 
         var line = SalesOrderLine.Create(productId, productName, quantityOrdered, unitPrice, discountPercent, vatRate);
         line.AssignToOrder(Id);
@@ -74,7 +74,7 @@ public sealed class SalesOrder : AggregateRoot
     public void UpdateDraft(int customerId, string customerName, string? notes)
     {
         if (Status != SalesOrderStatus.Draft)
-            throw new DomainException("Only draft sales order can be updated.");
+            throw new BusinessException("Only draft sales order can be updated.");
 
         CustomerId = customerId;
         CustomerName = customerName;
@@ -86,7 +86,7 @@ public sealed class SalesOrder : AggregateRoot
         IReadOnlyCollection<(int ProductId, string ProductName, decimal QuantityOrdered, decimal UnitPrice, decimal DiscountPercent, decimal VATRate)> lines)
     {
         if (Status != SalesOrderStatus.Draft)
-            throw new DomainException("Cannot modify a non-draft sales order.");
+            throw new BusinessException("Cannot modify a non-draft sales order.");
 
         _lines.Clear();
 
@@ -99,10 +99,10 @@ public sealed class SalesOrder : AggregateRoot
     public void Approve()
     {
         if (Status != SalesOrderStatus.Draft)
-            throw new DomainException("Only draft sales orders can be confirmed.");
+            throw new BusinessException("Only draft sales orders can be confirmed.");
 
         if (_lines.Count == 0)
-            throw new DomainException("Cannot confirm a sales order without lines.");
+            throw new BusinessException("Cannot confirm a sales order without lines.");
 
         Status = SalesOrderStatus.Confirmed;
         ApprovedAt = DateTime.UtcNow;
@@ -112,10 +112,10 @@ public sealed class SalesOrder : AggregateRoot
     public void Cancel()
     {
         if (Status is SalesOrderStatus.Confirmed or SalesOrderStatus.Delivered or SalesOrderStatus.PartialDelivery)
-            throw new DomainException("Only draft sales orders can be cancelled.");
+            throw new BusinessException("Only draft sales orders can be cancelled.");
 
         if (Status == SalesOrderStatus.Cancelled)
-            throw new DomainException("Sales order is already cancelled.");
+            throw new BusinessException("Sales order is already cancelled.");
 
         Status = SalesOrderStatus.Cancelled;
         Touch();

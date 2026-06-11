@@ -41,7 +41,7 @@ public sealed class WarehouseService(IInventoryUnitOfWork unitOfWork) : IWarehou
         CancellationToken cancellationToken = default)
     {
         var warehouse = await unitOfWork.Warehouses.GetByIdAsync(id, cancellationToken)
-            ?? throw new DomainException($"Warehouse '{id}' was not found.");
+            ?? throw new NotFoundException($"Warehouse '{id}' was not found.");
 
         warehouse.Update(request.Name, request.Location);
         unitOfWork.Warehouses.Update(warehouse);

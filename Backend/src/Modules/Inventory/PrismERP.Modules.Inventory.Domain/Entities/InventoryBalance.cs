@@ -18,17 +18,17 @@ public sealed class InventoryBalance : AggregateRoot
     {
         if (productId <= 0)
         {
-            throw new DomainException("ProductId is required.");
+            throw new BusinessException("ProductId is required.");
         }
 
         if (warehouseId <= 0)
         {
-            throw new DomainException("WarehouseId is required.");
+            throw new BusinessException("WarehouseId is required.");
         }
 
         if (reorderLevel < 0)
         {
-            throw new DomainException("Reorder level cannot be negative.");
+            throw new BusinessException("Reorder level cannot be negative.");
         }
 
         return new InventoryBalance
@@ -44,7 +44,7 @@ public sealed class InventoryBalance : AggregateRoot
     {
         if (quantity <= 0)
         {
-            throw new DomainException("Quantity must be greater than zero.");
+            throw new BusinessException("Quantity must be greater than zero.");
         }
 
         QuantityOnHand += quantity;
@@ -55,12 +55,12 @@ public sealed class InventoryBalance : AggregateRoot
     {
         if (quantity <= 0)
         {
-            throw new DomainException("Quantity must be greater than zero.");
+            throw new BusinessException("Quantity must be greater than zero.");
         }
 
         if (QuantityOnHand - quantity < 0)
         {
-            throw new DomainException("Insufficient on-hand quantity.");
+            throw new BusinessException("Insufficient on-hand quantity.");
         }
 
         QuantityOnHand -= quantity;
@@ -71,7 +71,7 @@ public sealed class InventoryBalance : AggregateRoot
     {
         if (reorderLevel < 0)
         {
-            throw new DomainException("Reorder level cannot be negative.");
+            throw new BusinessException("Reorder level cannot be negative.");
         }
 
         ReorderLevel = reorderLevel;

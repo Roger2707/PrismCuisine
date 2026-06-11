@@ -63,7 +63,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         if (balance is not null)
         {
             return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
-                ?? throw new DomainException("Inventory balance was not found.");
+                ?? throw new NotFoundException("Inventory balance was not found.");
         }
 
         await EnsureProductAndWarehouseExistAsync(productId, warehouseId, cancellationToken);
@@ -72,7 +72,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
-            ?? throw new DomainException("Inventory balance was not found.");
+            ?? throw new NotFoundException("Inventory balance was not found.");
     }
 
     private async Task<InventoryBalance> GetBalanceForUpdateByProductWarehouseAsync(
@@ -81,11 +81,11 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         CancellationToken cancellationToken)
     {
         var balance = await unitOfWork.Balances.GetByProductAndWarehouseAsync(productId, warehouseId, cancellationToken)
-            ?? throw new DomainException(
+            ?? throw new NotFoundException(
                 $"No inventory balance for product '{productId}' at warehouse '{warehouseId}'. Create balance first.");
 
         return await unitOfWork.Balances.GetByIdForUpdateAsync(balance.Id, cancellationToken)
-            ?? throw new DomainException("Inventory balance was not found.");
+            ?? throw new NotFoundException("Inventory balance was not found.");
     }
 
     public async Task<IReadOnlyCollection<InventoryBalanceDto>> GetLowStockAsync(
@@ -159,7 +159,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
             if (existing is not null)
             {
-                throw new DomainException("An active reservation already exists for this reference.");
+                throw new BusinessException("An active reservation already exists for this reference.");
             }
 
             await EnsureAvailableAsync(balance.Id, request.Quantity, cancellationToken);
@@ -201,7 +201,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             var reservation = line.Reservation;
             if (line.Quantity > reservation.RemainingQuantity)
             {
-                throw new DomainException(
+                throw new BusinessException(
                     $"Fulfillment quantity '{line.Quantity}' exceeds remaining reservation '{reservation.RemainingQuantity}' for reference '{reservation.ReferenceId}'.");
             }
 
@@ -210,7 +210,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
             if (!balanceById.TryGetValue(reservation.InventoryBalanceId, out var balance))
             {
-                throw new DomainException("Inventory balance for reservation was not found.");
+                throw new NotFoundException("Inventory balance for reservation was not found.");
             }
 
             if (!layersByBalance.TryGetValue(balance.Id, out var layers))
@@ -242,12 +242,12 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
     {
         if (string.IsNullOrWhiteSpace(deliveryNumber))
         {
-            throw new DomainException("Delivery number is required.");
+            throw new BusinessException("Delivery number is required.");
         }
 
         if (lines.Count == 0)
         {
-            throw new DomainException("At least one delivery line is required to return stock.");
+            throw new BusinessException("At least one delivery line is required to return stock.");
         }
 
         var referenceIds = lines.Select(l => l.SalesOrderLineId).ToHashSet();
@@ -259,7 +259,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
         if (issueMovements.Count == 0)
         {
-            throw new DomainException($"No issue movements found for delivery '{deliveryNumber}'.");
+            throw new BusinessException($"No issue movements found for delivery '{deliveryNumber}'.");
         }
 
         var movementsByLine = issueMovements
@@ -270,14 +270,14 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         {
             if (!movementsByLine.TryGetValue(line.SalesOrderLineId, out var lineMovements))
             {
-                throw new DomainException(
+                throw new BusinessException(
                     $"No issue movements found for sales order line '{line.SalesOrderLineId}' on delivery '{deliveryNumber}'.");
             }
 
             var issuedQty = lineMovements.Sum(m => m.Quantity);
             if (issuedQty != line.Quantity)
             {
-                throw new DomainException(
+                throw new BusinessException(
                     $"Return quantity '{line.Quantity}' does not match issued quantity '{issuedQty}' for sales order line '{line.SalesOrderLineId}'.");
             }
         }
@@ -304,7 +304,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         {
             if (!reservationByLine.TryGetValue(line.SalesOrderLineId, out var reservation))
             {
-                throw new DomainException(
+                throw new BusinessException(
                     $"No reservation found for sales order line '{line.SalesOrderLineId}'.");
             }
 
@@ -316,12 +316,12 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         {
             if (!layerById.TryGetValue(movement.InventoryCostLayerId, out var layer))
             {
-                throw new DomainException($"Cost layer '{movement.InventoryCostLayerId}' was not found.");
+                throw new NotFoundException($"Cost layer '{movement.InventoryCostLayerId}' was not found.");
             }
 
             if (!balanceById.TryGetValue(movement.InventoryBalanceId, out var balance))
             {
-                throw new DomainException($"Inventory balance '{movement.InventoryBalanceId}' was not found.");
+                throw new NotFoundException($"Inventory balance '{movement.InventoryBalanceId}' was not found.");
             }
 
             layer.Restore(movement.Quantity);
@@ -348,7 +348,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
     public async Task ReleaseReservationAsync(int reservationId, CancellationToken cancellationToken = default)
     {
         var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(reservationId, cancellationToken)
-            ?? throw new DomainException($"Reservation '{reservationId}' was not found.");
+            ?? throw new NotFoundException($"Reservation '{reservationId}' was not found.");
 
         reservation.Release();
         unitOfWork.Reservations.Update(reservation);
@@ -481,13 +481,13 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
 
         if (request.NewQuantity < 0)
         {
-            throw new DomainException("Adjusted quantity cannot be negative.");
+            throw new BusinessException("Adjusted quantity cannot be negative.");
         }
 
         var delta = request.NewQuantity - balance.QuantityOnHand;
         if (delta == 0)
         {
-            throw new DomainException("Adjusted quantity is the same as current on-hand quantity.");
+            throw new BusinessException("Adjusted quantity is the same as current on-hand quantity.");
         }
 
         List<InventoryMovement> movements = new();
@@ -547,14 +547,14 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         CancellationToken cancellationToken)
     {
         var balance = await unitOfWork.Balances.GetByIdAsync(balanceId, cancellationToken)
-            ?? throw new DomainException("Inventory balance was not found.");
+            ?? throw new NotFoundException("Inventory balance was not found.");
 
         var reserved = await unitOfWork.Reservations.GetActiveReservedQuantityAsync(balanceId, cancellationToken);
         var available = balance.GetAvailable(reserved);
 
         if (quantity > available)
         {
-            throw new DomainException(
+            throw new BusinessException(
                 $"Insufficient available quantity. On-hand: {balance.QuantityOnHand}, reserved: {reserved}, requested: {quantity}.");
         }
     }   
@@ -565,10 +565,10 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         CancellationToken cancellationToken)
     {
         _ = await unitOfWork.Products.GetByIdAsync(productId, cancellationToken)
-            ?? throw new DomainException($"Product '{productId}' was not found.");
+            ?? throw new NotFoundException($"Product '{productId}' was not found.");
 
         _ = await unitOfWork.Warehouses.GetByIdAsync(warehouseId, cancellationToken)
-            ?? throw new DomainException($"Warehouse '{warehouseId}' was not found.");
+            ?? throw new NotFoundException($"Warehouse '{warehouseId}' was not found.");
     }
 
     private async Task<InventoryBalanceDto> MapBalanceAsync(

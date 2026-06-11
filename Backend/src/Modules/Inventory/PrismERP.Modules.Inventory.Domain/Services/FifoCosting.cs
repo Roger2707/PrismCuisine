@@ -13,7 +13,7 @@ public static class FifoCosting
     {
         if (quantity <= 0)
         {
-            throw new DomainException("Issue quantity must be greater than zero.");
+            throw new BusinessException("Issue quantity must be greater than zero.");
         }
 
         var remaining = quantity;
@@ -39,7 +39,7 @@ public static class FifoCosting
 
         if (remaining > 0)
         {
-            throw new DomainException("Insufficient inventory in cost layers for FIFO issue.");
+            throw new BusinessException("Insufficient inventory in cost layers for FIFO issue.");
         }
 
         return consumptions;

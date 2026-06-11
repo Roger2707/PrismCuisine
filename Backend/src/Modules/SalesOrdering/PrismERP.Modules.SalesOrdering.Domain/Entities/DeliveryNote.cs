@@ -35,9 +35,10 @@ public sealed class DeliveryNote : AggregateRoot
         string? notes = null)
     {
         if (string.IsNullOrWhiteSpace(deliveryNumber))
-            throw new DomainException("DeliveryNumber is required.");
+            throw new BusinessException("DeliveryNumber is required.");
+
         if (salesOrderStatus != SalesOrderStatus.Confirmed && salesOrderStatus != SalesOrderStatus.PartialDelivery)
-            throw new DomainException("SalesOrder must be Confirmed or PartialDelivery.");
+            throw new BusinessException("SalesOrder must be Confirmed or PartialDelivery.");
 
         return new DeliveryNote
         {
@@ -55,7 +56,7 @@ public sealed class DeliveryNote : AggregateRoot
     public void UpdateDraft(string? notes)
     {
         if (Status != DeliveryNoteStatus.Draft)
-            throw new DomainException("Only draft Delivery Note can be updated.");
+            throw new BusinessException("Only draft Delivery Note can be updated.");
 
         Notes = notes?.Trim();
         Touch();
@@ -65,10 +66,10 @@ public sealed class DeliveryNote : AggregateRoot
         IReadOnlyCollection<(decimal DeliveredQuantity, SalesOrderLine SalesOrderLine)> lines)
     {
         if (Status != DeliveryNoteStatus.Draft)
-            throw new DomainException("Cannot modify a non-draft Delivery.");
+            throw new BusinessException("Cannot modify a non-draft Delivery.");
 
         if (lines.Count == 0)
-            throw new DomainException("Delivery note must have at least one line.");
+            throw new BusinessException("Delivery note must have at least one line.");
 
         _lines.Clear();
 
@@ -84,16 +85,16 @@ public sealed class DeliveryNote : AggregateRoot
     public void AddLine(decimal deliveredQuantity, SalesOrderLine salesOrderLine)
     {
         if (Status != DeliveryNoteStatus.Draft)
-            throw new DomainException("Only Draft delivery notes can be modified.");
+            throw new BusinessException("Only Draft delivery notes can be modified.");
         if (deliveredQuantity <= 0)
-            throw new DomainException("Quantity must be greater than zero.");
+            throw new BusinessException("Quantity must be greater than zero.");
 
         var existing = _lines.FirstOrDefault(l => l.SalesOrderLineId == salesOrderLine.Id);
         if (existing is not null)
-            throw new DomainException($"{salesOrderLine.ProductName}: line already added.");
+            throw new BusinessException($"{salesOrderLine.ProductName}: line already added.");
 
         if (deliveredQuantity > salesOrderLine.QuantityRemaining)
-            throw new DomainException(
+            throw new BusinessException(
                 $"{salesOrderLine.ProductName}: delivery quantity exceeds remaining ({salesOrderLine.QuantityRemaining}).");
 
         _lines.Add(DeliveryNoteLine.Create(
@@ -106,18 +107,18 @@ public sealed class DeliveryNote : AggregateRoot
     public void Post(SalesOrder salesOrder)
     {
         if (Status != DeliveryNoteStatus.Draft)
-            throw new DomainException("Only Draft delivery notes can be posted.");
+            throw new BusinessException("Only Draft delivery notes can be posted.");
         if (!_lines.Any())
-            throw new DomainException("Delivery note must have at least one line.");
+            throw new BusinessException("Delivery note must have at least one line.");
         if(salesOrder.Status != SalesOrderStatus.Confirmed && salesOrder.Status != SalesOrderStatus.PartialDelivery)
-            throw new DomainException("Sales order must be Confirmed or PartialDelivery.");
+            throw new BusinessException("Sales order must be Confirmed or PartialDelivery.");
 
         // Update QuantityDelivered tren t?ng OrderLine
         foreach (var line in _lines)
         {
             var orderLine = salesOrder.Lines
                 .FirstOrDefault(l => l.Id == line.SalesOrderLineId)
-                ?? throw new DomainException($"SalesOrderLine {line.SalesOrderLineId} not found.");
+                ?? throw new NotFoundException($"SalesOrderLine {line.SalesOrderLineId} not found.");
 
             orderLine.RecordDelivery(line.QuantityDelivered);
         }
@@ -131,7 +132,7 @@ public sealed class DeliveryNote : AggregateRoot
     public void Cancel(SalesOrder salesOrder)
     {
         if (Status != DeliveryNoteStatus.Posted)
-            throw new DomainException("Only Posted delivery notes can be cancelled.");
+            throw new BusinessException("Only Posted delivery notes can be cancelled.");
 
         // Rollback QuantityDelivered
         foreach (var line in _lines)

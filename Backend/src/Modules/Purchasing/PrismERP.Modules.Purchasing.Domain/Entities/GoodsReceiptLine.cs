@@ -23,22 +23,22 @@ public sealed class GoodsReceiptLine : Entity
     {
         if (purchaseOrderLineId <= 0)
         {
-            throw new DomainException("PurchaseOrderLineId is required.");
+            throw new BusinessException("PurchaseOrderLineId is required.");
         }
 
         if (productId <= 0)
         {
-            throw new DomainException("ProductId is required.");
+            throw new BusinessException("ProductId is required.");
         }
 
         if (quantity <= 0)
         {
-            throw new DomainException("Quantity must be greater than zero.");
+            throw new BusinessException("Quantity must be greater than zero.");
         }
 
         if (unitCost < 0)
         {
-            throw new DomainException("Unit cost cannot be negative.");
+            throw new BusinessException("Unit cost cannot be negative.");
         }
 
         return new GoodsReceiptLine

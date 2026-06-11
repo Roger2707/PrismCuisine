@@ -26,12 +26,12 @@ public sealed class  Customer : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            throw new DomainException("Customer code is required.");
+            throw new ValidationException("code", "Customer code is required.");
         }
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Customer name is required.");
+            throw new ValidationException("name", "Customer name is required.");
         }
 
         return new Customer
@@ -54,7 +54,7 @@ public sealed class  Customer : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Customer name is required.");
+            throw new ValidationException("name", "Customer name is required.");
         }
         Name = name.Trim();
         Phone = phone?.Trim();

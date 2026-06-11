@@ -1,6 +1,6 @@
+using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.Identity.Application.Abstractions.Persistence;
 using PrismERP.Modules.Identity.Domain.Entities;
-using System.Threading.Tasks;
 
 namespace PrismERP.Modules.Identity.Application.Permissions
 {
@@ -51,7 +51,7 @@ namespace PrismERP.Modules.Identity.Application.Permissions
         {
             var existingPermission = await unitOfWork.Permission.GetPermissionByCodeAsync(permission.Code);
             if(existingPermission is null)
-                throw new KeyNotFoundException($"Permission with code '{permission.Code}' not found.");
+                throw new NotFoundException($"Permission with code '{permission.Code}' not found.");
 
             existingPermission.Update(permission.Code, permission.Description);
             await unitOfWork.SaveChangesAsync();
@@ -61,7 +61,7 @@ namespace PrismERP.Modules.Identity.Application.Permissions
         {
             var permission = await unitOfWork.Permission.GetPermissionByCodeAsync(permissionCode);
             if (permission is null)
-                throw new KeyNotFoundException($"Permission with code '{permissionCode}' not found.");
+                throw new NotFoundException($"Permission with code '{permissionCode}' not found.");
             permission.Delete();
             await unitOfWork.SaveChangesAsync();
         }

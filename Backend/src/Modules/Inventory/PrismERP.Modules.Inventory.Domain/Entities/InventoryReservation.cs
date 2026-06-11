@@ -29,17 +29,17 @@ public sealed class InventoryReservation : Entity
     {
         if (inventoryBalanceId <= 0)
         {
-            throw new DomainException("InventoryBalanceId is required.");
+            throw new BusinessException("InventoryBalanceId is required.");
         }
 
         if (quantity <= 0)
         {
-            throw new DomainException("Reservation quantity must be greater than zero.");
+            throw new BusinessException("Reservation quantity must be greater than zero.");
         }
 
         if (referenceId <= 0)
         {
-            throw new DomainException("ReferenceId is required.");
+            throw new BusinessException("ReferenceId is required.");
         }
 
         return new InventoryReservation
@@ -58,7 +58,7 @@ public sealed class InventoryReservation : Entity
     {
         if (Status != InventoryReservationStatus.Active)
         {
-            throw new DomainException("Only active reservations can be released.");
+            throw new BusinessException("Only active reservations can be released.");
         }
 
         Status = InventoryReservationStatus.Released;
@@ -68,17 +68,17 @@ public sealed class InventoryReservation : Entity
     {
         if (Status != InventoryReservationStatus.Active)
         {
-            throw new DomainException("Only active reservations can be fulfilled.");
+            throw new BusinessException("Only active reservations can be fulfilled.");
         }
 
         if (quantity <= 0)
         {
-            throw new DomainException("Fulfillment quantity must be greater than zero.");
+            throw new BusinessException("Fulfillment quantity must be greater than zero.");
         }
 
         if (quantity > RemainingQuantity)
         {
-            throw new DomainException("Fulfillment quantity exceeds remaining reservation.");
+            throw new BusinessException("Fulfillment quantity exceeds remaining reservation.");
         }
 
         FulfilledQuantity += quantity;
@@ -95,17 +95,17 @@ public sealed class InventoryReservation : Entity
     {
         if (Status is InventoryReservationStatus.Released)
         {
-            throw new DomainException("Released reservations cannot be reversed.");
+            throw new BusinessException("Released reservations cannot be reversed.");
         }
 
         if (quantity <= 0)
         {
-            throw new DomainException("Reversal quantity must be greater than zero.");
+            throw new BusinessException("Reversal quantity must be greater than zero.");
         }
 
         if (quantity > FulfilledQuantity)
         {
-            throw new DomainException("Reversal quantity exceeds fulfilled reservation quantity.");
+            throw new BusinessException("Reversal quantity exceeds fulfilled reservation quantity.");
         }
 
         FulfilledQuantity -= quantity;

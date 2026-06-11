@@ -25,17 +25,17 @@ public sealed class Product : AggregateRoot
     {
         if (categoryId <= 0)
         {
-            throw new DomainException("CategoryId is required.");
+            throw new ValidationException("categoryId", "CategoryId is required.");
         }
 
         if (string.IsNullOrWhiteSpace(sku))
         {
-            throw new DomainException("SKU is required.");
+            throw new ValidationException("sku", "SKU is required.");
         }
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Product name is required.");
+            throw new ValidationException("name", "Product name is required.");
         }
 
         return new Product
@@ -53,7 +53,7 @@ public sealed class Product : AggregateRoot
     {
         if (categoryId <= 0)
         {
-            throw new DomainException("CategoryId is required.");
+            throw new ValidationException("categoryId", "CategoryId is required.");
         }
 
         CategoryId = categoryId;

@@ -25,7 +25,7 @@ public sealed class SupplierService(IPurchasingUnitOfWork unitOfWork) : ISupplie
         var existing = await unitOfWork.Suppliers.GetByCodeAsync(request.Code, cancellationToken);
         if (existing is not null)
         {
-            throw new DomainException($"Supplier code '{request.Code}' already exists.");
+            throw new ValidationException("code", $"Supplier code '{request.Code}' already exists.");
         }
 
         var supplier = Supplier.Create(
@@ -47,7 +47,7 @@ public sealed class SupplierService(IPurchasingUnitOfWork unitOfWork) : ISupplie
         CancellationToken cancellationToken = default)
     {
         var supplier = await unitOfWork.Suppliers.GetByIdAsync(id, cancellationToken)
-            ?? throw new DomainException($"Supplier '{id}' was not found.");
+            ?? throw new NotFoundException($"Supplier '{id}' was not found.");
 
         supplier.Update(request.Name, request.Phone, request.Email, request.Address, request.TaxCode);
         unitOfWork.Suppliers.Update(supplier);
@@ -57,7 +57,7 @@ public sealed class SupplierService(IPurchasingUnitOfWork unitOfWork) : ISupplie
     public async Task DeactivateAsync(int id, CancellationToken cancellationToken = default)
     {
         var supplier = await unitOfWork.Suppliers.GetByIdAsync(id, cancellationToken)
-            ?? throw new DomainException($"Supplier '{id}' was not found.");
+            ?? throw new NotFoundException($"Supplier '{id}' was not found.");
 
         supplier.Deactivate();
         unitOfWork.Suppliers.Update(supplier);

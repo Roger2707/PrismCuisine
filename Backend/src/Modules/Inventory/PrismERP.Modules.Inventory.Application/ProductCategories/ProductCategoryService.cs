@@ -25,7 +25,7 @@ public sealed class ProductCategoryService(IInventoryUnitOfWork unitOfWork) : IP
         var existing = await unitOfWork.ProductCategories.GetByCodeAsync(request.Code, cancellationToken);
         if (existing is not null)
         {
-            throw new DomainException($"Category code '{request.Code}' already exists.");
+            throw new ValidationException("code", $"Category code '{request.Code}' already exists.");
         }
 
         var category = ProductCategory.Create(request.Code, request.Name, request.Description);
@@ -41,7 +41,7 @@ public sealed class ProductCategoryService(IInventoryUnitOfWork unitOfWork) : IP
         CancellationToken cancellationToken = default)
     {
         var category = await unitOfWork.ProductCategories.GetByIdAsync(id, cancellationToken)
-            ?? throw new DomainException($"Product category '{id}' was not found.");
+            ?? throw new NotFoundException($"Product category '{id}' was not found.");
 
         category.Update(request.Name, request.Description);
         unitOfWork.ProductCategories.Update(category);

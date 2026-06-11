@@ -3,13 +3,10 @@ using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.Purchasing.Application.Abstractions;
 using PrismERP.Modules.Purchasing.Domain.Entities;
 using PrismERP.Modules.Purchasing.Domain.Enums;
-using PrismERP.Modules.Purchasing.IntegrationEvents;
 
 namespace PrismERP.Modules.Purchasing.Application.PurchaseOrders;
 
-public sealed class PurchaseOrderService(
-    IPurchasingUnitOfWork unitOfWork,
-    IIntegrationEventPublisher eventPublisher) : IPurchaseOrderService
+public sealed class PurchaseOrderService(IPurchasingUnitOfWork unitOfWork) : IPurchaseOrderService
 {
     public Task<IReadOnlyCollection<PurchaseOrderSummaryDto>> GetAllAsync(
         CancellationToken cancellationToken = default) =>
@@ -23,11 +20,11 @@ public sealed class PurchaseOrderService(
         CancellationToken cancellationToken = default)
     {
         _ = await unitOfWork.Suppliers.GetByIdAsync(request.SupplierId, cancellationToken)
-            ?? throw new DomainException($"Supplier '{request.SupplierId}' was not found.");
+            ?? throw new NotFoundException($"Supplier '{request.SupplierId}' was not found.");
 
         if (request.Lines is null || request.Lines.Count == 0)
         {
-            throw new DomainException("Purchase order must have at least one line.");
+            throw new BusinessException("Purchase order must have at least one line.");
         }
 
         var orderNumber = await GenerateOrderNumberAsync(cancellationToken);
@@ -54,15 +51,15 @@ public sealed class PurchaseOrderService(
         CancellationToken cancellationToken = default)
     {
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new DomainException($"Purchase order '{purchaseOrderId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
         if (request.Lines is null || request.Lines.Count == 0)
         {
-            throw new DomainException("Purchase order must have at least one line.");
+            throw new BusinessException("Purchase order must have at least one line.");
         }
 
         _ = await unitOfWork.Suppliers.GetByIdAsync(request.SupplierId, cancellationToken)
-            ?? throw new DomainException($"Supplier '{request.SupplierId}' was not found.");
+            ?? throw new NotFoundException($"Supplier '{request.SupplierId}' was not found.");
 
         order.UpdateDraft(request.SupplierId, request.WarehouseId, request.Notes);
         order.ReplaceLines(request.Lines
@@ -79,11 +76,11 @@ public sealed class PurchaseOrderService(
         CancellationToken cancellationToken = default)
     {
         var source = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new DomainException($"Purchase order '{purchaseOrderId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
         if (source.Status is not PurchaseOrderStatus.Approved and not PurchaseOrderStatus.PartiallyReceived)
         {
-            throw new DomainException("Only approved or partially received purchase orders can be amended.");
+            throw new BusinessException("Only approved or partially received purchase orders can be amended.");
         }
 
         var orderNumber = await GenerateOrderNumberAsync(cancellationToken);
@@ -106,7 +103,7 @@ public sealed class PurchaseOrderService(
 
         if (amendment.Lines.Count == 0)
         {
-            throw new DomainException("Amendment must include at least one line.");
+            throw new BusinessException("Amendment must include at least one line.");
         }
 
         unitOfWork.PurchaseOrders.Add(amendment);
@@ -121,7 +118,7 @@ public sealed class PurchaseOrderService(
         CancellationToken cancellationToken = default)
     {
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new DomainException($"Purchase order '{purchaseOrderId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
         order.AddLine(request.ProductId, request.QuantityOrdered, request.UnitPrice);
         unitOfWork.PurchaseOrders.Update(order);
@@ -131,21 +128,17 @@ public sealed class PurchaseOrderService(
     public async Task ApproveAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new DomainException($"Purchase order '{purchaseOrderId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
         order.Approve();
         unitOfWork.PurchaseOrders.Update(order);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        //await eventPublisher.PublishAsync(
-        //    new PurchaseOrderApprovedIntegrationEvent(order.Id, order.OrderNumber),
-        //    cancellationToken);
     }
 
     public async Task CancelAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
         var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new DomainException($"Purchase order '{purchaseOrderId}' was not found.");
+            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
         order.Cancel();
         unitOfWork.PurchaseOrders.Update(order);

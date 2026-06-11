@@ -10,9 +10,7 @@ public sealed class UserService(
     {
         var user = await users.GetByIdAsync(userId, cancellationToken);
         if (user is null)
-        {
             return null;
-        }
 
         var roles = await authorization.GetRoleNamesByUserIdAsync(userId, cancellationToken);
         var dto = new UserDto(user.Id, user.Email, user.DisplayName, user.IsActive, roles);

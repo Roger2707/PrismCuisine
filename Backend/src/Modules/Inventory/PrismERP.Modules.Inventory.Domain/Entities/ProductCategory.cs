@@ -18,12 +18,12 @@ public sealed class ProductCategory : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            throw new DomainException("Category code is required.");
+            throw new ValidationException("code", "Category code is required.");
         }
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Category name is required.");
+            throw new ValidationException("name", "Category name is required.");
         }
 
         return new ProductCategory
@@ -39,7 +39,7 @@ public sealed class ProductCategory : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Category name is required.");
+            throw new ValidationException("name", "Category name is required.");
         }
 
         Name = name.Trim();

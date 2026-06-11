@@ -1,9 +1,11 @@
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PrismERP.Api.Middlewares;
 using PrismERP.BuildingBlocks.Infrastructure;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Identity.Infrastructure;
@@ -89,6 +91,43 @@ builder.Services
             ValidAudience = jwt.Audience,
             IssuerSigningKey = key
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                // Prevent response default
+                context.HandleResponse();
+
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var problem = new ProblemDetails
+                {
+                    Type = "unauthorized",
+                    Title = "Unauthorized",
+                    Status = StatusCodes.Status401Unauthorized,
+                    Detail = context.AuthenticateFailure?.Message ?? "Token is missing or invalid."
+                };
+
+                await context.Response.WriteAsJsonAsync(problem);
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+
+                var problem = new ProblemDetails
+                {
+                    Type = "forbidden",
+                    Title = "Forbidden",
+                    Status = StatusCodes.Status403Forbidden,
+                    Detail = "You do not have permission to access this resource."
+                };
+
+                await context.Response.WriteAsJsonAsync(problem);
+            }
+        };
     })
     .AddCookie("MyRefreshCookieScheme", options =>
     {
@@ -119,6 +158,9 @@ builder.Services
     .AddPurchasingModule()
     .AddSalesOrderModule();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 await EnsureDatabaseAsync(app);
@@ -135,6 +177,9 @@ app.UseAuthentication();
 app.UseIdentityAuthBlacklistUsers();
 app.UseIdentityPermissions();
 app.UseAuthorization();
+
+app.UseExceptionHandler();
+
 app.MapControllers();
 
 app.Run();

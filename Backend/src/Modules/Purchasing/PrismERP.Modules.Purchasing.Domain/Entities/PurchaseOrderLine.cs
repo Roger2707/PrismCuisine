@@ -21,17 +21,17 @@ public sealed class PurchaseOrderLine : Entity
     {
         if (productId <= 0)
         {
-            throw new DomainException("ProductId is required.");
+            throw new BusinessException("ProductId is required.");
         }
 
         if (quantityOrdered <= 0)
         {
-            throw new DomainException("Ordered quantity must be greater than zero.");
+            throw new BusinessException("Ordered quantity must be greater than zero.");
         }
 
         if (unitPrice < 0)
         {
-            throw new DomainException("Unit price cannot be negative.");
+            throw new BusinessException("Unit price cannot be negative.");
         }
 
         return new PurchaseOrderLine
@@ -49,12 +49,12 @@ public sealed class PurchaseOrderLine : Entity
     {
         if (quantity <= 0)
         {
-            throw new DomainException("Receipt quantity must be greater than zero.");
+            throw new BusinessException("Receipt quantity must be greater than zero.");
         }
 
         if (quantity > QuantityRemaining)
         {
-            throw new DomainException("Receipt quantity exceeds remaining ordered quantity.");
+            throw new BusinessException("Receipt quantity exceeds remaining ordered quantity.");
         }
 
         QuantityReceived += quantity;

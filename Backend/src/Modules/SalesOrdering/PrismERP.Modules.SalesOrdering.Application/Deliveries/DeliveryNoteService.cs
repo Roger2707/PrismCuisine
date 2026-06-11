@@ -30,13 +30,13 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
     public async Task<DeliveryNoteDto> CreateAsync(CreateDeliveryNoteRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Lines is null || request.Lines.Count == 0)
-            throw new DomainException("Delivery note must have at least one line.");
+            throw new BusinessException("Delivery note must have at least one line.");
 
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(request.SalesOrderId, cancellationToken)
-            ?? throw new DomainException($"Sales order with id '{request.SalesOrderId}' does not exist.");
+            ?? throw new ValidationException("salesOrderId", $"Sales order with id '{request.SalesOrderId}' does not exist.");
 
         if (salesOrder.Status is not SalesOrderStatus.Confirmed and not SalesOrderStatus.PartialDelivery)
-            throw new DomainException("Delivery note can only be created for confirmed or partially delivered sales orders.");
+            throw new BusinessException("Delivery note can only be created for confirmed or partially delivered sales orders.");
 
         var deliveryNumber = await GenerateDeliveryNumberAsync(cancellationToken);
         var deliveryNote = DeliveryNote.CreateDraft(
@@ -51,7 +51,7 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
         foreach (var line in request.Lines)
         {
             var orderLine = salesOrder.Lines.FirstOrDefault(l => l.Id == line.SalesOrderLineId)
-                ?? throw new DomainException(
+                ?? throw new BusinessException(
                     $"Sales order line with id '{line.SalesOrderLineId}' does not exist in sales order '{request.SalesOrderId}'.");
 
             deliveryNote.AddLine(line.QuantityDelivered, orderLine);
@@ -65,23 +65,23 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
     public async Task UpdateAsync(int deliveryNoteId, UpdateDeliveryNoteRequest request, CancellationToken cancellationToken = default)
     {
         var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, cancellationToken)
-            ?? throw new DomainException($"Delivery note with id '{deliveryNoteId}' does not exist.");
+            ?? throw new NotFoundException($"Delivery note with id '{deliveryNoteId}' does not exist.");
 
         if (request.Lines is null || request.Lines.Count == 0)
-            throw new DomainException("Delivery note must have at least one line.");
+            throw new BusinessException("Delivery note must have at least one line.");
 
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(
             deliveryNote.SalesOrderId,
             cancellationToken)
-            ?? throw new DomainException($"Sales order with id '{deliveryNote.SalesOrderId}' does not exist.");
+            ?? throw new NotFoundException($"Sales order with id '{deliveryNote.SalesOrderId}' does not exist.");
 
         if (salesOrder.Status is not SalesOrderStatus.Confirmed and not SalesOrderStatus.PartialDelivery)
-            throw new DomainException("Delivery note can only be updated for confirmed or partially delivered sales orders.");
+            throw new BusinessException("Delivery note can only be updated for confirmed or partially delivered sales orders.");
 
         var preparedLines = request.Lines.Select(line =>
         {
             var orderLine = salesOrder.Lines.FirstOrDefault(l => l.Id == line.SalesOrderLineId)
-                ?? throw new DomainException(
+                ?? throw new BusinessException(
                     $"Sales order line with id '{line.SalesOrderLineId}' does not exist in sales order '{deliveryNote.SalesOrderId}'.");
 
             return (line.QuantityDelivered, orderLine);
@@ -100,15 +100,15 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
     public async Task PostAsync(int deliveryNoteId, CancellationToken cancellationToken = default)
     {
         var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, cancellationToken)
-            ?? throw new DomainException($"Delivery note '{deliveryNoteId}' was not found.");
+            ?? throw new NotFoundException($"Delivery note '{deliveryNoteId}' was not found.");
 
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(
             deliveryNote.SalesOrderId,
             cancellationToken)
-            ?? throw new DomainException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
+            ?? throw new NotFoundException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
 
         if (deliveryNote.Lines.Count == 0)
-            throw new DomainException("Delivery note must have at least one line.");
+            throw new BusinessException("Delivery note must have at least one line.");
 
         var deliveryLineIds = deliveryNote.Lines.Select(l => l.SalesOrderLineId).ToHashSet();
         var reservations = await inventoryPostingService.GetActivesByReferencesAsync(
@@ -124,13 +124,13 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
         {
             if (!reservationByLineId.TryGetValue(line.SalesOrderLineId, out var reservation))
             {
-                throw new DomainException(
+                throw new BusinessException(
                     $"No active inventory reservation found for sales order line '{line.SalesOrderLineId}'.");
             }
 
             if (line.QuantityDelivered > reservation.RemainingQuantity)
             {
-                throw new DomainException(
+                throw new BusinessException(
                     $"Delivery quantity '{line.QuantityDelivered}' exceeds remaining reservation '{reservation.RemainingQuantity}' for sales order line '{line.SalesOrderLineId}'.");
             }
 
@@ -155,12 +155,12 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
     public async Task CancelAsync(int deliveryNoteId, CancellationToken cancellationToken = default)
     {
         var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, cancellationToken)
-            ?? throw new DomainException($"Delivery note '{deliveryNoteId}' was not found.");
+            ?? throw new NotFoundException($"Delivery note '{deliveryNoteId}' was not found.");
 
         var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(
             deliveryNote.SalesOrderId,
             cancellationToken)
-            ?? throw new DomainException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
+            ?? throw new NotFoundException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
 
         var returnLines = deliveryNote.Lines
             .Select(l => new ReturnDeliveryLine(l.SalesOrderLineId, l.QuantityDelivered))

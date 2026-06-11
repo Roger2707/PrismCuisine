@@ -1,0 +1,11 @@
+﻿namespace PrismERP.BuildingBlocks.Domain.Exceptions;
+
+public class BusinessException : DomainException
+{
+    public string Code { get; }
+
+    public BusinessException(string message, string code = null) : base(message)
+    {
+        Code = code;
+    }
+}

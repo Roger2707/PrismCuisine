@@ -16,7 +16,7 @@ public sealed class Permission : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            throw new DomainException("Permission code is required.");
+            throw new ValidationException("id", "Permission code is required.");
         }
 
         return new Permission
@@ -30,7 +30,7 @@ public sealed class Permission : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            throw new DomainException("Permission code is required.");
+            throw new ValidationException("permissionCode", "Permission code is required.");
         }
 
         Code = code.Trim().ToLowerInvariant();

@@ -15,11 +15,11 @@ public sealed class IdentityAuthService(
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         var user = await unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken)
-            ?? throw new DomainException("Invalid credentials.");
+            ?? throw new NotFoundException("Invalid credentials.");
 
         if (!user.IsActive || !passwordHasher.Verify(request.Password, user.PasswordHash))
         {
-            throw new DomainException("Invalid credentials.");
+            throw new NotFoundException("Invalid credentials.");
         }
 
         var roles = await unitOfWork.Authorization.GetRoleNamesByUserIdAsync(user.Id, cancellationToken);
@@ -64,7 +64,7 @@ public sealed class IdentityAuthService(
         CancellationToken cancellationToken = default)
     {
         var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
-            ?? throw new DomainException("User was not found.");
+            ?? throw new NotFoundException("User was not found.");
 
         var roles = await unitOfWork.Authorization.GetRoleNamesByUserIdAsync(userId, cancellationToken);
         return new CurrentUserResponse(user.Id, user.Email, user.DisplayName, roles, permissions);
@@ -76,11 +76,11 @@ public sealed class IdentityAuthService(
         CancellationToken cancellationToken = default)
     {
         var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
-            ?? throw new DomainException("User was not found.");
+            ?? throw new NotFoundException("User was not found.");
 
         if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
         {
-            throw new DomainException("Current password is incorrect.");
+            throw new BusinessException("Current password is incorrect.");
         }
 
         user.ChangePassword(passwordHasher.Hash(request.NewPassword));
@@ -91,7 +91,7 @@ public sealed class IdentityAuthService(
     public async Task ForceLogoutAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
-            ?? throw new DomainException("User was not found.");
+            ?? throw new NotFoundException("User was not found.");
 
         string cacheKey = $"blacklist:user:{userId}";
         await cacheService.SetAsync(cacheKey, true, TimeSpan.FromDays(30), cancellationToken);
@@ -104,7 +104,7 @@ public sealed class IdentityAuthService(
     public async Task ReleaseBlacklistAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
-            ?? throw new DomainException("User was not found.");
+            ?? throw new NotFoundException("User was not found.");
 
         string cacheKey = $"blacklist:user:{userId}";
         var isBlacklisted = await cacheService.ExistsAsync(cacheKey, cancellationToken);

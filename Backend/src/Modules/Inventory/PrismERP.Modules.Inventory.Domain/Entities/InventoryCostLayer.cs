@@ -23,17 +23,17 @@ public sealed class InventoryCostLayer : Entity
     {
         if (inventoryBalanceId <= 0)
         {
-            throw new DomainException("InventoryBalanceId is required.");
+            throw new BusinessException("InventoryBalanceId is required.");
         }
 
         if (quantity <= 0)
         {
-            throw new DomainException("Layer quantity must be greater than zero.");
+            throw new BusinessException("Layer quantity must be greater than zero.");
         }
 
         if (unitCost < 0)
         {
-            throw new DomainException("Unit cost cannot be negative.");
+            throw new BusinessException("Unit cost cannot be negative.");
         }
 
         return new InventoryCostLayer
@@ -50,12 +50,12 @@ public sealed class InventoryCostLayer : Entity
     {
         if (quantity <= 0)
         {
-            throw new DomainException("Consume quantity must be greater than zero.");
+            throw new BusinessException("Consume quantity must be greater than zero.");
         }
 
         if (quantity > QuantityRemaining)
         {
-            throw new DomainException("Cannot consume more than layer remaining quantity.");
+            throw new BusinessException("Cannot consume more than layer remaining quantity.");
         }
 
         QuantityRemaining -= quantity;
@@ -66,12 +66,12 @@ public sealed class InventoryCostLayer : Entity
     {
         if (quantity <= 0)
         {
-            throw new DomainException("Restore quantity must be greater than zero.");
+            throw new BusinessException("Restore quantity must be greater than zero.");
         }
 
         if (QuantityRemaining + quantity > QuantityReceived)
         {
-            throw new DomainException("Cannot restore more than was consumed from this cost layer.");
+            throw new BusinessException("Cannot restore more than was consumed from this cost layer.");
         }
 
         QuantityRemaining += quantity;

@@ -27,12 +27,12 @@ public sealed class ProductService(IInventoryUnitOfWork unitOfWork) : IProductSe
     public async Task<ProductDto> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
     {
         _ = await unitOfWork.ProductCategories.GetByIdAsync(request.CategoryId, cancellationToken)
-            ?? throw new DomainException($"Product category '{request.CategoryId}' was not found.");
+            ?? throw new NotFoundException($"Product category '{request.CategoryId}' was not found.");
 
         var existing = await unitOfWork.Products.GetBySkuAsync(request.Sku, cancellationToken);
         if (existing is not null)
         {
-            throw new DomainException($"Product SKU '{request.Sku}' already exists.");
+            throw new ValidationException("sku", $"Product SKU '{request.Sku}' already exists.");
         }
 
         var product = Product.Create(
@@ -51,10 +51,10 @@ public sealed class ProductService(IInventoryUnitOfWork unitOfWork) : IProductSe
     public async Task UpdateAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken = default)
     {
         _ = await unitOfWork.ProductCategories.GetByIdAsync(request.CategoryId, cancellationToken)
-            ?? throw new DomainException($"Product category '{request.CategoryId}' was not found.");
+            ?? throw new NotFoundException($"Product category '{request.CategoryId}' was not found.");
 
         var product = await unitOfWork.Products.GetByIdForUpdateAsync(id, cancellationToken)
-            ?? throw new DomainException($"Product '{id}' was not found.");
+            ?? throw new NotFoundException($"Product '{id}' was not found.");
 
         product.Update(request.CategoryId, request.Name, request.Unit, request.Description);
         unitOfWork.Products.Update(product);
@@ -64,7 +64,7 @@ public sealed class ProductService(IInventoryUnitOfWork unitOfWork) : IProductSe
     public async Task DeactivateAsync(int id, CancellationToken cancellationToken = default)
     {
         var product = await unitOfWork.Products.GetByIdForUpdateAsync(id, cancellationToken)
-            ?? throw new DomainException($"Product '{id}' was not found.");
+            ?? throw new NotFoundException($"Product '{id}' was not found.");
 
         product.Deactivate();
         unitOfWork.Products.Update(product);

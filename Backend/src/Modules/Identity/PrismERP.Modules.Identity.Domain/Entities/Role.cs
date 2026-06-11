@@ -16,7 +16,7 @@ public sealed class Role : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new DomainException("Role name is required.");
+            throw new ValidationException("name", "Role name is required.");
         }
 
         return new Role
