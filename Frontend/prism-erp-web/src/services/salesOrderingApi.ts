@@ -66,6 +66,10 @@ export const deliveryNotesApi = {
     const response = await apiClient.get<DeliveryNoteSummaryDto[]>('/api/sales-ordering/delivery-notes');
     return response.data;
   },
+  getBySalesOrder: async (salesOrderId: number): Promise<DeliveryNoteSummaryDto[]> => {
+    const all = await deliveryNotesApi.getAll();
+    return all.filter((note) => note.salesOrderId === salesOrderId);
+  },
   getById: async (id: number): Promise<DeliveryNoteDto> => {
     const response = await apiClient.get<DeliveryNoteDto>(`/api/sales-ordering/delivery-notes/${id}`);
     return response.data;

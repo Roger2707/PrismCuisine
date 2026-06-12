@@ -2,11 +2,12 @@ import { useState } from 'react';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
-import Identity from './pages/Identity';
 import Inventory from './pages/Inventory';
 import Purchasing from './pages/Purchasing';
 import SalesOrdering from './pages/SalesOrdering';
-import GoodsReceipt from './pages/GoodsReceipt';
+import Customers from './pages/Customers';
+import Suppliers from './pages/Suppliers';
+import Products from './pages/Products';
 import './App.css';
 
 function App() {
@@ -29,16 +30,18 @@ function App() {
     switch (currentModule) {
       case 'dashboard':
         return <Dashboard username={userEmail.split('@')[0]} />;
-      case 'identity':
-        return <Identity />;
+      case 'customers':
+        return <Customers />;
+      case 'suppliers':
+        return <Suppliers />;
+      case 'products':
+        return <Products />;
       case 'inventory':
         return <Inventory />;
       case 'purchasing':
         return <Purchasing />;
       case 'salesOrdering':
         return <SalesOrdering />;
-      case 'goodsReceipt':
-        return <GoodsReceipt />;
       default:
         return <Dashboard username={userEmail.split('@')[0]} />;
     }
@@ -50,8 +53,8 @@ function App() {
 
   return (
     <div className="app-container">
-      <Sidebar 
-        currentModule={currentModule} 
+      <Sidebar
+        currentModule={currentModule}
         onModuleChange={setCurrentModule}
         onLogout={handleLogout}
       />

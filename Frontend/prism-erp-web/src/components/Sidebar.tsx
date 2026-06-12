@@ -12,11 +12,12 @@ export default function Sidebar({ currentModule, onModuleChange, onLogout }: Sid
 
   const modules = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊' },
-    { id: 'identity', name: 'Identity', icon: '👥' },
-    { id: 'inventory', name: 'Inventory', icon: '📦' },
-    { id: 'purchasing', name: 'Purchasing', icon: '🛒' },
-    { id: 'salesOrdering', name: 'Sales Ordering', icon: '📋' },
-    { id: 'goodsReceipt', name: 'Goods Receipt', icon: '📥' },
+    { id: 'customers', name: 'Customer', icon: '👥' },
+    { id: 'suppliers', name: 'Supplier', icon: '🏭' },
+    { id: 'products', name: 'Product', icon: '📦' },
+    { id: 'purchasing', name: 'Purchase Order', icon: '🛒' },
+    { id: 'salesOrdering', name: 'Sales Order', icon: '📋' },
+    { id: 'inventory', name: 'Inventory', icon: '🗄️' },
   ];
 
   return (
@@ -26,7 +27,7 @@ export default function Sidebar({ currentModule, onModuleChange, onLogout }: Sid
           <span className="logo-icon">💎</span>
           {!isCollapsed && <span className="logo-text">Prism ERP</span>}
         </div>
-        <button 
+        <button
           className="collapse-button"
           onClick={() => setIsCollapsed(!isCollapsed)}
           aria-label="Toggle sidebar"
