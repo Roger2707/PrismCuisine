@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Domain.Aggregates;
 using PrismERP.BuildingBlocks.Domain.Entities;
+using PrismERP.Modules.Finance.Domain.Entities;
 using PrismERP.Modules.Identity.Domain.Entities;
 using PrismERP.Modules.Inventory.Domain.Entities;
 using PrismERP.Modules.Purchasing.Domain.Entities;
@@ -50,6 +51,11 @@ public sealed class PrismERPDbContext : DbContext
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
     public DbSet<DeliveryNote> DeliveryNotes => Set<DeliveryNote>();
     public DbSet<DeliveryNoteLine> DeliveryNoteLines => Set<DeliveryNoteLine>();
+
+    // Finance
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
