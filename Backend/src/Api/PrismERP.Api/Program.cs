@@ -1,13 +1,12 @@
-using MassTransit;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PrismERP.Api.Middlewares;
 using PrismERP.BuildingBlocks.Infrastructure;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
+using PrismERP.Modules.Finance.Infrastructure;
 using PrismERP.Modules.Identity.Infrastructure;
 using PrismERP.Modules.Identity.Infrastructure.Auth;
 using PrismERP.Modules.Identity.Infrastructure.Persistence;
@@ -156,7 +155,8 @@ builder.Services
     .AddIdentityModule(builder.Configuration)
     .AddInventoryModule()
     .AddPurchasingModule()
-    .AddSalesOrderModule();
+    .AddSalesOrderModule()
+    .AddFinanceModule();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

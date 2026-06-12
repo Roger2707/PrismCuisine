@@ -13,7 +13,6 @@ public sealed class Invoice : AggregateRoot
     public DateTime? DueDate { get; private set; }
     public string? CustomerName { get; private set; }
     public string? CustomerAddress { get; private set; }
-    public string? CustomerTaxId { get; private set; }
     public decimal SubTotal { get; private set; }
     public decimal TaxAmount { get; private set; }
     public decimal DiscountAmount { get; private set; }
@@ -34,7 +33,6 @@ public sealed class Invoice : AggregateRoot
         DateTime? dueDate = null,
         string? customerName = null,
         string? customerAddress = null,
-        string? customerTaxId = null,
         string? notes = null)
     {
         if (string.IsNullOrWhiteSpace(invoiceNumber))
@@ -51,7 +49,6 @@ public sealed class Invoice : AggregateRoot
             DueDate = dueDate,
             CustomerName = customerName?.Trim(),
             CustomerAddress = customerAddress?.Trim(),
-            CustomerTaxId = customerTaxId?.Trim(),
             Notes = notes?.Trim(),
             SubTotal = 0,
             TaxAmount = 0,
@@ -147,18 +144,16 @@ public sealed class Invoice : AggregateRoot
         DateTime? dueDate,
         string? customerName,
         string? customerAddress,
-        string? customerTaxId,
         string? notes)
     {
         if (Status != InvoiceStatus.Draft)
         {
-            throw new ValidationException("status", "Only draft invoices can be updated.");
+            throw new BusinessException("Only draft invoices can be updated.");
         }
 
         DueDate = dueDate;
         CustomerName = customerName?.Trim();
         CustomerAddress = customerAddress?.Trim();
-        CustomerTaxId = customerTaxId?.Trim();
         Notes = notes?.Trim();
         Touch();
     }

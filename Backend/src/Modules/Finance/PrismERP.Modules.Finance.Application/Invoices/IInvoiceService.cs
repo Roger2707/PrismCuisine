@@ -12,4 +12,5 @@ public interface IInvoiceService
     Task AddLineAsync(int invoiceId, CreateInvoiceLineRequest request, CancellationToken cancellationToken = default);
     Task UpdateLineAsync(int invoiceId, int lineId, UpdateInvoiceLineRequest request, CancellationToken cancellationToken = default);
     Task RemoveLineAsync(int invoiceId, int lineId, CancellationToken cancellationToken = default);
+    Task<string> GenerateInvoiceNumberAsync(CancellationToken cancellationToken);
 }

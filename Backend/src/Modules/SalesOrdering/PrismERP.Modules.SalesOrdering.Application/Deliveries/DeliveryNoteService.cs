@@ -1,4 +1,7 @@
 using PrismERP.BuildingBlocks.Domain.Exceptions;
+using PrismERP.Modules.Finance.Application.Invoices;
+using PrismERP.Modules.Finance.Domain.Entities;
+using PrismERP.Modules.Finance.Domain.Enums;
 using PrismERP.Modules.Inventory.Application.Inventory;
 using PrismERP.Modules.Inventory.Domain.Enums;
 using PrismERP.Modules.SalesOrdering.Application.Abtractions;
@@ -7,7 +10,11 @@ using PrismERP.Modules.SalesOrdering.Domain.Enums;
 
 namespace PrismERP.Modules.SalesOrdering.Application.Deliveries;
 
-public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IInventoryPostingService inventoryPostingService) : IDeliveryNoteService
+public sealed class DeliveryNoteService(
+    ISalesOrderingUnitOfWork unitOfWork
+    , IInventoryPostingService inventoryPostingService
+    , IInvoiceService invoiceService
+    ) : IDeliveryNoteService
 {
     #region Read
 
@@ -110,6 +117,7 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
         if (deliveryNote.Lines.Count == 0)
             throw new BusinessException("Delivery note must have at least one line.");
 
+        // because reservation hold referenceId is SalesOrderLineId
         var deliveryLineIds = deliveryNote.Lines.Select(l => l.SalesOrderLineId).ToHashSet();
         var reservations = await inventoryPostingService.GetActivesByReferencesAsync(
             InventoryReferenceType.SalesOrder,
@@ -117,8 +125,11 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
             cancellationToken)
             ?? [];
 
+        var salesOrderMap = salesOrder.Lines.ToDictionary(s => s.Id);
+
         var reservationByLineId = reservations.ToDictionary(r => r.ReferenceId);
         var fulfillLines = new List<FulfillReservationLine>(deliveryNote.Lines.Count);
+        var invocieLineRequests = new List<CreateInvoiceLineRequest>(deliveryNote.Lines.Count);
 
         foreach (var line in deliveryNote.Lines)
         {
@@ -134,20 +145,35 @@ public sealed class DeliveryNoteService(ISalesOrderingUnitOfWork unitOfWork, IIn
                     $"Delivery quantity '{line.QuantityDelivered}' exceeds remaining reservation '{reservation.RemainingQuantity}' for sales order line '{line.SalesOrderLineId}'.");
             }
 
+            // 1. Export
             fulfillLines.Add(new FulfillReservationLine(
                 reservation,
                 line.QuantityDelivered,
                 deliveryNote.DeliveryNumber,
                 $"Delivery note {deliveryNote.DeliveryNumber}, SO line {line.SalesOrderLineId}"));
-        }
 
+            // 2. Create Invoice Line Request (AR flow)
+            var invocieLineRequest = new CreateInvoiceLineRequest(
+                line.ProductId.ToString(), line.ProductName, "", line.QuantityDelivered
+                , salesOrderMap[line.SalesOrderLineId].UnitPrice
+                , salesOrderMap[line.SalesOrderLineId].VATRate
+                , salesOrderMap[line.SalesOrderLineId].DiscountPercent);
+            invocieLineRequests.Add(invocieLineRequest);
+        }
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
             await inventoryPostingService.FulfillReservationsAsync(fulfillLines, ct);
-
             deliveryNote.Post(salesOrder);
             unitOfWork.DeliveryNotes.Update(deliveryNote);
             unitOfWork.SalesOrders.Update(salesOrder);
+
+            // Create Invoice (AR) for Accounting
+            var invoiceNumber = await invoiceService.GenerateInvoiceNumberAsync(cancellationToken);
+            var invoiceDto = await invoiceService.CreateAsync(
+                new CreateInvoiceRequest(
+                    invoiceNumber, InvoiceType.SalesInvoice, DateTime.UtcNow, null, deliveryNote.CustomerName, "", ""
+                    , invocieLineRequests), cancellationToken);
+
             await unitOfWork.SaveChangesAsync(ct);
         }, cancellationToken);
     }

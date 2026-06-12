@@ -38,9 +38,6 @@ public sealed class InvoiceConfiguration : EntityConfiguration<Invoice>
         builder.Property(i => i.CustomerAddress)
             .HasMaxLength(500);
 
-        builder.Property(i => i.CustomerTaxId)
-            .HasMaxLength(64);
-
         builder.Property(i => i.SubTotal)
             .HasPrecision(18, 2)
             .IsRequired();

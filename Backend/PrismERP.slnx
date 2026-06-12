@@ -29,4 +29,9 @@
     <Project Path="src/Modules/SalesOrdering/PrismERP.Modules.SalesOrdering.Domain/PrismERP.Modules.SalesOrdering.Domain.csproj" />
     <Project Path="src/Modules/SalesOrdering/PrismERP.Modules.SalesOrdering.Infrastructure/PrismERP.Modules.SalesOrdering.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Finance/">
+    <Project Path="src/Modules/Finance/PrismERP.Modules.Finance.Application/PrismERP.Modules.Finance.Application.csproj" />
+    <Project Path="src/Modules/Finance/PrismERP.Modules.Finance.Domain/PrismERP.Modules.Finance.Domain.csproj" />
+    <Project Path="src/Modules/Finance/PrismERP.Modules.Finance.Infrastructure/PrismERP.Modules.Finance.Infrastructure.csproj" />
+  </Folder>
 </Solution>

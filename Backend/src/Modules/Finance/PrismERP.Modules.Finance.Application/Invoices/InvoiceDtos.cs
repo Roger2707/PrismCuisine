@@ -11,7 +11,6 @@ public sealed record InvoiceDto(
     DateTime? DueDate,
     string? CustomerName,
     string? CustomerAddress,
-    string? CustomerTaxId,
     decimal SubTotal,
     decimal TaxAmount,
     decimal DiscountAmount,
@@ -41,18 +40,17 @@ public sealed record CreateInvoiceRequest(
     DateTime? DueDate,
     string? CustomerName,
     string? CustomerAddress,
-    string? CustomerTaxId,
-    string? Notes);
+    string? Notes,
+    List<CreateInvoiceLineRequest> Lines
+    );
 
 public sealed record UpdateInvoiceRequest(
     DateTime? DueDate,
     string? CustomerName,
     string? CustomerAddress,
-    string? CustomerTaxId,
     string? Notes);
 
 public sealed record CreateInvoiceLineRequest(
-    int InvoiceId,
     string? ProductCode,
     string? ProductName,
     string? Description,

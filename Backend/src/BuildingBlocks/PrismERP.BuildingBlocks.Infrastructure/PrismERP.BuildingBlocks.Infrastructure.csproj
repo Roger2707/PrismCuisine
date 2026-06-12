@@ -5,7 +5,8 @@
     <ProjectReference Include="..\..\Modules\Identity\PrismERP.Modules.Identity.Domain\PrismERP.Modules.Identity.Domain.csproj" />
     <ProjectReference Include="..\..\Modules\Inventory\PrismERP.Modules.Inventory.Domain\PrismERP.Modules.Inventory.Domain.csproj" />
     <ProjectReference Include="..\..\Modules\Purchasing\PrismERP.Modules.Purchasing.Domain\PrismERP.Modules.Purchasing.Domain.csproj" />
-    <ProjectReference Include="..\..\Modules\SalesOrdering\PrismERP.Modules.SalesOrdering.Domain\PrismERP.Modules.SalesOrdering.Domain.csproj" />
+	  <ProjectReference Include="..\..\Modules\SalesOrdering\PrismERP.Modules.SalesOrdering.Domain\PrismERP.Modules.SalesOrdering.Domain.csproj" />
+	  <ProjectReference Include="..\..\Modules\Finance\PrismERP.Modules.Finance.Domain\PrismERP.Modules.Finance.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

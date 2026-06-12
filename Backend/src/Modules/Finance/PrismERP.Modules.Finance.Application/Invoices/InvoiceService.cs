@@ -39,8 +39,21 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             request.DueDate,
             request.CustomerName,
             request.CustomerAddress,
-            request.CustomerTaxId,
             request.Notes);
+
+        foreach (var line in request.Lines)
+        {
+            var invoiceLine = InvoiceLine.Create(
+                line.ProductCode,
+                line.ProductName,
+                line.Description,
+                line.Quantity,
+                line.UnitPrice,
+                line.TaxRate,
+                line.DiscountRate);
+
+            invoice.AddLine(invoiceLine);
+        }
 
         unitOfWork.Invoices.Add(invoice);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -57,7 +70,6 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             request.DueDate,
             request.CustomerName,
             request.CustomerAddress,
-            request.CustomerTaxId,
             request.Notes);
 
         unitOfWork.Invoices.Update(invoice);
@@ -90,7 +102,6 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             ?? throw new NotFoundException($"Invoice '{invoiceId}' was not found.");
 
         var line = InvoiceLine.Create(
-            invoiceId,
             request.ProductCode,
             request.ProductName,
             request.Description,
@@ -162,7 +173,6 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             invoice.DueDate,
             invoice.CustomerName,
             invoice.CustomerAddress,
-            invoice.CustomerTaxId,
             invoice.SubTotal,
             invoice.TaxAmount,
             invoice.DiscountAmount,
@@ -185,4 +195,15 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             line.DiscountRate,
             line.DiscountAmount,
             line.LineTotal);
+
+    #region Helper Methods
+
+    public async Task<string> GenerateInvoiceNumberAsync(CancellationToken cancellationToken)
+    {
+        var today = DateTime.UtcNow.Date;
+        var count = await unitOfWork.Invoices.GetCountForDateAsync(today, cancellationToken);
+        return $"INV-{today:yyyyMMdd}-{(count + 1):D4}";
+    }
+
+    #endregion
 }

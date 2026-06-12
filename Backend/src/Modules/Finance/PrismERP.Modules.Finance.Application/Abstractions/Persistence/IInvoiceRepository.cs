@@ -10,4 +10,5 @@ public interface IInvoiceRepository
     Task<IReadOnlyCollection<Invoice>> GetAllAsync(CancellationToken cancellationToken = default);
     void Add(Invoice invoice);
     void Update(Invoice invoice);
+    Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default);
 }

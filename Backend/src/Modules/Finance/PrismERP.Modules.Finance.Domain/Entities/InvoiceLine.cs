@@ -3,7 +3,7 @@ using PrismERP.BuildingBlocks.Domain.Exceptions;
 
 namespace PrismERP.Modules.Finance.Domain.Entities;
 
-public sealed class InvoiceLine : Entity
+public sealed class InvoiceLine : AggregateRoot
 {
     public int InvoiceId { get; private set; }
     public string? ProductCode { get; private set; }
@@ -22,7 +22,6 @@ public sealed class InvoiceLine : Entity
     }
 
     public static InvoiceLine Create(
-        int invoiceId,
         string? productCode = null,
         string? productName = null,
         string? description = null,
@@ -58,7 +57,6 @@ public sealed class InvoiceLine : Entity
 
         return new InvoiceLine
         {
-            InvoiceId = invoiceId,
             ProductCode = productCode?.Trim(),
             ProductName = productName?.Trim(),
             Description = description?.Trim(),
