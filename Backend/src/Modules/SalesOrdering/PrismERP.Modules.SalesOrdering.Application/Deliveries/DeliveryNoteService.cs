@@ -171,7 +171,8 @@ public sealed class DeliveryNoteService(
             var invoiceNumber = await invoiceService.GenerateInvoiceNumberAsync(cancellationToken);
             var invoiceDto = await invoiceService.CreateAsync(
                 new CreateInvoiceRequest(
-                    invoiceNumber, InvoiceType.SalesInvoice, DateTime.UtcNow, null, deliveryNote.CustomerName, "", ""
+                    invoiceNumber, InvoiceType.SalesInvoice, DateTime.UtcNow, null, deliveryNote.CustomerName, "",
+                    salesOrder.Id, deliveryNoteId, null, null, ""
                     , invocieLineRequests), cancellationToken);
 
             await unitOfWork.SaveChangesAsync(ct);

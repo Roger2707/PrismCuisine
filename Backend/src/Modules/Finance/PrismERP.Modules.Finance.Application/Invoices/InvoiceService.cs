@@ -37,8 +37,12 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             request.InvoiceType,
             request.InvoiceDate,
             request.DueDate,
-            request.CustomerName,
-            request.CustomerAddress,
+            request.CounterpartyName,
+            request.CounterpartyAddress,
+            request.SalesOrderId,
+            request.DeliveryNoteId,
+            request.PurchaseOrderId,
+            request.GoodsReceiptId,
             request.Notes);
 
         foreach (var line in request.Lines)
@@ -68,10 +72,31 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
 
         invoice.Update(
             request.DueDate,
-            request.CustomerName,
-            request.CustomerAddress,
+            request.CounterpartyName,
+            request.CounterpartyAddress,
+            request.SalesOrderId,
+            request.DeliveryNoteId,
+            request.PurchaseOrderId,
+            request.GoodsReceiptId,
             request.Notes);
 
+        var lines = new List<InvoiceLine>();
+        foreach (var line in request.Lines)
+        {
+            var invoiceLine = InvoiceLine.Create(
+                line.ProductCode,
+                line.ProductName,
+                line.Description,
+                line.Quantity,
+                line.UnitPrice,
+                line.TaxRate,
+                line.DiscountRate);
+
+            lines.Add(invoiceLine);
+        }
+        invoice.ReplaceLines(lines);
+
+        invoice.RecalculateTotals();
         unitOfWork.Invoices.Update(invoice);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
@@ -171,8 +196,12 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             invoice.Status,
             invoice.InvoiceDate,
             invoice.DueDate,
-            invoice.CustomerName,
-            invoice.CustomerAddress,
+            invoice.CounterpartyName,
+            invoice.CounterpartyAddress,
+            invoice.SalesOrderId,
+            invoice.DeliveryNoteId,
+            invoice.PurchaseOrderId,
+            invoice.GoodsReceiptId,
             invoice.SubTotal,
             invoice.TaxAmount,
             invoice.DiscountAmount,

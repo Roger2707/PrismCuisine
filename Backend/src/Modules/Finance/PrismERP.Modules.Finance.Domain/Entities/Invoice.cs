@@ -11,8 +11,12 @@ public sealed class Invoice : AggregateRoot
     public InvoiceStatus Status { get; private set; }
     public DateTime InvoiceDate { get; private set; }
     public DateTime? DueDate { get; private set; }
-    public string? CustomerName { get; private set; }
-    public string? CustomerAddress { get; private set; }
+    public string? CounterpartyName { get; private set; }
+    public string? CounterpartyAddress { get; private set; }
+    public int? SalesOrderId { get; private set; }
+    public int? DeliveryNoteId { get; private set; }
+    public int? PurchaseOrderId { get; private set; }
+    public int? GoodsReceiptId { get; private set; }
     public decimal SubTotal { get; private set; }
     public decimal TaxAmount { get; private set; }
     public decimal DiscountAmount { get; private set; }
@@ -31,8 +35,12 @@ public sealed class Invoice : AggregateRoot
         InvoiceType invoiceType,
         DateTime invoiceDate,
         DateTime? dueDate = null,
-        string? customerName = null,
-        string? customerAddress = null,
+        string? counterpartyName = null,
+        string? counterpartyAddress = null,
+        int? salesOrderId = null,
+        int? deliveryNoteId = null,
+        int? purchaseOrderId = null,
+        int? goodsReceiptId = null,
         string? notes = null)
     {
         if (string.IsNullOrWhiteSpace(invoiceNumber))
@@ -47,8 +55,12 @@ public sealed class Invoice : AggregateRoot
             Status = InvoiceStatus.Draft,
             InvoiceDate = invoiceDate,
             DueDate = dueDate,
-            CustomerName = customerName?.Trim(),
-            CustomerAddress = customerAddress?.Trim(),
+            CounterpartyName = counterpartyName?.Trim(),
+            CounterpartyAddress = counterpartyAddress?.Trim(),
+            SalesOrderId = salesOrderId,
+            DeliveryNoteId = deliveryNoteId,
+            PurchaseOrderId = purchaseOrderId,
+            GoodsReceiptId = goodsReceiptId,
             Notes = notes?.Trim(),
             SubTotal = 0,
             TaxAmount = 0,
@@ -132,7 +144,7 @@ public sealed class Invoice : AggregateRoot
         Touch();
     }
 
-    private void RecalculateTotals()
+    public void RecalculateTotals()
     {
         SubTotal = Lines.Sum(l => l.LineTotal);
         TaxAmount = Lines.Sum(l => l.TaxAmount);
@@ -142,9 +154,13 @@ public sealed class Invoice : AggregateRoot
 
     public void Update(
         DateTime? dueDate,
-        string? customerName,
-        string? customerAddress,
-        string? notes)
+        string? counterpartyName = null,
+        string? counterpartyAddress = null,
+        int? salesOrderId = null,
+        int? deliveryNoteId = null,
+        int? purchaseOrderId = null,
+        int? goodsReceiptId = null,
+        string? notes = null)
     {
         if (Status != InvoiceStatus.Draft)
         {
@@ -152,9 +168,27 @@ public sealed class Invoice : AggregateRoot
         }
 
         DueDate = dueDate;
-        CustomerName = customerName?.Trim();
-        CustomerAddress = customerAddress?.Trim();
+        CounterpartyName = counterpartyName?.Trim();
+        CounterpartyAddress = counterpartyAddress?.Trim();
+        SalesOrderId = salesOrderId;
+        DeliveryNoteId = deliveryNoteId;
+        PurchaseOrderId = purchaseOrderId;
+        GoodsReceiptId = goodsReceiptId;
         Notes = notes?.Trim();
         Touch();
+    }
+
+    public void ReplaceLines(
+        IReadOnlyCollection<InvoiceLine> lines)
+    {
+        if (Status != InvoiceStatus.Draft)
+            throw new BusinessException("Cannot modify a non-draft Invoice.");
+
+        Lines.Clear();
+
+        foreach (var line in lines)
+        {
+            AddLine(line);
+        }
     }
 }

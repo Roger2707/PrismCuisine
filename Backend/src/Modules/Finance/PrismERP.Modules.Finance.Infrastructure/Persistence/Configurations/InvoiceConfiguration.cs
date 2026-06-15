@@ -32,10 +32,10 @@ public sealed class InvoiceConfiguration : EntityConfiguration<Invoice>
 
         builder.Property(i => i.DueDate);
 
-        builder.Property(i => i.CustomerName)
+        builder.Property(i => i.CounterpartyName)
             .HasMaxLength(200);
 
-        builder.Property(i => i.CustomerAddress)
+        builder.Property(i => i.CounterpartyAddress)
             .HasMaxLength(500);
 
         builder.Property(i => i.SubTotal)

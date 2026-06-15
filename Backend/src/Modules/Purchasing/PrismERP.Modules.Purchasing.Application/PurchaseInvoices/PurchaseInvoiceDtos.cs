@@ -1,8 +1,8 @@
-using PrismERP.Modules.Finance.Domain.Enums;
+﻿using PrismERP.Modules.Finance.Domain.Enums;
 
-namespace PrismERP.Modules.Finance.Application.Invoices;
+namespace PrismERP.Modules.Purchasing.Application.PurchaseInvoices;
 
-public sealed record InvoiceDto(
+public sealed record PurchaseInvoiceDto(
     int Id,
     string InvoiceNumber,
     InvoiceType InvoiceType,
@@ -21,9 +21,9 @@ public sealed record InvoiceDto(
     decimal TotalAmount,
     decimal PaidAmount,
     string? Notes,
-    IReadOnlyCollection<InvoiceLineDto> Lines);
+    IReadOnlyCollection<PurchaseInvoiceLineDto> Lines);
 
-public sealed record InvoiceLineDto(
+public sealed record PurchaseInvoiceLineDto(
     int Id,
     int InvoiceId,
     string? ProductCode,
@@ -37,7 +37,7 @@ public sealed record InvoiceLineDto(
     decimal DiscountAmount,
     decimal LineTotal);
 
-public sealed record CreateInvoiceRequest(
+public sealed record CreatePurchaseInvoiceRequest(
     string InvoiceNumber,
     InvoiceType InvoiceType,
     DateTime InvoiceDate,
@@ -49,10 +49,10 @@ public sealed record CreateInvoiceRequest(
     int? PurchaseOrderId,
     int? GoodsReceiptId,
     string? Notes,
-    List<CreateInvoiceLineRequest> Lines
+    List<CreatePurchaseInvoiceLineRequest> Lines
 );
 
-public sealed record UpdateInvoiceRequest(
+public sealed record UpdatePurchaseInvoiceRequest(
     DateTime? DueDate,
     string CounterpartyName,
     string CounterpartyAddress,
@@ -61,10 +61,10 @@ public sealed record UpdateInvoiceRequest(
     int? PurchaseOrderId,
     int? GoodsReceiptId,
     string? Notes,
-    List<UpdateInvoiceLineRequest> Lines
+    List<UpdatePurchaseInvoiceLineRequest> Lines
     );
 
-public sealed record CreateInvoiceLineRequest(
+public sealed record CreatePurchaseInvoiceLineRequest(
     string? ProductCode,
     string? ProductName,
     string? Description,
@@ -73,7 +73,7 @@ public sealed record CreateInvoiceLineRequest(
     decimal TaxRate,
     decimal DiscountRate);
 
-public sealed record UpdateInvoiceLineRequest(
+public sealed record UpdatePurchaseInvoiceLineRequest(
     string? ProductCode,
     string? ProductName,
     string? Description,
