@@ -52,7 +52,7 @@ public sealed class Invoice : AggregateRoot
         {
             InvoiceNumber = invoiceNumber.Trim().ToUpperInvariant(),
             InvoiceType = invoiceType,
-            Status = InvoiceStatus.Draft,
+            Status = InvoiceStatus.Unpaid,
             InvoiceDate = invoiceDate,
             DueDate = dueDate,
             CounterpartyName = counterpartyName?.Trim(),
@@ -77,44 +77,9 @@ public sealed class Invoice : AggregateRoot
         Touch();
     }
 
-    public void RemoveLine(InvoiceLine line)
-    {
-        Lines.Remove(line);
-        RecalculateTotals();
-        Touch();
-    }
-
-    public void UpdateLine(InvoiceLine line)
-    {
-        var existingLine = Lines.FirstOrDefault(l => l.Id == line.Id);
-        if (existingLine is not null)
-        {
-            Lines.Remove(existingLine);
-            Lines.Add(line);
-            RecalculateTotals();
-            Touch();
-        }
-    }
-
-    public void Post()
-    {
-        if (Status != InvoiceStatus.Draft)
-        {
-            throw new ValidationException("status", "Only draft invoices can be posted.");
-        }
-
-        if (!Lines.Any())
-        {
-            throw new ValidationException("lines", "Invoice must have at least one line.");
-        }
-
-        Status = InvoiceStatus.Posted;
-        Touch();
-    }
-
     public void Cancel()
     {
-        if (Status == InvoiceStatus.Paid || Status == InvoiceStatus.PartiallyPaid)
+        if (Status == InvoiceStatus.Paid || Status == InvoiceStatus.PartialPaid)
         {
             throw new ValidationException("status", "Cannot cancel paid or partially paid invoices.");
         }
@@ -138,7 +103,7 @@ public sealed class Invoice : AggregateRoot
         }
         else
         {
-            Status = InvoiceStatus.PartiallyPaid;
+            Status = InvoiceStatus.PartialPaid;
         }
         
         Touch();
@@ -150,45 +115,5 @@ public sealed class Invoice : AggregateRoot
         TaxAmount = Lines.Sum(l => l.TaxAmount);
         DiscountAmount = Lines.Sum(l => l.DiscountAmount);
         TotalAmount = SubTotal + TaxAmount - DiscountAmount;
-    }
-
-    public void Update(
-        DateTime? dueDate,
-        string? counterpartyName = null,
-        string? counterpartyAddress = null,
-        int? salesOrderId = null,
-        int? deliveryNoteId = null,
-        int? purchaseOrderId = null,
-        int? goodsReceiptId = null,
-        string? notes = null)
-    {
-        if (Status != InvoiceStatus.Draft)
-        {
-            throw new BusinessException("Only draft invoices can be updated.");
-        }
-
-        DueDate = dueDate;
-        CounterpartyName = counterpartyName?.Trim();
-        CounterpartyAddress = counterpartyAddress?.Trim();
-        SalesOrderId = salesOrderId;
-        DeliveryNoteId = deliveryNoteId;
-        PurchaseOrderId = purchaseOrderId;
-        GoodsReceiptId = goodsReceiptId;
-        Notes = notes?.Trim();
-        Touch();
-    }
-
-    public void ReplaceLines(
-        IReadOnlyCollection<InvoiceLine> lines)
-    {
-        if (Status != InvoiceStatus.Draft)
-            throw new BusinessException("Cannot modify a non-draft Invoice.");
-
-        Lines.Clear();
-
-        foreach (var line in lines)
-        {
-            AddLine(line);
-        }
     }
 }

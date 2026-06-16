@@ -29,6 +29,14 @@ internal sealed class InvoiceRepository(PrismERPDbContext db) : IInvoiceReposito
                 i => i.InvoiceNumber == invoiceNumber.Trim().ToUpperInvariant(),
                 cancellationToken);
 
+    public Task<Invoice?> GetByGoodsReceiptIdAsync(int goodsReceiptId, CancellationToken cancellationToken = default)
+        => db.Invoices
+            .Include(i => i.Lines)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                i => i.GoodsReceiptId == goodsReceiptId,
+                cancellationToken);
+
     public Task<IReadOnlyCollection<Invoice>> GetAllAsync(CancellationToken cancellationToken = default) =>
         db.Invoices
             .Include(i => i.Lines)
@@ -37,6 +45,14 @@ internal sealed class InvoiceRepository(PrismERPDbContext db) : IInvoiceReposito
             .OrderBy(i => i.InvoiceDate)
             .ToListAsync(cancellationToken)
             .ContinueWith(t => (IReadOnlyCollection<Invoice>)t.Result, cancellationToken);
+
+    public Task<List<Invoice>> GetByPurchaseOrderAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
+        =>
+            db.Invoices
+                .Where(i => i.PurchaseOrderId == purchaseOrderId)
+                .Include(i => i.Lines)
+                .OrderBy(i => i.InvoiceDate)
+                .ToListAsync(cancellationToken);
 
     public void Add(Invoice invoice) => db.Invoices.Add(invoice);
 

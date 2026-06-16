@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Finance\PrismERP.Modules.Finance.Application\PrismERP.Modules.Finance.Application.csproj" />
     <ProjectReference Include="..\..\Finance\PrismERP.Modules.Finance.Domain\PrismERP.Modules.Finance.Domain.csproj" />
     <ProjectReference Include="..\PrismERP.Modules.Purchasing.Domain\PrismERP.Modules.Purchasing.Domain.csproj" />
     <ProjectReference Include="..\..\Inventory\PrismERP.Modules.Inventory.Application\PrismERP.Modules.Inventory.Application.csproj" />

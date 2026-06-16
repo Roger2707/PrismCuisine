@@ -26,7 +26,7 @@ public sealed record PurchaseInvoiceDto(
 public sealed record PurchaseInvoiceLineDto(
     int Id,
     int InvoiceId,
-    string? ProductCode,
+    int ProductId,
     string? ProductName,
     string? Description,
     decimal Quantity,
@@ -46,35 +46,15 @@ public sealed record CreatePurchaseInvoiceRequest(
     string CounterpartyAddress,
     int? SalesOrderId,
     int? DeliveryNoteId,
-    int? PurchaseOrderId,
-    int? GoodsReceiptId,
+    int PurchaseOrderId,
+    int GoodsReceiptId,
     string? Notes,
     List<CreatePurchaseInvoiceLineRequest> Lines
 );
 
-public sealed record UpdatePurchaseInvoiceRequest(
-    DateTime? DueDate,
-    string CounterpartyName,
-    string CounterpartyAddress,
-    int? SalesOrderId,
-    int? DeliveryNoteId,
-    int? PurchaseOrderId,
-    int? GoodsReceiptId,
-    string? Notes,
-    List<UpdatePurchaseInvoiceLineRequest> Lines
-    );
 
 public sealed record CreatePurchaseInvoiceLineRequest(
-    string? ProductCode,
-    string? ProductName,
-    string? Description,
-    decimal Quantity,
-    decimal UnitPrice,
-    decimal TaxRate,
-    decimal DiscountRate);
-
-public sealed record UpdatePurchaseInvoiceLineRequest(
-    string? ProductCode,
+    int ProductId,
     string? ProductName,
     string? Description,
     decimal Quantity,

@@ -14,8 +14,8 @@ public sealed class SalesOrder : AggregateRoot
     public DateTime OrderDate { get; private set; }
     public DateTime? DeliveryDate { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
-
     public SalesOrderStatus Status { get; private set; }
+    public SalesOrderInvoicingStatus InvoiceStatus { get; private set; }
     public string? Notes { get; private set; }
 
     // Totals ? computed khi AddLine / RemoveLine
@@ -48,7 +48,8 @@ public sealed class SalesOrder : AggregateRoot
             CustomerName = customerName.Trim(),
             OrderDate = DateTime.UtcNow,
             Notes = notes?.Trim(),
-            Status = SalesOrderStatus.Draft
+            Status = SalesOrderStatus.Draft,
+            InvoiceStatus = SalesOrderInvoicingStatus.NotInvoiced,
         };
     }
 
@@ -133,5 +134,14 @@ public sealed class SalesOrder : AggregateRoot
             Status = SalesOrderStatus.PartialDelivery;
         else if (allNotDelivered)
             Status = SalesOrderStatus.Confirmed;
+    }
+
+    public void UpdateInvoiceStatus()
+    {
+        bool fullInvoicing = _lines.All(line => line.QuantityRemaining <= 0);
+        
+        InvoiceStatus = fullInvoicing ? SalesOrderInvoicingStatus.FullyInvoiced : SalesOrderInvoicingStatus.PartiallyInvoiced;
+
+        Touch();
     }
 }

@@ -6,7 +6,7 @@ namespace PrismERP.Modules.Finance.Domain.Entities;
 public sealed class InvoiceLine : AggregateRoot
 {
     public int InvoiceId { get; private set; }
-    public string? ProductCode { get; private set; }
+    public int ProductId { get; private set; }
     public string? ProductName { get; private set; }
     public string? Description { get; private set; }
     public decimal Quantity { get; private set; }
@@ -22,7 +22,7 @@ public sealed class InvoiceLine : AggregateRoot
     }
 
     public static InvoiceLine Create(
-        string? productCode = null,
+        int productId,
         string? productName = null,
         string? description = null,
         decimal quantity = 1,
@@ -57,7 +57,7 @@ public sealed class InvoiceLine : AggregateRoot
 
         return new InvoiceLine
         {
-            ProductCode = productCode?.Trim(),
+            ProductId = productId,
             ProductName = productName?.Trim(),
             Description = description?.Trim(),
             Quantity = quantity,
@@ -71,7 +71,7 @@ public sealed class InvoiceLine : AggregateRoot
     }
 
     public void Update(
-        string? productCode,
+        string? productId,
         string? productName,
         string? description,
         decimal quantity,
@@ -99,7 +99,7 @@ public sealed class InvoiceLine : AggregateRoot
             throw new ValidationException("discountRate", "Discount rate cannot be negative.");
         }
 
-        ProductCode = productCode?.Trim();
+        productId = productId?.Trim();
         ProductName = productName?.Trim();
         Description = description?.Trim();
         Quantity = quantity;

@@ -24,6 +24,18 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         return invoice is null ? null : Map(invoice);
     }
 
+    public async Task<InvoiceDto?> GetByGoodsReceiptIdAsync(int goodsReceiptId, CancellationToken cancellationToken = default)
+    {
+        var invoice = await unitOfWork.Invoices.GetByGoodsReceiptIdAsync(goodsReceiptId, cancellationToken);
+        return invoice is null ? null : Map(invoice);
+    }
+
+    public async Task<IReadOnlyCollection<InvoiceDto>> GetInvoicesByPurchaseOrderAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
+    {
+        var invoices = await unitOfWork.Invoices.GetByPurchaseOrderAsync(purchaseOrderId, cancellationToken);
+        return invoices.Select(Map).ToList();
+    }
+
     public async Task<InvoiceDto> CreateAsync(CreateInvoiceRequest request, CancellationToken cancellationToken = default)
     {
         var existing = await unitOfWork.Invoices.GetByInvoiceNumberAsync(request.InvoiceNumber, cancellationToken);
@@ -48,7 +60,7 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         foreach (var line in request.Lines)
         {
             var invoiceLine = InvoiceLine.Create(
-                line.ProductCode,
+                line.ProductId,
                 line.ProductName,
                 line.Description,
                 line.Quantity,
@@ -65,52 +77,6 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         return Map(invoice);
     }
 
-    public async Task UpdateAsync(int id, UpdateInvoiceRequest request, CancellationToken cancellationToken = default)
-    {
-        var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(id, cancellationToken)
-            ?? throw new NotFoundException($"Invoice '{id}' was not found.");
-
-        invoice.Update(
-            request.DueDate,
-            request.CounterpartyName,
-            request.CounterpartyAddress,
-            request.SalesOrderId,
-            request.DeliveryNoteId,
-            request.PurchaseOrderId,
-            request.GoodsReceiptId,
-            request.Notes);
-
-        var lines = new List<InvoiceLine>();
-        foreach (var line in request.Lines)
-        {
-            var invoiceLine = InvoiceLine.Create(
-                line.ProductCode,
-                line.ProductName,
-                line.Description,
-                line.Quantity,
-                line.UnitPrice,
-                line.TaxRate,
-                line.DiscountRate);
-
-            lines.Add(invoiceLine);
-        }
-        invoice.ReplaceLines(lines);
-
-        invoice.RecalculateTotals();
-        unitOfWork.Invoices.Update(invoice);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task PostAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(id, cancellationToken)
-            ?? throw new NotFoundException($"Invoice '{id}' was not found.");
-
-        invoice.Post();
-        unitOfWork.Invoices.Update(invoice);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
     public async Task CancelAsync(int id, CancellationToken cancellationToken = default)
     {
         var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(id, cancellationToken)
@@ -118,73 +84,6 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
 
         invoice.Cancel();
         unitOfWork.Invoices.Update(invoice);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task AddLineAsync(int invoiceId, CreateInvoiceLineRequest request, CancellationToken cancellationToken = default)
-    {
-        var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(invoiceId, cancellationToken)
-            ?? throw new NotFoundException($"Invoice '{invoiceId}' was not found.");
-
-        var line = InvoiceLine.Create(
-            request.ProductCode,
-            request.ProductName,
-            request.Description,
-            request.Quantity,
-            request.UnitPrice,
-            request.TaxRate,
-            request.DiscountRate);
-
-        invoice.AddLine(line);
-        unitOfWork.Invoices.Update(invoice);
-        unitOfWork.InvoiceLines.Add(line);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task UpdateLineAsync(int invoiceId, int lineId, UpdateInvoiceLineRequest request, CancellationToken cancellationToken = default)
-    {
-        var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(invoiceId, cancellationToken)
-            ?? throw new NotFoundException($"Invoice '{invoiceId}' was not found.");
-
-        var line = await unitOfWork.InvoiceLines.GetByIdAsync(lineId, cancellationToken)
-            ?? throw new NotFoundException($"Invoice line '{lineId}' was not found.");
-
-        if (line.InvoiceId != invoiceId)
-        {
-            throw new ValidationException("lineId", $"Invoice line '{lineId}' does not belong to invoice '{invoiceId}'.");
-        }
-
-        line.Update(
-            request.ProductCode,
-            request.ProductName,
-            request.Description,
-            request.Quantity,
-            request.UnitPrice,
-            request.TaxRate,
-            request.DiscountRate);
-
-        invoice.UpdateLine(line);
-        unitOfWork.Invoices.Update(invoice);
-        unitOfWork.InvoiceLines.Update(line);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task RemoveLineAsync(int invoiceId, int lineId, CancellationToken cancellationToken = default)
-    {
-        var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(invoiceId, cancellationToken)
-            ?? throw new NotFoundException($"Invoice '{invoiceId}' was not found.");
-
-        var line = await unitOfWork.InvoiceLines.GetByIdAsync(lineId, cancellationToken)
-            ?? throw new NotFoundException($"Invoice line '{lineId}' was not found.");
-
-        if (line.InvoiceId != invoiceId)
-        {
-            throw new ValidationException("lineId", $"Invoice line '{lineId}' does not belong to invoice '{invoiceId}'.");
-        }
-
-        invoice.RemoveLine(line);
-        unitOfWork.Invoices.Update(invoice);
-        unitOfWork.InvoiceLines.Delete(line);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
@@ -214,7 +113,7 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         new(
             line.Id,
             line.InvoiceId,
-            line.ProductCode,
+            line.ProductId,
             line.ProductName,
             line.Description,
             line.Quantity,

@@ -13,7 +13,7 @@ public sealed class DeliveryNote : AggregateRoot
     public string DeliveryNumber { get; private set; } = null!;  // DN2024001
     public int SalesOrderId { get; private set; }
 
-    // Snapshot t? SalesOrder t?i th?i ?i?m t?o
+    // Snapshot SalesOrder
     public int CustomerId { get; private set; }
     public string CustomerName { get; private set; } = null!;
     public string OrderNumber { get; private set; } = null!;

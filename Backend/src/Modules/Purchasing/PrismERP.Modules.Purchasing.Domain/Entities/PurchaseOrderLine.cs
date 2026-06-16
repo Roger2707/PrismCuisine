@@ -10,12 +10,12 @@ public sealed class PurchaseOrderLine : Entity
     public decimal QuantityOrdered { get; private set; }
     public decimal QuantityReceived { get; private set; }
     public decimal UnitPrice { get; private set; }
+    public decimal QuantityRemaining => QuantityOrdered - QuantityReceived;
 
     private PurchaseOrderLine()
     {
     }
 
-    public decimal QuantityRemaining => QuantityOrdered - QuantityReceived;
 
     internal static PurchaseOrderLine Create(int productId, decimal quantityOrdered, decimal unitPrice)
     {

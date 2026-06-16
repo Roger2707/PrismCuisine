@@ -19,8 +19,8 @@ public sealed class InvoiceLineConfiguration : EntityConfiguration<InvoiceLine>
 
         builder.HasIndex(l => l.InvoiceId);
 
-        builder.Property(l => l.ProductCode)
-            .HasMaxLength(64);
+        builder.Property(l => l.ProductId)
+            .IsRequired();
 
         builder.Property(l => l.ProductName)
             .HasMaxLength(200);

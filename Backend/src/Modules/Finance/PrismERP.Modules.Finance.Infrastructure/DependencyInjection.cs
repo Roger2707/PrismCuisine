@@ -14,7 +14,6 @@ public static class DependencyInjection
         services.AddSingleton<IModulePersistenceConfigurator, FinancePersistenceConfigurator>();
         services.AddScoped<IFinanceUnitOfWork, FinanceUnitOfWork>();
         services.AddScoped<IInvoiceRepository>(sp => sp.GetRequiredService<IFinanceUnitOfWork>().Invoices);
-        services.AddScoped<IInvoiceLineRepository>(sp => sp.GetRequiredService<IFinanceUnitOfWork>().InvoiceLines);
         services.AddScoped<IPaymentRepository>(sp => sp.GetRequiredService<IFinanceUnitOfWork>().Payments);
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IPaymentService, PaymentService>();

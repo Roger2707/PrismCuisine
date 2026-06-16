@@ -7,7 +7,6 @@ namespace PrismERP.Modules.Finance.Infrastructure.Persistence;
 internal sealed class FinanceUnitOfWork(PrismERPDbContext db) : IFinanceUnitOfWork
 {
     public IInvoiceRepository Invoices { get; } = new InvoiceRepository(db);
-    public IInvoiceLineRepository InvoiceLines { get; } = new InvoiceLineRepository(db);
     public IPaymentRepository Payments { get; } = new PaymentRepository(db);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>

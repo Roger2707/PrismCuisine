@@ -13,6 +13,7 @@ public sealed class PurchaseOrder : AggregateRoot
     public int SupplierId { get; private set; }
     public int WarehouseId { get; private set; }
     public PurchaseOrderStatus Status { get; private set; }
+    public PurchaseOrderInvoicingStatus InvoiceStatus { get; private set; }
     public int? AmendedFromPurchaseOrderId { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
     public string? Notes { get; private set; }
@@ -186,5 +187,11 @@ public sealed class PurchaseOrder : AggregateRoot
         {
             Status = PurchaseOrderStatus.PartiallyReceived;
         }
+    }
+
+    public void UpdateInvoiceStatus(PurchaseOrderInvoicingStatus status)
+    {
+        InvoiceStatus = status;
+        Touch();
     }
 }

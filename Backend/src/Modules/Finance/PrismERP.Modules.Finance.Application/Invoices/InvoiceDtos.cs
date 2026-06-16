@@ -26,7 +26,7 @@ public sealed record InvoiceDto(
 public sealed record InvoiceLineDto(
     int Id,
     int InvoiceId,
-    string? ProductCode,
+    int ProductId,
     string? ProductName,
     string? Description,
     decimal Quantity,
@@ -52,29 +52,8 @@ public sealed record CreateInvoiceRequest(
     List<CreateInvoiceLineRequest> Lines
 );
 
-public sealed record UpdateInvoiceRequest(
-    DateTime? DueDate,
-    string CounterpartyName,
-    string CounterpartyAddress,
-    int? SalesOrderId,
-    int? DeliveryNoteId,
-    int? PurchaseOrderId,
-    int? GoodsReceiptId,
-    string? Notes,
-    List<UpdateInvoiceLineRequest> Lines
-    );
-
 public sealed record CreateInvoiceLineRequest(
-    string? ProductCode,
-    string? ProductName,
-    string? Description,
-    decimal Quantity,
-    decimal UnitPrice,
-    decimal TaxRate,
-    decimal DiscountRate);
-
-public sealed record UpdateInvoiceLineRequest(
-    string? ProductCode,
+    int ProductId,
     string? ProductName,
     string? Description,
     decimal Quantity,

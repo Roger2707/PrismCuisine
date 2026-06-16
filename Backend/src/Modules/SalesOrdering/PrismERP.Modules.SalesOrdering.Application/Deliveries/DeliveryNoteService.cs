@@ -154,7 +154,7 @@ public sealed class DeliveryNoteService(
 
             // 2. Create Invoice Line Request (AR flow)
             var invocieLineRequest = new CreateInvoiceLineRequest(
-                line.ProductId.ToString(), line.ProductName, "", line.QuantityDelivered
+                line.ProductId, line.ProductName, "", line.QuantityDelivered
                 , salesOrderMap[line.SalesOrderLineId].UnitPrice
                 , salesOrderMap[line.SalesOrderLineId].VATRate
                 , salesOrderMap[line.SalesOrderLineId].DiscountPercent);
@@ -174,6 +174,9 @@ public sealed class DeliveryNoteService(
                     invoiceNumber, InvoiceType.SalesInvoice, DateTime.UtcNow, null, deliveryNote.CustomerName, "",
                     salesOrder.Id, deliveryNoteId, null, null, ""
                     , invocieLineRequests), cancellationToken);
+
+            // Update SalesOrder - InvoiceStatus
+            salesOrder.UpdateInvoiceStatus();
 
             await unitOfWork.SaveChangesAsync(ct);
         }, cancellationToken);
