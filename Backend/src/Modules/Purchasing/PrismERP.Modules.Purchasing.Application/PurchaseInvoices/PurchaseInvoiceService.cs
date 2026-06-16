@@ -4,7 +4,6 @@ using PrismERP.Modules.Finance.Domain.Enums;
 using PrismERP.Modules.Inventory.Application.ProductCategories;
 using PrismERP.Modules.Purchasing.Application.Abstractions;
 using PrismERP.Modules.Purchasing.Application.GoodsReceipts;
-using PrismERP.Modules.Purchasing.Application.PurchaseOrders;
 using PrismERP.Modules.Purchasing.Application.Suppliers;
 using PrismERP.Modules.Purchasing.Domain.Entities;
 using PrismERP.Modules.Purchasing.Domain.Enums;
@@ -13,7 +12,6 @@ namespace PrismERP.Modules.Purchasing.Application.PurchaseInvoices;
 
 public sealed class PurchaseInvoiceService(
     IPurchasingUnitOfWork unitOfWork,
-    IPurchaseOrderService purchaseOrderService, 
     IGoodsReceiptService goodsReceiptService, 
     IInvoiceService invoiceService,
     IProductCategoryService productCategoryService,

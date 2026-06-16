@@ -1,6 +1,7 @@
 using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.Finance.Application.Abstractions.Persistence;
 using PrismERP.Modules.Finance.Domain.Entities;
+using PrismERP.Modules.Finance.Domain.Enums;
 
 namespace PrismERP.Modules.Finance.Application.Payments;
 
@@ -35,10 +36,15 @@ public sealed class PaymentService(IFinanceUnitOfWork unitOfWork) : IPaymentServ
         var invoice = await unitOfWork.Invoices.GetByIdAsync(request.InvoiceId, cancellationToken)
             ?? throw new NotFoundException($"Invoice '{request.InvoiceId}' was not found.");
 
-        var existing = await unitOfWork.Payments.GetByPaymentNumberAsync(request.PaymentNumber, cancellationToken);
-        if (existing is not null)
+        var existingByPaymentNumber = await unitOfWork.Payments.GetByPaymentNumberAsync(request.PaymentNumber, cancellationToken);
+        if (existingByPaymentNumber is not null)
+            throw new BusinessException($"Payment number '{request.PaymentNumber}' already exists.");
+
+        var existingByInvoice = await unitOfWork.Payments.GetByInvoiceIdAsync(request.InvoiceId, cancellationToken);
+        if(existingByInvoice is not null)
         {
-            throw new ValidationException("paymentNumber", $"Payment number '{request.PaymentNumber}' already exists.");
+            if (existingByInvoice.Any(p => p.Status == PaymentStatus.Completed))
+                throw new BusinessException($"Payment with InvoiceId : {request.InvoiceId} has Paid !");
         }
 
         var payment = Payment.Create(
