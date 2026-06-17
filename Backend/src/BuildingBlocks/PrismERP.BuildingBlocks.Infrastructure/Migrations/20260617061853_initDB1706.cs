@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initNewDB : Migration
+    public partial class initDB1706 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,6 +19,9 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 
             migrationBuilder.EnsureSchema(
                 name: "inventory");
+
+            migrationBuilder.EnsureSchema(
+                name: "finance");
 
             migrationBuilder.EnsureSchema(
                 name: "identity");
@@ -188,6 +191,40 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Invoices",
+                schema: "finance",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InvoiceNumber = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    InvoiceType = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    InvoiceDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CounterpartyName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    CounterpartyAddress = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    SalesOrderId = table.Column<int>(type: "int", nullable: true),
+                    DeliveryNoteId = table.Column<int>(type: "int", nullable: true),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: true),
+                    GoodsReceiptId = table.Column<int>(type: "int", nullable: true),
+                    SubTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TaxAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    PaidAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Invoices", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Permissions",
                 schema: "identity",
                 columns: table => new
@@ -261,6 +298,7 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     WarehouseId = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    InvoiceStatus = table.Column<int>(type: "int", nullable: false),
                     AmendedFromPurchaseOrderId = table.Column<int>(type: "int", nullable: true),
                     ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
@@ -347,6 +385,7 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
                     DeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    InvoiceStatus = table.Column<int>(type: "int", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     SubTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     TotalDiscount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
@@ -504,6 +543,75 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
                         principalTable: "GoodsReceipts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InvoiceLines",
+                schema: "finance",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InvoiceId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    ProductName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TaxRate = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    TaxAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    DiscountRate = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    LineTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InvoiceLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InvoiceLines_Invoices_InvoiceId",
+                        column: x => x.InvoiceId,
+                        principalSchema: "finance",
+                        principalTable: "Invoices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Payments",
+                schema: "finance",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InvoiceId = table.Column<int>(type: "int", nullable: false),
+                    PaymentNumber = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    PaymentMethod = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    BankName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    AccountNumber = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_Invoices_InvoiceId",
+                        column: x => x.InvoiceId,
+                        principalSchema: "finance",
+                        principalTable: "Invoices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -665,6 +773,32 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
                 columns: new[] { "ReferenceType", "ReferenceId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_InvoiceLines_InvoiceId",
+                schema: "finance",
+                table: "InvoiceLines",
+                column: "InvoiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Invoices_InvoiceNumber",
+                schema: "finance",
+                table: "Invoices",
+                column: "InvoiceNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_InvoiceId",
+                schema: "finance",
+                table: "Payments",
+                column: "InvoiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_PaymentNumber",
+                schema: "finance",
+                table: "Payments",
+                column: "PaymentNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Permissions_Code",
                 schema: "identity",
                 table: "Permissions",
@@ -799,6 +933,14 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
                 schema: "inventory");
 
             migrationBuilder.DropTable(
+                name: "InvoiceLines",
+                schema: "finance");
+
+            migrationBuilder.DropTable(
+                name: "Payments",
+                schema: "finance");
+
+            migrationBuilder.DropTable(
                 name: "Permissions",
                 schema: "identity");
 
@@ -853,6 +995,10 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
             migrationBuilder.DropTable(
                 name: "GoodsReceipts",
                 schema: "purchasing");
+
+            migrationBuilder.DropTable(
+                name: "Invoices",
+                schema: "finance");
 
             migrationBuilder.DropTable(
                 name: "PurchaseOrders",

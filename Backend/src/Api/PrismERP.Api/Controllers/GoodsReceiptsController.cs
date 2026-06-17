@@ -40,16 +40,6 @@ public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptSer
         return NoContent();
     }
 
-    [HttpPost("{id:int}/lines")]
-    public async Task<IActionResult> AddLine(
-        int id,
-        [FromBody] AddGoodsReceiptLineRequest request,
-        CancellationToken cancellationToken)
-    {
-        await goodsReceiptService.AddLineAsync(id, request, cancellationToken);
-        return NoContent();
-    }
-
     [HttpPost("{id:int}/post")]
     public async Task<IActionResult> Post(int id, CancellationToken cancellationToken)
     {

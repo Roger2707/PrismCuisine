@@ -62,6 +62,6 @@ internal sealed class InvoiceRepository(PrismERPDbContext db) : IInvoiceReposito
     {
         var start = date.Date;
         var end = start.AddDays(1);
-        return db.SalesOrders.CountAsync(o => o.CreatedAt >= start && o.CreatedAt < end, cancellationToken);
+        return db.Invoices.CountAsync(o => o.CreatedAt >= start && o.CreatedAt < end, cancellationToken);
     }
 }

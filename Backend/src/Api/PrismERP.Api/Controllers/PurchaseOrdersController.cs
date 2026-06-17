@@ -50,16 +50,6 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
         return CreatedAtAction(nameof(GetById), new { id = amendment.Id }, amendment);
     }
 
-    [HttpPost("{id:int}/lines")]
-    public async Task<IActionResult> AddLine(
-        int id,
-        [FromBody] AddPurchaseOrderLineRequest request,
-        CancellationToken cancellationToken)
-    {
-        await purchaseOrderService.AddLineAsync(id, request, cancellationToken);
-        return NoContent();
-    }
-
     [HttpPost("{id:int}/approve")]
     public async Task<IActionResult> Approve(int id, CancellationToken cancellationToken)
     {
