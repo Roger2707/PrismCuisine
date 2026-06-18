@@ -136,6 +136,14 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
         return reservation is null ? null : MapReservation(reservation);
     }
 
+    public async Task<IReadOnlyCollection<InventoryReservationDto>> GetReservationsByBalanceIdAsync(
+        int balanceId,
+        CancellationToken cancellationToken = default)
+    {
+        var reservations = await unitOfWork.Reservations.GetByBalanceIdAsync(balanceId, cancellationToken);
+        return reservations.Select(MapReservation).ToList();
+    }
+
     public async Task<List<InventoryReservation>?> GetActivesByReferencesAsync(InventoryReferenceType referenceType, HashSet<int> referenceIds, CancellationToken cancellationToken = default)
     {
         return await unitOfWork.Reservations.GetActivesByReferencesAsync(referenceType, referenceIds, cancellationToken);

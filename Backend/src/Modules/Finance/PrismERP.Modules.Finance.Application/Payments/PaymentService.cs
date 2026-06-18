@@ -139,4 +139,11 @@ public sealed class PaymentService(IFinanceUnitOfWork unitOfWork) : IPaymentServ
             payment.BankName,
             payment.AccountNumber,
             payment.Notes);
+
+    public async Task<string> GeneratePaymentNumberAsync(CancellationToken cancellationToken = default)
+    {
+        var today = DateTime.UtcNow.Date;
+        var count = await unitOfWork.Payments.GetCountForDateAsync(today, cancellationToken);
+        return $"PAY-{today:yyyyMMdd}-{(count + 1):D4}";
+    }
 }

@@ -34,6 +34,7 @@ export interface PurchaseOrderSummaryDto {
   supplierId: number;
   warehouseId: number;
   status: string;
+  invoiceStatus: string;
   amendedFromPurchaseOrderId?: number;
   approvedAt?: string;
   totalAmount: number;
@@ -54,6 +55,7 @@ export interface PurchaseOrderDto {
   supplierId: number;
   warehouseId: number;
   status: string;
+  invoiceStatus: string;
   amendedFromPurchaseOrderId?: number;
   approvedAt?: string;
   notes?: string;

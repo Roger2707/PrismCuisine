@@ -37,6 +37,10 @@ public sealed record PurchaseInvoiceLineDto(
     decimal DiscountAmount,
     decimal LineTotal);
 
+public sealed record CreatePurchaseInvoiceFromGoodsReceiptRequest(
+    int PurchaseOrderId,
+    int GoodsReceiptId);
+
 public sealed record CreatePurchaseInvoiceRequest(
     string InvoiceNumber,
     InvoiceType InvoiceType,

@@ -30,6 +30,12 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         return invoice is null ? null : Map(invoice);
     }
 
+    public async Task<InvoiceDto?> GetByDeliveryNoteIdAsync(int deliveryNoteId, CancellationToken cancellationToken = default)
+    {
+        var invoice = await unitOfWork.Invoices.GetByDeliveryNoteIdAsync(deliveryNoteId, cancellationToken);
+        return invoice is null ? null : Map(invoice);
+    }
+
     public async Task<IReadOnlyCollection<InvoiceDto>> GetInvoicesByPurchaseOrderAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
         var invoices = await unitOfWork.Invoices.GetByPurchaseOrderAsync(purchaseOrderId, cancellationToken);

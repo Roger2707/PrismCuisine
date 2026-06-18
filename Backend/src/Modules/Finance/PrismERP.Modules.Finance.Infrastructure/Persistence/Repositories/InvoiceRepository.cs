@@ -37,6 +37,14 @@ internal sealed class InvoiceRepository(PrismERPDbContext db) : IInvoiceReposito
                 i => i.GoodsReceiptId == goodsReceiptId,
                 cancellationToken);
 
+    public Task<Invoice?> GetByDeliveryNoteIdAsync(int deliveryNoteId, CancellationToken cancellationToken = default)
+        => db.Invoices
+            .Include(i => i.Lines)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                i => i.DeliveryNoteId == deliveryNoteId,
+                cancellationToken);
+
     public Task<IReadOnlyCollection<Invoice>> GetAllAsync(CancellationToken cancellationToken = default) =>
         db.Invoices
             .Include(i => i.Lines)

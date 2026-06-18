@@ -1,6 +1,8 @@
-import type { GoodsReceiptDto, GoodsReceiptSummaryDto } from '../../services/types/purchasing.types';
-import type { GoodsReceiptLineEditable } from '../../pages/purchasing/goodsReceiptFromPO';
-import { isPoPartiallyReceived } from '../../pages/purchasing/goodsReceiptFromPO';
+import type { GoodsReceiptDto } from '../../services/types/purchasing.types';
+import type { GoodsReceiptLineEditable } from '../../pages/purchasing/goodsReceipt/types';
+import { formatCurrency } from '../../utils/formatters';
+import { StatusBadge } from '../../utils/statusBadge';
+import { LoadingButton } from '../LoadingButton';
 
 interface GoodsReceiptEditModalProps {
   isOpen: boolean;
@@ -12,7 +14,14 @@ interface GoodsReceiptEditModalProps {
   onNotesChange: (notes: string) => void;
   onSave: () => void;
   onPost: () => void;
-  formatCurrency: (value: number) => string;
+  onViewInvoice?: () => void;
+  onCreateInvoice?: () => void;
+  showViewInvoice?: boolean;
+  showCreateInvoice?: boolean;
+  creatingInvoice?: boolean;
+  saving?: boolean;
+  posting?: boolean;
+  viewingInvoice?: boolean;
 }
 
 export function GoodsReceiptEditModal({
@@ -25,7 +34,14 @@ export function GoodsReceiptEditModal({
   onNotesChange,
   onSave,
   onPost,
-  formatCurrency,
+  onViewInvoice,
+  onCreateInvoice,
+  showViewInvoice,
+  showCreateInvoice,
+  creatingInvoice,
+  saving,
+  posting,
+  viewingInvoice,
 }: GoodsReceiptEditModalProps) {
   if (!isOpen) return null;
 
@@ -46,17 +62,11 @@ export function GoodsReceiptEditModal({
               <div className="order-info-section">
                 <h3>Receipt Information</h3>
                 <div className="info-grid">
-                  <div className="info-item">
-                    <label>Receipt Number:</label>
-                    <span>{goodsReceipt.receiptNumber}</span>
-                  </div>
-                  <div className="info-item">
-                    <label>Purchase Order ID:</label>
-                    <span>{goodsReceipt.purchaseOrderId}</span>
-                  </div>
+                  <div className="info-item"><label>Receipt Number:</label><span>{goodsReceipt.receiptNumber}</span></div>
+                  <div className="info-item"><label>Purchase Order ID:</label><span>{goodsReceipt.purchaseOrderId}</span></div>
                   <div className="info-item">
                     <label>Status:</label>
-                    <span className={`status ${goodsReceipt.status.toLowerCase()}`}>{goodsReceipt.status}</span>
+                    <StatusBadge status={goodsReceipt.status} />
                   </div>
                 </div>
                 <div className="form-group">
@@ -70,7 +80,6 @@ export function GoodsReceiptEditModal({
                   />
                 </div>
               </div>
-
               <div className="order-lines-section">
                 <h3>Receipt Lines</h3>
                 <table className="data-table editable-table">
@@ -109,7 +118,6 @@ export function GoodsReceiptEditModal({
                   </tbody>
                 </table>
               </div>
-
               <div className="order-totals-footer">
                 <div className="totals-grid">
                   <div className="total-item total-amount-item">
@@ -125,98 +133,25 @@ export function GoodsReceiptEditModal({
         </div>
         {goodsReceipt && (
           <div className="modal-footer">
-            <button className="cancel-button" onClick={onClose}>Cancel</button>
+            <LoadingButton variant="secondary" onClick={onClose} disabled={saving || posting || creatingInvoice}>Cancel</LoadingButton>
+            {showCreateInvoice && onCreateInvoice && (
+              <LoadingButton variant="action" onClick={onCreateInvoice} loading={creatingInvoice} loadingText="Creating...">
+                Create Invoice
+              </LoadingButton>
+            )}
+            {showViewInvoice && onViewInvoice && (
+              <LoadingButton variant="action" onClick={onViewInvoice} loading={viewingInvoice} loadingText="Loading...">
+                View Invoice
+              </LoadingButton>
+            )}
             {goodsReceipt.id !== 0 && isDraft && (
-              <button className="approve-button" onClick={onPost}>Post</button>
+              <LoadingButton variant="approve" onClick={onPost} loading={posting} loadingText="Posting...">Post</LoadingButton>
             )}
             {isDraft && (
-              <button className="save-button" onClick={onSave}>Save</button>
+              <LoadingButton variant="primary" onClick={onSave} loading={saving} loadingText="Saving...">Save</LoadingButton>
             )}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-interface GoodsReceiptSearchModalProps {
-  isOpen: boolean;
-  purchaseOrderId?: number;
-  poStatus?: string;
-  receipts: GoodsReceiptSummaryDto[];
-  onClose: () => void;
-  onSelect: (receiptId: number) => void;
-  onCreateNew: () => void;
-  formatDate: (date: string | Date | null | undefined) => string;
-}
-
-export function GoodsReceiptSearchModal({
-  isOpen,
-  purchaseOrderId,
-  poStatus,
-  receipts,
-  onClose,
-  onSelect,
-  onCreateNew,
-  formatDate,
-}: GoodsReceiptSearchModalProps) {
-  if (!isOpen) return null;
-
-  const showCreateButton = poStatus ? isPoPartiallyReceived(poStatus) : false;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
-          <h2>Goods Receipts for PO #{purchaseOrderId}</h2>
-          <button className="close-button" onClick={onClose}>×</button>
-        </div>
-        <div className="modal-body">
-          <div className="data-table-container">
-            <div className="table-header">
-              <h2>Goods Receipt List</h2>
-              {showCreateButton && (
-                <button className="add-button" onClick={onCreateNew}>+ Create New Receipt</button>
-              )}
-            </div>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Receipt Number</th>
-                  <th>Status</th>
-                  <th>Posted Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {receipts.map((receipt) => (
-                  <tr
-                    key={receipt.id}
-                    className="search-row"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => onSelect(receipt.id)}
-                  >
-                    <td>{receipt.id}</td>
-                    <td>{receipt.receiptNumber}</td>
-                    <td>
-                      <span className={`status ${receipt.status.toLowerCase()}`}>
-                        {receipt.status}
-                      </span>
-                    </td>
-                    <td>{receipt.postedAt ? formatDate(receipt.postedAt) : 'N/A'}</td>
-                  </tr>
-                ))}
-                {receipts.length === 0 && (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '20px' }}>
-                      No goods receipts found for this purchase order
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </div>
   );

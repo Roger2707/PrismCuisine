@@ -11,4 +11,5 @@ public interface IPaymentRepository
     Task<IReadOnlyCollection<Payment>> GetAllAsync(CancellationToken cancellationToken = default);
     void Add(Payment payment);
     void Update(Payment payment);
+    Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default);
 }

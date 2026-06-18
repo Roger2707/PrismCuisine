@@ -1,107 +1,12 @@
 import { useState, useCallback } from 'react';
-import { deliveryNotesApi } from '../../services/salesOrderingApi';
-import type {
-  SalesOrderDto,
-  SalesOrderLineDto,
-  DeliveryNoteDto,
-  DeliveryNoteSummaryDto,
-} from '../../services/types/salesOrdering.types';
-import { parseApiError, getToastMessage } from '../../utils/errorHandler';
-
-export interface DeliveryNoteLineEditable {
-  id: number;
-  salesOrderLineId: number;
-  productId: number;
-  productName: string;
-  quantityOrdered: number;
-  quantityRemaining: number;
-  quantityDelivered: number;
-}
-
-export function normalizeStatus(status: string): string {
-  return status.toLowerCase().replace(/[^a-z]/g, '');
-}
-
-export function isSoDraftOrCancelled(status: string): boolean {
-  const s = normalizeStatus(status);
-  return s === 'draft' || s === 'cancelled';
-}
-
-export function isSoConfirmed(status: string): boolean {
-  return normalizeStatus(status) === 'confirmed';
-}
-
-export function isSoPartialDelivery(status: string): boolean {
-  return normalizeStatus(status) === 'partialdelivery';
-}
-
-export function canOpenDeliveryNote(status: string): boolean {
-  const s = normalizeStatus(status);
-  return s === 'confirmed' || s === 'partialdelivery' || s === 'delivered';
-}
-
-export function isDeliveryNotePosted(status: string): boolean {
-  return normalizeStatus(status) === 'posted';
-}
-
-export function isDeliveryNoteDraft(status: string): boolean {
-  return normalizeStatus(status) === 'draft';
-}
-
-function mapSoLineToDnLine(
-  line: SalesOrderLineDto,
-  quantityDelivered: number,
-  lineId = 0,
-): DeliveryNoteLineEditable {
-  return {
-    id: lineId,
-    salesOrderLineId: line.id,
-    productId: line.productId,
-    productName: line.productName,
-    quantityOrdered: line.quantityOrdered,
-    quantityRemaining: line.quantityRemaining,
-    quantityDelivered,
-  };
-}
-
-function mapDeliveryLineToEditable(
-  deliveryLine: DeliveryNoteDto['lines'][number],
-  soLine?: SalesOrderLineDto,
-): DeliveryNoteLineEditable {
-  return {
-    id: deliveryLine.id,
-    salesOrderLineId: deliveryLine.salesOrderLineId,
-    productId: deliveryLine.productId,
-    productName: deliveryLine.productName,
-    quantityOrdered: soLine?.quantityOrdered ?? 0,
-    quantityRemaining: soLine?.quantityRemaining ?? 0,
-    quantityDelivered: deliveryLine.quantityDelivered,
-  };
-}
-
-function buildNewDraftDelivery(salesOrder: SalesOrderDto): DeliveryNoteDto {
-  return {
-    id: 0,
-    deliveryNumber: `DN-${new Date().getFullYear()}-${String(salesOrder.id).padStart(4, '0')}`,
-    salesOrderId: salesOrder.id,
-    customerId: salesOrder.customerId,
-    customerName: salesOrder.customerName,
-    orderNumber: salesOrder.orderNumber,
-    deliveryDate: new Date().toISOString(),
-    status: 'Draft',
-    notes: '',
-    lines: [],
-  };
-}
-
-function buildLinesForSave(lines: DeliveryNoteLineEditable[]) {
-  return lines
-    .filter((line) => line.quantityDelivered > 0)
-    .map((line) => ({
-      salesOrderLineId: line.salesOrderLineId,
-      quantityDelivered: line.quantityDelivered,
-    }));
-}
+import { deliveryNotesApi } from '../../../services/salesOrderingApi';
+import { invoicesApi } from '../../../services/financeApi';
+import type { InvoiceDto } from '../../../services/types/finance.types';
+import type { SalesOrderDto, DeliveryNoteDto, DeliveryNoteSummaryDto } from '../../../services/types/salesOrdering.types';
+import { parseApiError, getToastMessage } from '../../../utils/errorHandler';
+import type { DeliveryNoteLineEditable } from './types';
+import { isDeliveryNoteDraft, isDeliveryNotePosted, canOpenDeliveryNote, isSoDraftOrCancelled } from './statusHelpers';
+import { mapSoLineToDnLine, mapDeliveryLineToEditable, buildNewDraftDelivery, buildLinesForSave } from './mappers';
 
 interface UseDeliveryNoteFromSOOptions {
   showToast: (message: string, type: 'success' | 'error') => void;
@@ -116,11 +21,18 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
   const [loading, setLoading] = useState(false);
   const [deliveryNoteList, setDeliveryNoteList] = useState<DeliveryNoteSummaryDto[]>([]);
   const [activeSalesOrder, setActiveSalesOrder] = useState<SalesOrderDto | null>(null);
+  const [linkedInvoice, setLinkedInvoice] = useState<InvoiceDto | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [posting, setPosting] = useState(false);
 
   const closeEditModal = useCallback(() => {
     setShowEditModal(false);
     setDeliveryNote(null);
     setDeliveryNoteLines([]);
+    setLinkedInvoice(null);
+    setShowInvoiceModal(false);
   }, []);
 
   const closeSearchModal = useCallback(() => {
@@ -141,6 +53,12 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
         );
         setDeliveryNote(note);
         setDeliveryNoteLines(editableLines);
+        if (isDeliveryNotePosted(note.status)) {
+          const invoice = await invoicesApi.getByDeliveryNote(deliveryId);
+          setLinkedInvoice(invoice);
+        } else {
+          setLinkedInvoice(null);
+        }
       } catch (error) {
         console.error('Failed to load delivery note', error);
         showToast('Failed to load delivery note', 'error');
@@ -168,12 +86,10 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
       try {
         const notes = await deliveryNotesApi.getBySalesOrder(soDetail.id);
         const draftNote = notes.find((n) => isDeliveryNoteDraft(n.status));
-
         if (draftNote) {
           await openEditWithDelivery(draftNote.id, soDetail);
           return;
         }
-
         openNewDraftFromSo(soDetail, 0);
       } catch (error) {
         console.error('Failed to open delivery note for confirmed SO', error);
@@ -205,16 +121,13 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
         showToast('Sales order must be confirmed before creating delivery note', 'error');
         return;
       }
-
       try {
         const notes = await deliveryNotesApi.getBySalesOrder(soDetail.id);
         const hasPostedNote = notes.some((n) => isDeliveryNotePosted(n.status));
-
         if (hasPostedNote) {
           await openSearchFlow(soDetail);
           return;
         }
-
         await openConfirmedSoFlow(soDetail);
       } catch (error) {
         console.error('Failed to open delivery note flow', error);
@@ -235,11 +148,9 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
 
   const handleCreateNewDeliveryNote = useCallback(async () => {
     if (!activeSalesOrder) return;
-
     setShowSearchModal(false);
     setLoading(true);
     setShowEditModal(true);
-
     try {
       openNewDraftFromSo(activeSalesOrder, 0);
     } catch (error) {
@@ -261,13 +172,12 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
 
   const handleSave = useCallback(async () => {
     if (!deliveryNote) return;
-
     const linesToSave = buildLinesForSave(deliveryNoteLines);
     if (deliveryNote.id === 0 && linesToSave.length === 0) {
       showToast('Enter quantity for at least one line before saving', 'error');
       return;
     }
-
+    setSaving(true);
     try {
       if (deliveryNote.id === 0) {
         await deliveryNotesApi.create({
@@ -283,17 +193,18 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
         });
         showToast('Delivery note updated successfully!', 'success');
       }
-
       closeEditModal();
       await onSalesOrderChanged?.();
     } catch (error: unknown) {
       showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setSaving(false);
     }
   }, [closeEditModal, deliveryNote, deliveryNoteLines, onSalesOrderChanged, showToast]);
 
   const handlePost = useCallback(async () => {
     if (!deliveryNote || deliveryNote.id === 0) return;
-
+    setPosting(true);
     try {
       await deliveryNotesApi.post(deliveryNote.id);
       showToast('Delivery note posted successfully!', 'success');
@@ -301,12 +212,33 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
       await onSalesOrderChanged?.();
     } catch (error: unknown) {
       showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setPosting(false);
     }
   }, [closeEditModal, deliveryNote, onSalesOrderChanged, showToast]);
 
-  const isDeliveryNoteButtonDisabled = useCallback((status: string) => {
-    return isSoDraftOrCancelled(status);
-  }, []);
+  const isDeliveryNoteButtonDisabled = useCallback((status: string) => isSoDraftOrCancelled(status), []);
+
+  const handleViewInvoice = useCallback(async () => {
+    if (!deliveryNote || deliveryNote.id === 0) return;
+    setShowInvoiceModal(true);
+    setInvoiceLoading(true);
+    try {
+      const invoice = linkedInvoice ?? await invoicesApi.getByDeliveryNote(deliveryNote.id);
+      setLinkedInvoice(invoice);
+      if (!invoice) showToast('Invoice not found for this delivery note', 'error');
+    } catch (error: unknown) {
+      showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setInvoiceLoading(false);
+    }
+  }, [deliveryNote, linkedInvoice, showToast]);
+
+  const closeInvoiceModal = useCallback(() => setShowInvoiceModal(false), []);
+
+  const canViewInvoice = deliveryNote
+    ? isDeliveryNotePosted(deliveryNote.status) && (linkedInvoice !== null || deliveryNote.id > 0)
+    : false;
 
   return {
     showEditModal,
@@ -326,5 +258,25 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
     closeEditModal,
     closeSearchModal,
     setDeliveryNote,
+    linkedInvoice,
+    showInvoiceModal,
+    invoiceLoading,
+    handleViewInvoice,
+    closeInvoiceModal,
+    canViewInvoice,
+    saving,
+    posting,
   };
 }
+
+// Re-export for backward compatibility
+export type { DeliveryNoteLineEditable } from './types';
+export {
+  normalizeStatus,
+  isSoDraftOrCancelled,
+  isSoConfirmed,
+  isSoPartialDelivery,
+  canOpenDeliveryNote,
+  isDeliveryNotePosted,
+  isDeliveryNoteDraft,
+} from './statusHelpers';

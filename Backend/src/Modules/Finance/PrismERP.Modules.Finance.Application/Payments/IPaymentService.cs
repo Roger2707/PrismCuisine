@@ -12,4 +12,5 @@ public interface IPaymentService
     Task FailAsync(int id, CancellationToken cancellationToken = default);
     Task CancelAsync(int id, CancellationToken cancellationToken = default);
     Task RefundAsync(int id, CancellationToken cancellationToken = default);
+    Task<string> GeneratePaymentNumberAsync(CancellationToken cancellationToken = default);
 }

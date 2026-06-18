@@ -40,6 +40,13 @@ public sealed class InventoryController(IInventoryPostingService inventoryPostin
         return Ok(balance);
     }
 
+    [HttpGet("balances/{id}/reservations")]
+    public async Task<IActionResult> GetReservations(int id, CancellationToken cancellationToken)
+    {
+        var reservations = await inventoryPostingService.GetReservationsByBalanceIdAsync(id, cancellationToken);
+        return Ok(reservations);
+    }
+
     [HttpGet("balances/{id}/movements")]
     public async Task<IActionResult> GetMovements(int id, CancellationToken cancellationToken)
     {

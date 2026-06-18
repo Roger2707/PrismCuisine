@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Purchasing.Application.Abstractions;
 using PrismERP.Modules.Purchasing.Application.GoodsReceipts;
+using PrismERP.Modules.Purchasing.Application.PurchaseInvoices;
 using PrismERP.Modules.Purchasing.Application.PurchaseOrders;
 using PrismERP.Modules.Purchasing.Application.Suppliers;
 using PrismERP.Modules.Purchasing.Infrastructure.Persistence;
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ISupplierService, SupplierService>();
         services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
         services.AddScoped<IGoodsReceiptService, GoodsReceiptService>();
+        services.AddScoped<IPurchaseInvoiceService, PurchaseInvoiceService>();
         services.AddScoped<IPurchasingDataSeeder, PurchasingDataSeeder>();
 
         return services;

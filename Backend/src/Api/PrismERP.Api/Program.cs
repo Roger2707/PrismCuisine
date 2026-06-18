@@ -30,13 +30,16 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://localhost:5173",
-                "https://localhost:5173"
+                "https://localhost:5173",
+                "http://localhost:3000"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
 });
+
+builder.Services.AddSignalR();
 
 #region Scalar API Reference
 
@@ -181,6 +184,7 @@ app.UseAuthorization();
 app.UseExceptionHandler();
 
 app.MapControllers();
+app.MapHub<PrismERP.Api.Hubs.NotificationHub>("/hubs/notifications");
 
 app.Run();
 

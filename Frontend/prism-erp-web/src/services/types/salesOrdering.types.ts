@@ -37,6 +37,7 @@ export interface SalesOrderSummaryDto {
   deliveryDate?: string;
   approvedAt?: string;
   status: string;
+  invoiceStatus: string;
   notes?: string;
   subTotal: number;
   totalDiscount: number;
@@ -68,6 +69,7 @@ export interface SalesOrderDto {
   deliveryDate?: string;
   approvedAt?: string;
   status: string;
+  invoiceStatus: string;
   notes?: string;
   subTotal: number;
   totalDiscount: number;

@@ -112,6 +112,10 @@ export const inventoryApi = {
     const response = await apiClient.get<InventoryCostLayerDto[]>(`/api/inventory/balances/${id}/cost-layers`);
     return response.data;
   },
+  getReservations: async (balanceId: number): Promise<InventoryReservationDto[]> => {
+    const response = await apiClient.get<InventoryReservationDto[]>(`/api/inventory/balances/${balanceId}/reservations`);
+    return response.data;
+  },
   receive: async (request: ReceiveInventoryRequest): Promise<InventoryMovementDto> => {
     const response = await apiClient.post<InventoryMovementDto>('/api/inventory/receive', request);
     return response.data;

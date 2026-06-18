@@ -54,6 +54,16 @@ internal sealed class InventoryReservationRepository(PrismERPDbContext db) : IIn
             .ToListAsync(cancellationToken);
     }
 
+    public Task<IReadOnlyCollection<InventoryReservation>> GetByBalanceIdAsync(
+        int inventoryBalanceId,
+        CancellationToken cancellationToken = default) =>
+        db.InventoryReservations
+            .AsNoTracking()
+            .Where(r => r.InventoryBalanceId == inventoryBalanceId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(cancellationToken)
+            .ContinueWith(t => (IReadOnlyCollection<InventoryReservation>)t.Result, cancellationToken);
+
     public void Add(InventoryReservation reservation) => db.InventoryReservations.Add(reservation);
 
     public void Update(InventoryReservation reservation) => db.InventoryReservations.Update(reservation);

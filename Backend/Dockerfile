@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY PrismERP.sln ./
+COPY PrismERP.slnx ./
 COPY src/ ./src/
 
 RUN dotnet restore src/Api/PrismERP.Api/PrismERP.Api.csproj

@@ -33,18 +33,38 @@ public sealed class PurchaseInvoiceService(
         return Map(invoice);
     }
 
-    public async Task<PurchaseInvoiceDto> CreateAsync(CreatePurchaseInvoiceRequest request, CancellationToken cancellationToken = default)
+    public async Task<PurchaseInvoiceDto?> GetByGoodsReceiptIdAsync(int goodsReceiptId, CancellationToken cancellationToken = default)
+    {
+        var invoice = await invoiceService.GetByGoodsReceiptIdAsync(goodsReceiptId, cancellationToken);
+        if (invoice is null || invoice.InvoiceType != InvoiceType.PurchaseInvoice)
+            return null;
+
+        return Map(invoice);
+    }
+
+    public Task<PurchaseInvoiceDto> CreateFromGoodsReceiptAsync(
+        CreatePurchaseInvoiceFromGoodsReceiptRequest request,
+        CancellationToken cancellationToken = default) =>
+        CreateInternalAsync(request.PurchaseOrderId, request.GoodsReceiptId, cancellationToken);
+
+    public Task<PurchaseInvoiceDto> CreateAsync(CreatePurchaseInvoiceRequest request, CancellationToken cancellationToken = default) =>
+        CreateInternalAsync(request.PurchaseOrderId, request.GoodsReceiptId, cancellationToken);
+
+    private async Task<PurchaseInvoiceDto> CreateInternalAsync(
+        int purchaseOrderId,
+        int goodsReceiptId,
+        CancellationToken cancellationToken)
     {
         #region Validations
 
-        var existing = await invoiceService.GetByGoodsReceiptIdAsync(request.GoodsReceiptId, cancellationToken);
+        var existing = await invoiceService.GetByGoodsReceiptIdAsync(goodsReceiptId, cancellationToken);
         if (existing != null)
-            throw new BusinessException($"Invoice with PurchaseOrderId : {request.PurchaseOrderId} and GoodsReceiptId : {request.GoodsReceiptId} is existed !");
+            throw new BusinessException($"Invoice with PurchaseOrderId : {purchaseOrderId} and GoodsReceiptId : {goodsReceiptId} is existed !");
 
-        var goodsReceipt = await goodsReceiptService.GetByIdAsync(request.GoodsReceiptId);
+        var goodsReceipt = await goodsReceiptService.GetByIdAsync(goodsReceiptId);
         if (goodsReceipt == null)
-            throw new NotFoundException($"GoodsReceipt with ID : {request.GoodsReceiptId} is not found !");
-        var purchaseOrder = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(request.PurchaseOrderId);
+            throw new NotFoundException($"GoodsReceipt with ID : {goodsReceiptId} is not found !");
+        var purchaseOrder = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId);
         if (purchaseOrder == null)
             throw new NotFoundException($"PurchaseOrder with ID : {goodsReceipt.PurchaseOrderId} is not found !");
         var supplier = await supplierService.GetByIdAsync(purchaseOrder.SupplierId);
@@ -74,8 +94,8 @@ public sealed class PurchaseInvoiceService(
 
             var invoiceDto = await invoiceService.CreateAsync(
                 new CreateInvoiceRequest(
-                    invoiceNumber, InvoiceType.SalesInvoice, DateTime.UtcNow, null, supplier.Name, supplier?.Address ?? "",
-                    null, null, request.PurchaseOrderId, request.GoodsReceiptId, "", invoiceLinesMap), cancellationToken);
+                    invoiceNumber, InvoiceType.PurchaseInvoice, DateTime.UtcNow, null, supplier.Name, supplier?.Address ?? "",
+                    null, null, purchaseOrderId, goodsReceiptId, "", invoiceLinesMap), cancellationToken);
 
             // Update InvoiceStatus (in PurchaseOrder)
             await UpdatePurchaseInvoiceStatus(purchaseOrder);

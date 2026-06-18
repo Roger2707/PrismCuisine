@@ -35,4 +35,11 @@ internal sealed class PaymentRepository(PrismERPDbContext db) : IPaymentReposito
     public void Add(Payment payment) => db.Payments.Add(payment);
 
     public void Update(Payment payment) => db.Payments.Update(payment);
+
+    public Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        var start = date.Date;
+        var end = start.AddDays(1);
+        return db.Payments.CountAsync(p => p.CreatedAt >= start && p.CreatedAt < end, cancellationToken);
+    }
 }

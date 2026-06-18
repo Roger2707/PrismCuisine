@@ -48,6 +48,8 @@ namespace PrismERP.Modules.SalesOrdering.Application.Customers
             var customer = await unitOfWork.Customers.GetByIdAsync(id, cancellationToken)
                 ?? throw new DomainException($"Customer '{id}' was not found.");
 
+            customer.Update(request.Name, request.Phone, request.Email, request.Address, request.TaxCode);
+
             unitOfWork.Customers.Update(customer);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }

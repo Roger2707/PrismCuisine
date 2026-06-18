@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { parseApiError, type ApiError } from '../utils/errorHandler';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5085';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.PROD ? '' : 'http://localhost:5085');
 
 // Create axios instance with base configuration
 const apiClient = axios.create({

@@ -23,5 +23,6 @@ namespace PrismERP.Modules.SalesOrdering.Application.Customers
         string? Phone,
         string? Email,
         string? Address,
-        string? TaxCode);
+        string? TaxCode
+    );
 }

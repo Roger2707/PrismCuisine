@@ -1,116 +1,23 @@
 import { useState, useCallback } from 'react';
-import { goodsReceiptsApi } from '../../services/purchasingApi';
-import type {
-  PurchaseOrderDto,
-  PurchaseOrderLineDto,
-  GoodsReceiptDto,
-  GoodsReceiptSummaryDto,
-} from '../../services/types/purchasing.types';
-import { parseApiError, getToastMessage } from '../../utils/errorHandler';
-
-export interface GoodsReceiptLineEditable {
-  id: number;
-  purchaseOrderLineId: number;
-  productId: number;
-  productName: string;
-  quantityOrdered: number;
-  quantityRemaining: number;
-  quantityReceived: number;
-  unitCost: number;
-  lineTotal: number;
-}
-
-export function normalizeStatus(status: string): string {
-  return status.toLowerCase().replace(/[^a-z]/g, '');
-}
-
-export function isPoDraftOrCancelled(status: string): boolean {
-  const s = normalizeStatus(status);
-  return s === 'draft' || s === 'cancelled';
-}
-
-export function isPoApproved(status: string): boolean {
-  return normalizeStatus(status) === 'approved';
-}
-
-export function isPoPartiallyReceived(status: string): boolean {
-  return normalizeStatus(status) === 'partiallyreceived';
-}
-
-export function isPoFullyReceived(status: string): boolean {
-  return normalizeStatus(status) === 'received';
-}
-
-export function canOpenGoodsReceipt(status: string): boolean {
-  const s = normalizeStatus(status);
-  return s === 'approved' || s === 'partiallyreceived' || s === 'received';
-}
-
-export function isGoodsReceiptPosted(status: string): boolean {
-  return normalizeStatus(status) === 'posted';
-}
-
-export function isGoodsReceiptDraft(status: string): boolean {
-  return normalizeStatus(status) === 'draft';
-}
-
-function mapPoLineToGrLine(
-  line: PurchaseOrderLineDto,
-  quantityReceived: number,
-  lineId = 0,
-): GoodsReceiptLineEditable {
-  return {
-    id: lineId,
-    purchaseOrderLineId: line.id,
-    productId: line.productId,
-    productName: `Product ${line.productId}`,
-    quantityOrdered: line.quantityOrdered,
-    quantityRemaining: line.quantityRemaining,
-    quantityReceived,
-    unitCost: line.unitPrice,
-    lineTotal: quantityReceived * line.unitPrice,
-  };
-}
-
-function mapReceiptLineToEditable(
-  receiptLine: GoodsReceiptDto['lines'][number],
-  poLine?: PurchaseOrderLineDto,
-): GoodsReceiptLineEditable {
-  return {
-    id: receiptLine.id,
-    purchaseOrderLineId: receiptLine.purchaseOrderLineId,
-    productId: receiptLine.productId,
-    productName: `Product ${receiptLine.productId}`,
-    quantityOrdered: poLine?.quantityOrdered ?? 0,
-    quantityRemaining: poLine?.quantityRemaining ?? 0,
-    quantityReceived: receiptLine.quantity,
-    unitCost: receiptLine.unitCost,
-    lineTotal: receiptLine.quantity * receiptLine.unitCost,
-  };
-}
-
-function buildNewDraftReceipt(purchaseOrderId: number, suffix = ''): GoodsReceiptDto {
-  const base = `GR-${new Date().getFullYear()}-${String(purchaseOrderId).padStart(4, '0')}`;
-  return {
-    id: 0,
-    receiptNumber: suffix ? `${base}-${suffix}` : base,
-    purchaseOrderId,
-    status: 'Draft',
-    postedAt: undefined,
-    notes: '',
-    lines: [],
-  };
-}
-
-function buildLinesForSave(lines: GoodsReceiptLineEditable[]) {
-  return lines
-    .filter((line) => line.quantityReceived > 0)
-    .map((line) => ({
-      purchaseOrderLineId: line.purchaseOrderLineId,
-      quantity: line.quantityReceived,
-      unitCost: line.unitCost,
-    }));
-}
+import { goodsReceiptsApi } from '../../../services/purchasingApi';
+import { purchaseInvoicesApi } from '../../../services/financeApi';
+import type { InvoiceDto } from '../../../services/types/finance.types';
+import type { PurchaseOrderDto, GoodsReceiptDto, GoodsReceiptSummaryDto } from '../../../services/types/purchasing.types';
+import { parseApiError, getToastMessage } from '../../../utils/errorHandler';
+import type { GoodsReceiptLineEditable } from './types';
+import {
+  isGoodsReceiptDraft,
+  isGoodsReceiptPosted,
+  canOpenGoodsReceipt,
+  isPoApproved,
+  isPoDraftOrCancelled,
+} from './statusHelpers';
+import {
+  mapPoLineToGrLine,
+  mapReceiptLineToEditable,
+  buildNewDraftReceipt,
+  buildLinesForSave,
+} from './mappers';
 
 interface UseGoodsReceiptFromPOOptions {
   showToast: (message: string, type: 'success' | 'error') => void;
@@ -125,11 +32,19 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
   const [loading, setLoading] = useState(false);
   const [goodsReceiptList, setGoodsReceiptList] = useState<GoodsReceiptSummaryDto[]>([]);
   const [activePurchaseOrder, setActivePurchaseOrder] = useState<PurchaseOrderDto | null>(null);
+  const [linkedInvoice, setLinkedInvoice] = useState<InvoiceDto | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [posting, setPosting] = useState(false);
 
   const closeEditModal = useCallback(() => {
     setShowEditModal(false);
     setGoodsReceipt(null);
     setGoodsReceiptLines([]);
+    setLinkedInvoice(null);
+    setShowInvoiceModal(false);
   }, []);
 
   const closeSearchModal = useCallback(() => {
@@ -150,6 +65,12 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
         );
         setGoodsReceipt(receipt);
         setGoodsReceiptLines(editableLines);
+        if (isGoodsReceiptPosted(receipt.status)) {
+          const invoice = await purchaseInvoicesApi.getByGoodsReceipt(receiptId);
+          setLinkedInvoice(invoice);
+        } else {
+          setLinkedInvoice(null);
+        }
       } catch (error) {
         console.error('Failed to load goods receipt', error);
         showToast('Failed to load goods receipt', 'error');
@@ -180,12 +101,10 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
       try {
         const receipts = await goodsReceiptsApi.getByPurchaseOrder(poDetail.id);
         const draftReceipt = receipts.find((r) => isGoodsReceiptDraft(r.status));
-
         if (draftReceipt) {
           await openEditWithReceipt(draftReceipt.id, poDetail);
           return;
         }
-
         openNewDraftFromPo(poDetail, 0);
       } catch (error) {
         console.error('Failed to open goods receipt for approved PO', error);
@@ -217,22 +136,17 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
         showToast('Purchase order must be approved before creating goods receipt', 'error');
         return;
       }
-
       try {
         const receipts = await goodsReceiptsApi.getByPurchaseOrder(poDetail.id);
         const hasPostedReceipt = receipts.some((r) => isGoodsReceiptPosted(r.status));
-
         if (hasPostedReceipt) {
           await openSearchFlow(poDetail);
           return;
         }
-
         if (isPoApproved(poDetail.status)) {
           await openApprovedPoFlow(poDetail);
           return;
         }
-
-        // Partially received but no posted receipt yet — fall back to approved flow
         await openApprovedPoFlow(poDetail);
       } catch (error) {
         console.error('Failed to open goods receipt flow', error);
@@ -253,11 +167,9 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
 
   const handleCreateNewGoodsReceipt = useCallback(async () => {
     if (!activePurchaseOrder) return;
-
     setShowSearchModal(false);
     setLoading(true);
     setShowEditModal(true);
-
     try {
       const existingReceipts = await goodsReceiptsApi.getByPurchaseOrder(activePurchaseOrder.id);
       const suffix = String(existingReceipts.length + 1).padStart(2, '0');
@@ -271,30 +183,26 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
     }
   }, [activePurchaseOrder, closeEditModal, openNewDraftFromPo, showToast]);
 
-  const handleLineChange = useCallback(
-    (index: number, quantityReceived: number) => {
-      setGoodsReceiptLines((prev) => {
-        const updated = [...prev];
-        updated[index] = {
-          ...updated[index],
-          quantityReceived,
-          lineTotal: quantityReceived * updated[index].unitCost,
-        };
-        return updated;
-      });
-    },
-    [],
-  );
+  const handleLineChange = useCallback((index: number, quantityReceived: number) => {
+    setGoodsReceiptLines((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        quantityReceived,
+        lineTotal: quantityReceived * updated[index].unitCost,
+      };
+      return updated;
+    });
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!goodsReceipt) return;
-
+    setSaving(true);
     const linesToSave = buildLinesForSave(goodsReceiptLines);
     if (goodsReceipt.id === 0 && linesToSave.length === 0) {
       showToast('Enter quantity for at least one line before saving', 'error');
       return;
     }
-
     try {
       if (goodsReceipt.id === 0) {
         await goodsReceiptsApi.create({
@@ -311,32 +219,69 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
         });
         showToast('Goods receipt updated successfully!', 'success');
       }
-
       closeEditModal();
       await onPurchaseOrderChanged?.();
     } catch (error: unknown) {
-      const apiError = parseApiError(error);
-      showToast(getToastMessage(apiError), 'error');
+      showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setSaving(false);
     }
   }, [closeEditModal, goodsReceipt, goodsReceiptLines, onPurchaseOrderChanged, showToast]);
 
   const handlePost = useCallback(async () => {
     if (!goodsReceipt || goodsReceipt.id === 0) return;
-
+    setPosting(true);
     try {
       await goodsReceiptsApi.post(goodsReceipt.id);
       showToast('Goods receipt posted successfully!', 'success');
       closeEditModal();
       await onPurchaseOrderChanged?.();
     } catch (error: unknown) {
-      const apiError = parseApiError(error);
-      showToast(getToastMessage(apiError), 'error');
+      showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setPosting(false);
     }
   }, [closeEditModal, goodsReceipt, onPurchaseOrderChanged, showToast]);
 
-  const isGoodsReceiptButtonDisabled = useCallback((status: string) => {
-    return isPoDraftOrCancelled(status);
-  }, []);
+  const isGoodsReceiptButtonDisabled = useCallback((status: string) => isPoDraftOrCancelled(status), []);
+
+  const handleViewInvoice = useCallback(async () => {
+    if (!goodsReceipt || goodsReceipt.id === 0) return;
+    setShowInvoiceModal(true);
+    setInvoiceLoading(true);
+    try {
+      const invoice = linkedInvoice ?? await purchaseInvoicesApi.getByGoodsReceipt(goodsReceipt.id);
+      setLinkedInvoice(invoice);
+      if (!invoice) showToast('Invoice not found for this goods receipt', 'error');
+    } catch (error: unknown) {
+      showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setInvoiceLoading(false);
+    }
+  }, [goodsReceipt, linkedInvoice, showToast]);
+
+  const handleCreateInvoice = useCallback(async () => {
+    if (!goodsReceipt || goodsReceipt.id === 0) return;
+    setCreatingInvoice(true);
+    try {
+      const invoice = await purchaseInvoicesApi.createFromGoodsReceipt({
+        purchaseOrderId: goodsReceipt.purchaseOrderId,
+        goodsReceiptId: goodsReceipt.id,
+      });
+      setLinkedInvoice(invoice);
+      showToast('Invoice created successfully!', 'success');
+      await onPurchaseOrderChanged?.();
+    } catch (error: unknown) {
+      showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setCreatingInvoice(false);
+    }
+  }, [goodsReceipt, onPurchaseOrderChanged, showToast]);
+
+  const closeInvoiceModal = useCallback(() => setShowInvoiceModal(false), []);
+
+  const isPostedReceipt = goodsReceipt ? isGoodsReceiptPosted(goodsReceipt.status) : false;
+  const hasLinkedInvoice = linkedInvoice !== null;
 
   return {
     showEditModal,
@@ -356,5 +301,28 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
     closeEditModal,
     closeSearchModal,
     setGoodsReceipt,
+    linkedInvoice,
+    showInvoiceModal,
+    invoiceLoading,
+    creatingInvoice,
+    handleViewInvoice,
+    handleCreateInvoice,
+    closeInvoiceModal,
+    isPostedReceipt,
+    hasLinkedInvoice,
+    saving,
+    posting,
   };
 }
+
+export type { GoodsReceiptLineEditable } from './types';
+export {
+  normalizeStatus,
+  isPoDraftOrCancelled,
+  isPoApproved,
+  isPoPartiallyReceived,
+  isPoFullyReceived,
+  canOpenGoodsReceipt,
+  isGoodsReceiptPosted,
+  isGoodsReceiptDraft,
+} from './statusHelpers';

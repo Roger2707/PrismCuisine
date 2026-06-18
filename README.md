@@ -4,7 +4,7 @@ Modular monolith backend (.NET 9) and React frontend.
 
 ## Structure
 
-- `Backend/` — ASP.NET Core API, Clean Architecture, Unit of Work + Repository + Service, RabbitMQ, Redis, SQL Server (schema per module)
+- `Backend/` — ASP.NET Core API, Clean Architecture, Unit of Work + Repository + Service, SignalR, Redis, SQL Server (schema per module)
 - `Frontend/prism-erp-web/` — React + Vite + Redux Toolkit
 
 ## Modules (database schemas)
@@ -26,14 +26,16 @@ Controller → Service (use case) → UnitOfWork / Repository → DbContext
 
 ## Run with Docker
 
-```bash
+See [DOCKER.md](./DOCKER.md).
+
+```powershell
+cd d:\Personals\PrismERP
 docker compose up --build
 ```
 
-- API: http://localhost:8080
-- Web: http://localhost:3000
-- SQL Server: `localhost,1433` (sa / `Your_password123`)
-- RabbitMQ management: http://localhost:15672 (guest/guest)
+- Web: http://localhost:5173
+- API: http://localhost:5085
+- SQL Server: trên **máy host** (SSMS), không trong Docker — mặc định sa / `admin1`
 
 ## Local development
 

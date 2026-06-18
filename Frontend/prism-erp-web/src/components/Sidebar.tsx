@@ -17,6 +17,8 @@ export default function Sidebar({ currentModule, onModuleChange, onLogout }: Sid
     { id: 'products', name: 'Product', icon: '📦' },
     { id: 'purchasing', name: 'Purchase Order', icon: '🛒' },
     { id: 'salesOrdering', name: 'Sales Order', icon: '📋' },
+    { id: 'invoiceInquiry', name: 'Invoice Inquiry', icon: '🧾' },
+    { id: 'paymentInquiry', name: 'Payment Inquiry', icon: '💳' },
     { id: 'inventory', name: 'Inventory', icon: '🗄️' },
   ];
 

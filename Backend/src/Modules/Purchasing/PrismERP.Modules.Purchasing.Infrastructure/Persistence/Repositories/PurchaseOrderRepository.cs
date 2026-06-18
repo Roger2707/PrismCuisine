@@ -38,6 +38,7 @@ internal sealed class PurchaseOrderRepository(PrismERPDbContext db) : IPurchaseO
             o.SupplierId,
             o.WarehouseId,
             o.Status.ToString(),
+            o.InvoiceStatus.ToString(),
             o.AmendedFromPurchaseOrderId,
             o.ApprovedAt,
             o.Lines.Sum(l => l.QuantityOrdered * l.UnitPrice))).ToList();
@@ -72,6 +73,7 @@ internal sealed class PurchaseOrderRepository(PrismERPDbContext db) : IPurchaseO
             order.SupplierId,
             order.WarehouseId,
             order.Status.ToString(),
+            order.InvoiceStatus.ToString(),
             order.AmendedFromPurchaseOrderId,
             order.ApprovedAt,
             order.Notes,

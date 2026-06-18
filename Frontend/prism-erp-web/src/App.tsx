@@ -5,10 +5,13 @@ import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Purchasing from './pages/Purchasing';
 import SalesOrdering from './pages/SalesOrdering';
+import InvoiceInquiry from './pages/InvoiceInquiry';
+import PaymentInquiry from './pages/PaymentInquiry';
 import Customers from './pages/Customers';
 import Suppliers from './pages/Suppliers';
 import Products from './pages/Products';
 import './App.css';
+import './styles/status.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -42,6 +45,10 @@ function App() {
         return <Purchasing />;
       case 'salesOrdering':
         return <SalesOrdering />;
+      case 'invoiceInquiry':
+        return <InvoiceInquiry />;
+      case 'paymentInquiry':
+        return <PaymentInquiry />;
       default:
         return <Dashboard username={userEmail.split('@')[0]} />;
     }

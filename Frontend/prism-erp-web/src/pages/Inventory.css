@@ -99,24 +99,7 @@
   font-weight: 500;
 }
 
-.status.active,
-.status.confirmed,
-.status.delivered,
-.status.received {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status.inactive,
-.status.cancelled {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.status.draft {
-  background: #fef3c7;
-  color: #92400e;
-}
+/* Extended status colors imported via App.css status.css */
 
 .action-btn {
   padding: 6px 12px;

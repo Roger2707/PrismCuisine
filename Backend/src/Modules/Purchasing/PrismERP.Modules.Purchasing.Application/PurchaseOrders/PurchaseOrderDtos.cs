@@ -6,6 +6,7 @@ public sealed record PurchaseOrderSummaryDto(
     int SupplierId,
     int WarehouseId,
     string Status,
+    string InvoiceStatus,
     int? AmendedFromPurchaseOrderId,
     DateTime? ApprovedAt,
     decimal TotalAmount);
@@ -16,6 +17,7 @@ public sealed record PurchaseOrderDto(
     int SupplierId,
     int WarehouseId,
     string Status,
+    string InvoiceStatus,
     int? AmendedFromPurchaseOrderId,
     DateTime? ApprovedAt,
     string? Notes,

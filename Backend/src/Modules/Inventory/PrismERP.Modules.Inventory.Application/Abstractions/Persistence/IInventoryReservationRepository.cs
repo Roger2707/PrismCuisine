@@ -23,6 +23,10 @@ public interface IInventoryReservationRepository
         HashSet<int> referenceIds,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<InventoryReservation>> GetByBalanceIdAsync(
+        int inventoryBalanceId,
+        CancellationToken cancellationToken = default);
+
     void Add(InventoryReservation reservation);
     void Update(InventoryReservation reservation);
 }
