@@ -287,6 +287,7 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             .Where(id => id > 0)
             .Distinct()
             .ToList();
+
         var layers = await unitOfWork.CostLayers.GetByIdsForUpdateAsync(layerIds, cancellationToken);
         var layerById = layers.ToDictionary(l => l.Id);
 
@@ -384,7 +385,8 @@ public sealed class InventoryPostingService(IInventoryUnitOfWork unitOfWork) : I
             layer.Id,
             request.Reference,
             request.ReferenceId,
-            request.Notes);
+            request.Notes
+        );
 
         unitOfWork.Movements.Add(movement);
         await unitOfWork.SaveChangesAsync(cancellationToken);
