@@ -120,6 +120,8 @@ Adjust **không** sửa reservation — cẩn thận khi giảm tồn đã có S
 
 `RowVersion` trên mọi entity — `DbUpdateConcurrencyException` hiện rơi vào 500 (nên map 409 sau).
 
+Chi tiết problem, trade-off và khuyến nghị: **[INVENTORY-CONCURRENCY.md](INVENTORY-CONCURRENCY.md)**.
+
 `EnsureAvailableAsync` đọc no-tracking — có thể stale; RowVersion lúc save là lớp bảo vệ cuối.
 
 ---
