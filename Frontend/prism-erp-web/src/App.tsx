@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Login from './components/Login';
+import { AuthInitializer } from './components/AuthInitializer';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -10,29 +11,34 @@ import PaymentInquiry from './pages/PaymentInquiry';
 import Customers from './pages/Customers';
 import Suppliers from './pages/Suppliers';
 import Products from './pages/Products';
+import { useAppDispatch, useAppSelector } from './app/hooks';
+import { clearAuth } from './app/userSlice';
+import { authApi } from './services/identityApi';
 import './App.css';
 import './styles/status.css';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+function AppContent() {
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector((state) => state.user.isAuthenticated);
+  const user = useAppSelector((state) => state.user.user);
   const [currentModule, setCurrentModule] = useState('dashboard');
-  const [userEmail, setUserEmail] = useState('');
 
-  const handleLogin = (email: string, _password: string) => {
-    setIsAuthenticated(true);
-    setUserEmail(email);
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUserEmail('');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout({ refreshToken: '' });
+    } catch {
+      // Refresh token is in HttpOnly cookie; client-side session is cleared regardless.
+    }
+    dispatch(clearAuth());
     setCurrentModule('dashboard');
   };
 
   const renderModule = () => {
+    const username = user?.displayName ?? user?.email?.split('@')[0] ?? 'User';
+
     switch (currentModule) {
       case 'dashboard':
-        return <Dashboard username={userEmail.split('@')[0]} />;
+        return <Dashboard username={username} />;
       case 'customers':
         return <Customers />;
       case 'suppliers':
@@ -50,12 +56,12 @@ function App() {
       case 'paymentInquiry':
         return <PaymentInquiry />;
       default:
-        return <Dashboard username={userEmail.split('@')[0]} />;
+        return <Dashboard username={username} />;
     }
   };
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return <Login />;
   }
 
   return (
@@ -69,6 +75,14 @@ function App() {
         {renderModule()}
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthInitializer>
+      <AppContent />
+    </AuthInitializer>
   );
 }
 

@@ -1,7 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Inventory.Application.Abstractions.Persistence;
-using PrismERP.Modules.Inventory.Application.Inventory;
+using PrismERP.Modules.Inventory.Application.Inventory.Admin;
+using PrismERP.Modules.Inventory.Application.Inventory.Internal;
+using PrismERP.Modules.Inventory.Application.Inventory.Queries;
+using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 using PrismERP.Modules.Inventory.Application.ProductCategories;
 using PrismERP.Modules.Inventory.Application.Products;
 using PrismERP.Modules.Inventory.Application.Warehouses;
@@ -22,10 +25,21 @@ public static class DependencyInjection
         services.AddScoped<IInventoryMovementRepository>(sp => sp.GetRequiredService<IInventoryUnitOfWork>().Movements);
         services.AddScoped<IInventoryCostLayerRepository>(sp => sp.GetRequiredService<IInventoryUnitOfWork>().CostLayers);
         services.AddScoped<IInventoryReservationRepository>(sp => sp.GetRequiredService<IInventoryUnitOfWork>().Reservations);
+
+        services.AddScoped<InventoryBalanceAccess>();
+        services.AddScoped<InventoryAvailabilityChecker>();
+        services.AddScoped<InventoryFifoIssuer>();
+
+        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddScoped<IInventoryBalanceAdminService, InventoryBalanceAdminService>();
+        services.AddScoped<IInventoryManualStockAdminService, InventoryManualStockAdminService>();
+        services.AddScoped<IInventoryReservationAdminService, InventoryReservationAdminService>();
+        services.AddScoped<IInventorySalesReservationWorkflowService, InventorySalesReservationWorkflowService>();
+        services.AddScoped<IInventoryReceivingWorkflowService, InventoryReceivingWorkflowService>();
+
         services.AddScoped<IProductCategoryService, ProductCategoryService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IWarehouseService, WarehouseService>();
-        services.AddScoped<IInventoryPostingService, InventoryPostingService>();
         services.AddScoped<IInventoryDataSeeder, InventoryDataSeeder>();
 
         return services;

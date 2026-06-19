@@ -124,8 +124,8 @@ export const inventoryApi = {
     const response = await apiClient.post<InventoryMovementDto>('/api/inventory/issue', request);
     return response.data;
   },
-  adjust: async (request: AdjustInventoryRequest): Promise<InventoryMovementDto> => {
-    const response = await apiClient.post<InventoryMovementDto>('/api/inventory/adjust', request);
+  adjust: async (request: AdjustInventoryRequest): Promise<InventoryMovementDto[]> => {
+    const response = await apiClient.post<InventoryMovementDto[]>('/api/inventory/adjust', request);
     return response.data;
   },
   getReservation: async (id: number): Promise<InventoryReservationDto> => {

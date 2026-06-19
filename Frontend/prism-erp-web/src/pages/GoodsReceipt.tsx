@@ -12,32 +12,11 @@ interface GoodsReceipt {
 }
 
 export default function GoodsReceipt() {
-  const [receipts, setReceipts] = useState<GoodsReceipt[]>([]);
+  const [receipts] = useState<GoodsReceipt[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchReceipts = async () => {
-      try {
-        // Note: Backend doesn't have GetAll, only GetByPurchaseOrder and GetById
-        // Using mock data for now
-        setReceipts([
-          { id: 1, receiptNumber: 'GRN-2024-001', purchaseOrder: 'PO-2024-001', supplier: 'Da Lat Fresh Vegetables Cooperative', totalAmount: 1500000, status: 'Posted', receiptDate: '2024-01-15' },
-          { id: 2, receiptNumber: 'GRN-2024-002', purchaseOrder: 'PO-2024-002', supplier: 'An Binh Food Company', totalAmount: 2400000, status: 'Posted', receiptDate: '2024-01-16' },
-          { id: 3, receiptNumber: 'GRN-2024-003', purchaseOrder: 'PO-2024-003', supplier: 'Nha Trang Fresh Seafood', totalAmount: 5400000, status: 'Draft', receiptDate: '2024-01-17' },
-        ]);
-      } catch (error) {
-        console.log('API not available, using mock data');
-        setReceipts([
-          { id: 1, receiptNumber: 'GRN-2024-001', purchaseOrder: 'PO-2024-001', supplier: 'Da Lat Fresh Vegetables Cooperative', totalAmount: 1500000, status: 'Posted', receiptDate: '2024-01-15' },
-          { id: 2, receiptNumber: 'GRN-2024-002', purchaseOrder: 'PO-2024-002', supplier: 'An Binh Food Company', totalAmount: 2400000, status: 'Posted', receiptDate: '2024-01-16' },
-          { id: 3, receiptNumber: 'GRN-2024-003', purchaseOrder: 'PO-2024-003', supplier: 'Nha Trang Fresh Seafood', totalAmount: 5400000, status: 'Draft', receiptDate: '2024-01-17' },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReceipts();
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -57,7 +36,11 @@ export default function GoodsReceipt() {
             <h2>Goods Receipt List</h2>
             <button className="add-button">+ Create Receipt</button>
           </div>
-          
+
+          <p style={{ color: '#64748b', padding: '16px' }}>
+            Goods receipts are managed from Purchase Order. Backend list API is not available yet.
+          </p>
+
           <table className="data-table">
             <thead>
               <tr>
@@ -90,6 +73,11 @@ export default function GoodsReceipt() {
                   </td>
                 </tr>
               ))}
+              {receipts.length === 0 && (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center' }}>No goods receipts</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

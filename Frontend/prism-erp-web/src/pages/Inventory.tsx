@@ -3,22 +3,22 @@ import { productsApi } from '../services/inventoryApi';
 import type { ProductDto } from '../services/types/inventory.types';
 import { ProductInventoryModal } from '../components/inventory/ProductInventoryModal';
 import { StatusBadge } from '../utils/statusBadge';
+import { parseApiError, getToastMessage } from '../utils/errorHandler';
 import './Inventory.css';
 import './Purchasing.css';
 
 export default function Inventory() {
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewProduct, setViewProduct] = useState<ProductDto | null>(null);
 
   useEffect(() => {
     productsApi.getAll()
       .then(setProducts)
-      .catch(() => {
-        setProducts([
-          { id: 1, sku: 'P001', name: 'Water Spinach', unit: 'KG', categoryId: 1, isActive: true },
-          { id: 2, sku: 'P002', name: 'Pork Belly', unit: 'KG', categoryId: 1, isActive: true },
-        ]);
+      .catch((err: unknown) => {
+        setError(getToastMessage(parseApiError(err)));
+        setProducts([]);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -33,6 +33,9 @@ export default function Inventory() {
       </div>
 
       <div className="page-content">
+        {error && (
+          <p className="error-message" style={{ marginBottom: '16px' }}>{error}</p>
+        )}
         <div className="data-table-container">
           <div className="table-header">
             <h2>Product List</h2>
@@ -63,6 +66,11 @@ export default function Inventory() {
                   </td>
                 </tr>
               ))}
+              {products.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center' }}>No products found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

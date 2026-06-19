@@ -20,15 +20,10 @@ export default function CustomerSearch({ value, onChange, disabled, hasError }: 
     const fetchCustomers = async () => {
       try {
         const data = await customersApi.getAll();
-        console.log('aaaaa: ' + data);
         setCustomers(data);
       } catch (error) {
-        console.log('API not available, using mock data');
-        setCustomers([
-          { id: 1, code: 'C001', name: 'Sen Vang Restaurant', phone: '0901234567', email: 'senvang@email.com', address: '123 District 1', taxCode: '123456789', isActive: true },
-          { id: 2, code: 'C002', name: 'Com Nieu Restaurant', phone: '0902345678', email: 'comnieu@email.com', address: '456 District 2', taxCode: '234567890', isActive: true },
-          { id: 3, code: 'C003', name: 'Riverside Hotel', phone: '0903456789', email: 'riverside@email.com', address: '789 District 3', taxCode: '345678901', isActive: true },
-        ]);
+        console.error('Failed to load customers', error);
+        setCustomers([]);
       }
     };
 

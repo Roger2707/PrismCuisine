@@ -2,11 +2,12 @@ using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.SalesOrdering.Application.Abtractions;
 using PrismERP.Modules.SalesOrdering.Domain.Entities;
 using PrismERP.Modules.Inventory.Application.Inventory;
+using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 
 namespace PrismERP.Modules.SalesOrdering.Application.SalesOrders;
 public sealed class SalesOrderService(
     ISalesOrderingUnitOfWork unitOfWork
-    , IInventoryPostingService inventoryPosting) : ISalesOrderService
+    , IInventorySalesReservationWorkflowService inventoryReservations) : ISalesOrderService
 {
 
     #region Read
@@ -102,16 +103,17 @@ public sealed class SalesOrderService(
         {
             const int warehouseId = 1; // TODO: assign warehouse based on product or sales order
 
-            await inventoryPosting.ReserveAsync(
-                        new CreateReservationRequest(
-                            salesOrder.Lines
-                            .Select(l => new CreateReservationLine(
-                                l.ProductId,
-                                warehouseId,
-                                l.QuantityOrdered,
-                                l.Id,
-                                $"Reservation for sales order {salesOrder.OrderNumber}, line {l.Id}"))
-                            .ToList()), ct);
+            await inventoryReservations.ReserveForSalesOrderAsync(
+                new CreateReservationRequest(
+                    salesOrder.Lines
+                        .Select(l => new CreateReservationLine(
+                            l.ProductId,
+                            warehouseId,
+                            l.QuantityOrdered,
+                            l.Id,
+                            $"Reservation for sales order {salesOrder.OrderNumber}, line {l.Id}"))
+                        .ToList()),
+                ct);
 
             salesOrder.Approve();
             unitOfWork.SalesOrders.Update(salesOrder);

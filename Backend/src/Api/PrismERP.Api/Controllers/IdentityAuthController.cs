@@ -67,7 +67,7 @@ public sealed class IdentityAuthController(IIdentityAuthService authService, IWe
     }
 
     [HttpPost("refresh-page")]
-    [Authorize(AuthenticationSchemes = "MyRefreshCookieScheme")]
+    [AllowAnonymous]
     public async Task<IActionResult> RefreshPage(CancellationToken cancellationToken)
     {
         if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken) || string.IsNullOrEmpty(refreshToken))
@@ -124,7 +124,7 @@ public sealed class IdentityAuthController(IIdentityAuthService authService, IWe
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            Secure = env.IsDevelopment() ? false : true,
             SameSite = SameSiteMode.Lax
         };
         Response.Cookies.Delete("refreshToken", cookieOptions);

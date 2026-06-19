@@ -11,32 +11,11 @@ interface User {
 }
 
 export default function Identity() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        // Note: Backend only has getById, so we'll use mock data for list
-        // In a real scenario, you'd need to add a GetAll endpoint to the backend
-        setUsers([
-          { id: 1, email: 'admin@prismerp.com', fullName: 'Admin User', role: 'Admin', status: 'Active', createdAt: '2024-01-15' },
-          { id: 2, email: 'manager@prismerp.com', fullName: 'Manager User', role: 'Manager', status: 'Active', createdAt: '2024-02-20' },
-          { id: 3, email: 'staff@prismerp.com', fullName: 'Staff User', role: 'Staff', status: 'Active', createdAt: '2024-03-10' },
-        ]);
-      } catch (error) {
-        console.log('API not available, using mock data');
-        setUsers([
-          { id: 1, email: 'admin@prismerp.com', fullName: 'Admin User', role: 'Admin', status: 'Active', createdAt: '2024-01-15' },
-          { id: 2, email: 'manager@prismerp.com', fullName: 'Manager User', role: 'Manager', status: 'Active', createdAt: '2024-02-20' },
-          { id: 3, email: 'staff@prismerp.com', fullName: 'Staff User', role: 'Staff', status: 'Active', createdAt: '2024-03-10' },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -56,7 +35,11 @@ export default function Identity() {
             <h2>User List</h2>
             <button className="add-button">+ Add User</button>
           </div>
-          
+
+          <p style={{ color: '#64748b', padding: '16px' }}>
+            User list API is not available yet. Use Identity API getById when needed.
+          </p>
+
           <table className="data-table">
             <thead>
               <tr>
@@ -88,6 +71,11 @@ export default function Identity() {
                   </td>
                 </tr>
               ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center' }}>No users</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

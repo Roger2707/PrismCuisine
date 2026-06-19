@@ -7,8 +7,6 @@ import type { PurchaseOrder, OrderDetail, OrderLineEditable } from '../types';
 import {
   createEmptyLine,
   mapPoLinesFromDto,
-  buildMockOrderDetail,
-  MOCK_PO_LINES,
 } from '../types';
 import { calculateOrderTotals } from '../orderCalculations';
 
@@ -76,9 +74,9 @@ export function usePurchaseOrderForm({ showToast, refreshOrders }: UsePurchaseOr
         supplierName: supplierData.name,
         totalAmount: calculateOrderTotals(lines).totalAmount,
       });
-    } catch {
-      setEditableLines(MOCK_PO_LINES);
-      setOrderDetail(buildMockOrderDetail(order, MOCK_PO_LINES));
+    } catch (error: unknown) {
+      showToast(getToastMessage(parseApiError(error)), 'error');
+      setShowModal(false);
     } finally {
       setLoadingDetail(false);
     }

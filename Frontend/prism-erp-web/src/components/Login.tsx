@@ -1,12 +1,12 @@
 import { useState } from 'react';
+import { useAppDispatch } from '../app/hooks';
+import { setAccessToken, setUser, finishHydration } from '../app/userSlice';
 import { authApi } from '../services/identityApi';
+import { parseApiError, getToastMessage } from '../utils/errorHandler';
 import './Login.css';
 
-interface LoginProps {
-  onLogin: (email: string, password: string) => void;
-}
-
-export default function Login({ onLogin }: LoginProps) {
+export default function Login() {
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,27 +18,13 @@ export default function Login({ onLogin }: LoginProps) {
     setError('');
 
     try {
-      // Call backend API for login using axios
       const data = await authApi.login(email, password);
-      
-      // Store token if needed
-      if (data.accessToken) {
-        localStorage.setItem('token', data.accessToken);
-      }
-      if (data.refreshToken) {
-        localStorage.setItem('refreshToken', data.refreshToken);
-      }
-      onLogin(email, password);
-    } catch (err) {
-      // Fallback to simulation if API is not available
-      console.log('API not available, using simulation');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (email && password) {
-        onLogin(email, password);
-      } else {
-        setError('Please enter email and password');
-      }
+      dispatch(setAccessToken(data.accessToken));
+      const currentUser = await authApi.getCurrentUser();
+      dispatch(setUser(currentUser));
+      dispatch(finishHydration());
+    } catch (err: unknown) {
+      setError(getToastMessage(parseApiError(err)));
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +37,7 @@ export default function Login({ onLogin }: LoginProps) {
           <h1>Prism ERP</h1>
           <p>Enterprise Management System</p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -64,7 +50,7 @@ export default function Login({ onLogin }: LoginProps) {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -76,14 +62,14 @@ export default function Login({ onLogin }: LoginProps) {
               required
             />
           </div>
-          
+
           {error && <div className="error-message">{error}</div>}
-          
+
           <button type="submit" className="login-button" disabled={isLoading}>
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        
+
         <div className="login-footer">
           <p>© 2026 Prism ERP. All rights reserved.</p>
         </div>

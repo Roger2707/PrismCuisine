@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Inventory.Application.Inventory;
+using PrismERP.Modules.Inventory.Application.Inventory.Admin;
+using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 using PrismERP.Modules.Inventory.Domain.Entities;
 
 namespace PrismERP.Modules.Inventory.Infrastructure.Persistence;
@@ -12,7 +14,8 @@ public interface IInventoryDataSeeder
 
 internal sealed class InventoryDataSeeder(
     PrismERPDbContext db,
-    IInventoryPostingService postingService) : IInventoryDataSeeder
+    IInventoryBalanceAdminService balanceAdminService,
+    IInventoryManualStockAdminService manualStockAdminService) : IInventoryDataSeeder
 {
     private const string WarehouseCode = "MAIN";
 
@@ -83,11 +86,11 @@ internal sealed class InventoryDataSeeder(
         db.Products.Add(product);
         await db.SaveChangesAsync(cancellationToken);
 
-        await postingService.EnsureBalanceAsync(
+        await balanceAdminService.EnsureBalanceAsync(
             new CreateInventoryBalanceRequest(product.Id, warehouseId, 5m),
             cancellationToken);
 
-        await postingService.ReceiveAsync(
+        await manualStockAdminService.ReceiveAsync(
             new ReceiveInventoryRequest(
                 product.Id,
                 warehouseId,
@@ -97,7 +100,7 @@ internal sealed class InventoryDataSeeder(
                 Notes: $"Seed layer 1 - {seed.Sku}"),
             cancellationToken);
 
-        await postingService.ReceiveAsync(
+        await manualStockAdminService.ReceiveAsync(
             new ReceiveInventoryRequest(
                 product.Id,
                 warehouseId,

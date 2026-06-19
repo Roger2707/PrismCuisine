@@ -118,23 +118,32 @@ public sealed class IdentityAuthService(
 
     public async Task<RefreshPageResponse> RefreshPage(string refreshToken, CancellationToken cancellationToken)
     {
-        var entity = await unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken, cancellationToken)
+        var existingRefreshToken = await unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken, cancellationToken)
             ?? throw new DomainException("Refresh token is invalid.");
 
-        var user = await unitOfWork.Users.GetByIdAsync(entity.UserId, cancellationToken)
+        if (!existingRefreshToken.IsActive())
+        {
+            throw new DomainException("Refresh token is invalid.");
+        }
+
+        var user = await unitOfWork.Users.GetByIdAsync(existingRefreshToken.UserId, cancellationToken)
             ?? throw new DomainException("User was not found.");
+
+        if (!user.IsActive)
+        {
+            throw new DomainException("User is inactive.");
+        }
 
         var roles = await unitOfWork.Authorization.GetRoleNamesByUserIdAsync(user.Id, cancellationToken);
 
         var (accessToken, accessTokenExpiresAt) = jwtTokenProvider.CreateAccessToken(user.Id, user.Email, roles);
-        var (refreshTokenValue, refreshTokenExpiresAt) = jwtTokenProvider.CreateRefreshToken();
 
-        var existingRefreshToken = await unitOfWork.RefreshTokens.GetByUserIdAsync(user.Id, cancellationToken);
-        if (existingRefreshToken != null)
-            existingRefreshToken.UpdateToken(refreshTokenValue, refreshTokenExpiresAt);
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return new RefreshPageResponse(accessToken, refreshTokenValue, accessTokenExpiresAt, refreshTokenExpiresAt);
+        // F5 refresh: issue a new access token only — do not rotate refresh token here to avoid
+        // RowVersion conflicts when the client fires duplicate refresh-page calls (e.g. React StrictMode).
+        return new RefreshPageResponse(
+            accessToken,
+            refreshToken,
+            accessTokenExpiresAt,
+            existingRefreshToken.ExpiresAt);
     }
 }

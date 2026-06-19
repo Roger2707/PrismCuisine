@@ -31,9 +31,7 @@ export interface CurrentUserResponse {
 
 export interface RefreshPageResponse {
   accessToken: string;
-  refreshToken: string;
   accessTokenExpiresAt: string;
-  refreshTokenExpiresAt: string;
 }
 
 export interface UserDto {

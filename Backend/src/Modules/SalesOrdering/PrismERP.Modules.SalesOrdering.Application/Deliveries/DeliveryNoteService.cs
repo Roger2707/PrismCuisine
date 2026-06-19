@@ -2,6 +2,7 @@ using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.Finance.Application.Invoices;
 using PrismERP.Modules.Finance.Domain.Enums;
 using PrismERP.Modules.Inventory.Application.Inventory;
+using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 using PrismERP.Modules.Inventory.Domain.Enums;
 using PrismERP.Modules.SalesOrdering.Application.Abtractions;
 using PrismERP.Modules.SalesOrdering.Domain.Entities;
@@ -11,7 +12,7 @@ namespace PrismERP.Modules.SalesOrdering.Application.Deliveries;
 
 public sealed class DeliveryNoteService(
     ISalesOrderingUnitOfWork unitOfWork
-    , IInventoryPostingService inventoryPostingService
+    , IInventorySalesReservationWorkflowService inventoryReservations
     , IInvoiceService invoiceService
     ) : IDeliveryNoteService
 {
@@ -118,7 +119,7 @@ public sealed class DeliveryNoteService(
 
         // because reservation hold referenceId is SalesOrderLineId
         var deliveryLineIds = deliveryNote.Lines.Select(l => l.SalesOrderLineId).ToHashSet();
-        var reservations = await inventoryPostingService.GetActivesByReferencesAsync(
+        var reservations = await inventoryReservations.GetActivesByReferencesAsync(
             InventoryReferenceType.SalesOrder,
             deliveryLineIds,
             cancellationToken)
@@ -161,7 +162,7 @@ public sealed class DeliveryNoteService(
         }
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
-            await inventoryPostingService.FulfillReservationsAsync(fulfillLines, ct);
+            await inventoryReservations.FulfillReservationsAsync(fulfillLines, ct);
             deliveryNote.Post(salesOrder);
             unitOfWork.DeliveryNotes.Update(deliveryNote);
             unitOfWork.SalesOrders.Update(salesOrder);
@@ -197,7 +198,7 @@ public sealed class DeliveryNoteService(
 
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
-            await inventoryPostingService.ReturnDeliveryIssuesAsync(
+            await inventoryReservations.ReturnDeliveryIssuesAsync(
                 deliveryNote.DeliveryNumber,
                 returnLines,
                 ct);

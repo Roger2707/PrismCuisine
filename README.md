@@ -24,6 +24,12 @@ Controller → Service (use case) → UnitOfWork / Repository → DbContext
   Write: repository with tracking + domain behavior + SaveChanges()
 ```
 
+## Documentation
+
+- [Inventory module](INVENTORY.md) — luồng tồn kho, service split, concurrency
+- [Identity & session refresh](IDENTITY-AUTH.md) — login, refresh token cookie, F5 hydrate
+- [Docker](DOCKER.md) — chạy BE + FE bằng Docker Compose
+
 ## Run with Docker
 
 See [DOCKER.md](./DOCKER.md).

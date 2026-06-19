@@ -1,5 +1,6 @@
 using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.Inventory.Application.Inventory;
+using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 using PrismERP.Modules.Purchasing.Application.Abstractions;
 using PrismERP.Modules.Purchasing.Domain.Entities;
 using PrismERP.Modules.Purchasing.Domain.Enums;
@@ -8,7 +9,7 @@ namespace PrismERP.Modules.Purchasing.Application.GoodsReceipts;
 
 public sealed class GoodsReceiptService(
     IPurchasingUnitOfWork unitOfWork,
-    IInventoryPostingService inventoryPosting) : IGoodsReceiptService
+    IInventoryReceivingWorkflowService inventoryReceiving) : IGoodsReceiptService
 {
     public Task<IReadOnlyCollection<GoodsReceiptSummaryDto>> GetByPurchaseOrderIdAsync(
         int purchaseOrderId,
@@ -174,7 +175,7 @@ public sealed class GoodsReceiptService(
         {
             order.RecordReceipt(line.PurchaseOrderLineId, line.Quantity);
 
-            await inventoryPosting.ReceiveAsync(
+            await inventoryReceiving.ReceiveStockAsync(
                 new ReceiveInventoryRequest(
                     line.ProductId,
                     order.WarehouseId,

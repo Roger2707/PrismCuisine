@@ -10,8 +10,10 @@ import type {
 import { inventoryApi, warehousesApi } from '../../services/inventoryApi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { StatusBadge } from '../../utils/statusBadge';
+import { LoadingButton } from '../LoadingButton';
+import { parseApiError, getToastMessage } from '../../utils/errorHandler';
 
-type TabId = 'balance' | 'reservations' | 'movements' | 'costlayers';
+type TabId = 'balance' | 'reservations' | 'movements' | 'costlayers' | 'adjust';
 
 interface ProductInventoryModalProps {
   product: ProductDto | null;
@@ -28,6 +30,13 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
   const [movements, setMovements] = useState<InventoryMovementDto[]>([]);
   const [costLayers, setCostLayers] = useState<InventoryCostLayerDto[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [adjustNewQty, setAdjustNewQty] = useState('');
+  const [adjustUnitCost, setAdjustUnitCost] = useState('');
+  const [adjustReference, setAdjustReference] = useState('');
+  const [adjustNotes, setAdjustNotes] = useState('');
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+  const [adjustSuccess, setAdjustSuccess] = useState<string | null>(null);
+  const [adjusting, setAdjusting] = useState(false);
 
   useEffect(() => {
     warehousesApi.getAll()
@@ -49,8 +58,10 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
     try {
       const bal = await inventoryApi.getBalance(product.id, warehouseId);
       setBalance(bal);
+      setAdjustNewQty(String(bal.quantityOnHand));
     } catch {
       setError('No inventory balance for this product at selected warehouse.');
+      setAdjustNewQty('0');
     } finally {
       setLoading(false);
     }
@@ -60,6 +71,8 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
     if (product && warehouseId) {
       loadBalance();
       setActiveTab('balance');
+      setAdjustError(null);
+      setAdjustSuccess(null);
     }
   }, [product, warehouseId, loadBalance]);
 
@@ -82,8 +95,56 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
   }, [balance]);
 
   useEffect(() => {
-    if (balance && activeTab !== 'balance') loadTabData(activeTab);
+    if (balance && activeTab !== 'balance' && activeTab !== 'adjust') {
+      loadTabData(activeTab);
+    }
   }, [activeTab, balance, loadTabData]);
+
+  const handleAdjust = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!product || !warehouseId) return;
+
+    setAdjustError(null);
+    setAdjustSuccess(null);
+
+    const newQuantity = Number(adjustNewQty);
+    const unitCostForIncrease = Number(adjustUnitCost) || 0;
+
+    if (Number.isNaN(newQuantity) || newQuantity < 0) {
+      setAdjustError('New quantity must be a non-negative number.');
+      return;
+    }
+
+    setAdjusting(true);
+    try {
+      let workingBalance = balance;
+      if (!workingBalance) {
+        workingBalance = await inventoryApi.ensureBalance({
+          productId: product.id,
+          warehouseId,
+          reorderLevel: 0,
+        });
+        setBalance(workingBalance);
+      }
+
+      await inventoryApi.adjust({
+        productId: product.id,
+        warehouseId,
+        newQuantity,
+        unitCostForIncrease,
+        reference: adjustReference || undefined,
+        notes: adjustNotes || undefined,
+      });
+
+      setAdjustSuccess('Inventory adjusted successfully.');
+      await loadBalance();
+      setActiveTab('balance');
+    } catch (err: unknown) {
+      setAdjustError(getToastMessage(parseApiError(err)));
+    } finally {
+      setAdjusting(false);
+    }
+  };
 
   if (!product) return null;
 
@@ -92,7 +153,13 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
     { id: 'reservations', label: 'Reservations' },
     { id: 'movements', label: 'Movements' },
     { id: 'costlayers', label: 'Cost Layers' },
+    { id: 'adjust', label: 'Adjust' },
   ];
+
+  const isIncrease =
+    balance !== null
+      ? Number(adjustNewQty) > balance.quantityOnHand
+      : Number(adjustNewQty) > 0;
 
   return (
     <div className="modal-overlay">
@@ -122,7 +189,7 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
                 type="button"
                 className={`inventory-tab ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
-                disabled={!balance && tab.id !== 'balance'}
+                disabled={!balance && tab.id !== 'balance' && tab.id !== 'adjust'}
               >
                 {tab.label}
               </button>
@@ -130,7 +197,7 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
           </div>
 
           <div className="inventory-tab-panel">
-            {loading && <div className="loading">Loading...</div>}
+            {loading && activeTab !== 'adjust' && <div className="loading">Loading...</div>}
             {!loading && error && activeTab === 'balance' && (
               <p style={{ color: '#64748b', textAlign: 'center', padding: '24px' }}>{error}</p>
             )}
@@ -216,6 +283,64 @@ export function ProductInventoryModal({ product, onClose }: ProductInventoryModa
                   )}
                 </tbody>
               </table>
+            )}
+            {activeTab === 'adjust' && (
+              <form onSubmit={handleAdjust} className="form-grid" style={{ maxWidth: '480px' }}>
+                <p style={{ color: '#64748b', marginBottom: '8px' }}>
+                  Set the physical count after stocktake. Current on-hand:{' '}
+                  <strong>{balance?.quantityOnHand ?? 0}</strong>
+                </p>
+                <div className="form-group">
+                  <label htmlFor="adjust-new-qty">New quantity</label>
+                  <input
+                    id="adjust-new-qty"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={adjustNewQty}
+                    onChange={(e) => setAdjustNewQty(e.target.value)}
+                    required
+                  />
+                </div>
+                {isIncrease && (
+                  <div className="form-group">
+                    <label htmlFor="adjust-unit-cost">Unit cost (for increase)</label>
+                    <input
+                      id="adjust-unit-cost"
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={adjustUnitCost}
+                      onChange={(e) => setAdjustUnitCost(e.target.value)}
+                      required={isIncrease}
+                    />
+                  </div>
+                )}
+                <div className="form-group">
+                  <label htmlFor="adjust-reference">Reference</label>
+                  <input
+                    id="adjust-reference"
+                    type="text"
+                    value={adjustReference}
+                    onChange={(e) => setAdjustReference(e.target.value)}
+                    placeholder="Stocktake #..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="adjust-notes">Notes</label>
+                  <textarea
+                    id="adjust-notes"
+                    value={adjustNotes}
+                    onChange={(e) => setAdjustNotes(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+                {adjustError && <div className="error-message">{adjustError}</div>}
+                {adjustSuccess && <div className="success-message">{adjustSuccess}</div>}
+                <LoadingButton type="submit" loading={adjusting} loadingText="Adjusting...">
+                  Apply adjustment
+                </LoadingButton>
+              </form>
             )}
           </div>
         </div>

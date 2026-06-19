@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Inventory.Application.Inventory;
+using PrismERP.Modules.Inventory.Application.Inventory.Admin;
 using PrismERP.Modules.Inventory.Domain.Entities;
 using PrismERP.Modules.Purchasing.Domain.Entities;
 using PrismERP.Modules.Purchasing.Domain.Enums;
@@ -14,7 +15,7 @@ public interface IPurchasingDataSeeder
 
 internal sealed class PurchasingDataSeeder(
     PrismERPDbContext db,
-    IInventoryPostingService inventoryPosting) : IPurchasingDataSeeder
+    IInventoryManualStockAdminService manualStockAdminService) : IPurchasingDataSeeder
 {
     private const string SeedMarker = "PO-SEED-001";
 
@@ -155,7 +156,7 @@ internal sealed class PurchasingDataSeeder(
         {
             order.RecordReceipt(line.PurchaseOrderLineId, line.Quantity);
 
-            await inventoryPosting.ReceiveAsync(
+            await manualStockAdminService.ReceiveAsync(
                 new ReceiveInventoryRequest(
                     line.ProductId,
                     warehouseId,

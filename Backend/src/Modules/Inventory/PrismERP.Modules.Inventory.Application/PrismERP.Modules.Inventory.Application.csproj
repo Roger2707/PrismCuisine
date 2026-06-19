@@ -5,6 +5,10 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\PrismERP.BuildingBlocks.Application\PrismERP.BuildingBlocks.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="PrismERP.Modules.Inventory.Application.Inventory" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Inventory.Application.Inventory;
+using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 using PrismERP.Modules.Inventory.Domain.Entities;
 using PrismERP.Modules.Inventory.Domain.Enums;
 using PrismERP.Modules.SalesOrdering.Domain.Entities;
@@ -14,7 +15,7 @@ public interface ISalesOrderingDataSeeder
 
 internal sealed class SalesOrderingDataSeeder(
     PrismERPDbContext db,
-    IInventoryPostingService inventoryPosting) : ISalesOrderingDataSeeder
+    IInventorySalesReservationWorkflowService inventoryReservations) : ISalesOrderingDataSeeder
 {
     private const string SeedMarker = "SO-SEED-001";
     private const int WarehouseId = 1;
@@ -120,7 +121,7 @@ internal sealed class SalesOrderingDataSeeder(
 
     private async Task ApproveAndReserveAsync(SalesOrder salesOrder, CancellationToken cancellationToken)
     {
-        await inventoryPosting.ReserveAsync(
+        await inventoryReservations.ReserveForSalesOrderAsync(
                 new CreateReservationRequest(
                 salesOrder.Lines.Select(l => new CreateReservationLine
                 (
@@ -159,7 +160,7 @@ internal sealed class SalesOrderingDataSeeder(
         await db.SaveChangesAsync(cancellationToken);
 
         var deliveryLineIds = deliveryNote.Lines.Select(l => l.SalesOrderLineId).ToHashSet();
-        var reservations = await inventoryPosting.GetActivesByReferencesAsync(
+        var reservations = await inventoryReservations.GetActivesByReferencesAsync(
             InventoryReferenceType.SalesOrder,
             deliveryLineIds,
             cancellationToken)
@@ -175,7 +176,7 @@ internal sealed class SalesOrderingDataSeeder(
                 $"Seed delivery {deliveryNote.DeliveryNumber}, line {dnLine.SalesOrderLineId}");
         }).ToList();
 
-        await inventoryPosting.FulfillReservationsAsync(fulfillLines, cancellationToken);
+        await inventoryReservations.FulfillReservationsAsync(fulfillLines, cancellationToken);
 
         deliveryNote.Post(salesOrder);
         db.DeliveryNotes.Update(deliveryNote);

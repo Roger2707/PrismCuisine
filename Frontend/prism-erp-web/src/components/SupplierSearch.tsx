@@ -22,12 +22,8 @@ export default function SupplierSearch({ value, onChange, disabled, hasError }: 
         const data = await suppliersApi.getAll();
         setSuppliers(data);
       } catch (error) {
-        console.log('API not available, using mock data');
-        setSuppliers([
-          { id: 1, code: 'S001', name: 'Food Supplier Co', phone: '0901234567', email: 'food@email.com', address: '123 District 1', taxCode: '123456789', isActive: true },
-          { id: 2, code: 'S002', name: 'Beverage Supplier', phone: '0902345678', email: 'beverage@email.com', address: '456 District 2', taxCode: '234567890', isActive: true },
-          { id: 3, code: 'S003', name: 'Equipment Supplier', phone: '0903456789', email: 'equipment@email.com', address: '789 District 3', taxCode: '345678901', isActive: true },
-        ]);
+        console.error('Failed to load suppliers', error);
+        setSuppliers([]);
       }
     };
 
