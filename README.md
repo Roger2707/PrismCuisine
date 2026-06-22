@@ -28,6 +28,7 @@ Controller → Service (use case) → UnitOfWork / Repository → DbContext
 
 - [Inventory module](INVENTORY.md) — luồng tồn kho, service split
 - [Inventory concurrency](INVENTORY-CONCURRENCY.md) — race Approve/Post, reserve vs fulfill, trade-off
+- [Inventory concurrency implementation](INVENTORY-CONCURRENCY-IMPL.md) — changes made: UPDLOCK, retry wrapper, status guards
 - [Identity & session refresh](IDENTITY-AUTH.md) — login, refresh token cookie, F5 hydrate
 - [Docker](DOCKER.md) — chạy BE + FE bằng Docker Compose
 

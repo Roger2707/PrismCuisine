@@ -1,6 +1,7 @@
 using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.SalesOrdering.Application.Abtractions;
 using PrismERP.Modules.SalesOrdering.Domain.Entities;
+using PrismERP.Modules.SalesOrdering.Domain.Enums;
 using PrismERP.Modules.Inventory.Application.Inventory;
 using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 
@@ -96,13 +97,21 @@ public sealed class SalesOrderService(
 
     public async Task ApproveAsync(int salesOrderId, CancellationToken cancellationToken = default)
     {
-        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, cancellationToken)
-            ?? throw new NotFoundException($"Sales order with id '{salesOrderId}' was not found.");
-
-        await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        await unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
         {
+            // Reload inside the transaction so every retry sees the latest committed state.
+            var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, ct)
+                ?? throw new NotFoundException($"Sales order with id '{salesOrderId}' was not found.");
+
+            // Guard: if another user already approved this SO, surface 409 immediately — no retry.
+            if (salesOrder.Status != SalesOrderStatus.Draft)
+                throw new ConflictException(
+                    $"Sales order '{salesOrder.OrderNumber}' is already '{salesOrder.Status}'. Refresh and try again.");
+
             const int warehouseId = 1; // TODO: assign warehouse based on product or sales order
 
+            // UPDLOCK acquired inside ReserveForSalesOrderAsync serialises concurrent reserves
+            // for the same product/warehouse — prevents oversell without locking the whole table.
             await inventoryReservations.ReserveForSalesOrderAsync(
                 new CreateReservationRequest(
                     salesOrder.Lines

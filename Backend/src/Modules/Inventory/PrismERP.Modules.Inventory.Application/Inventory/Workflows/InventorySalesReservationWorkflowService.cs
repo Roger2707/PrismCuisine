@@ -20,7 +20,9 @@ public sealed class InventorySalesReservationWorkflowService(
 
         foreach (var request in reservationRequest.CreateReservationLines)
         {
-            var balance = await balanceAccess.GetForUpdateByProductWarehouseAsync(
+            // UPDLOCK serialises concurrent reserves for the same product/warehouse so that
+            // two simultaneous Approve calls cannot both see the same available quantity.
+            var balance = await balanceAccess.GetForUpdateWithLockByProductWarehouseAsync(
                 request.ProductId,
                 request.WarehouseId,
                 cancellationToken);

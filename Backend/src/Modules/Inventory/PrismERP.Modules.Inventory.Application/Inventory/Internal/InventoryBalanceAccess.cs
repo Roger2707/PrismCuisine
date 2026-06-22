@@ -31,6 +31,24 @@ public sealed class InventoryBalanceAccess(IInventoryUnitOfWork unitOfWork)
             ?? throw new NotFoundException("Inventory balance was not found.");
     }
 
+    /// <summary>
+    /// Same as <see cref="GetForUpdateByProductWarehouseAsync"/> but acquires an UPDLOCK on the
+    /// balance row so that concurrent Reserve operations for the same product/warehouse are
+    /// serialised instead of both reading the same available quantity and over-reserving.
+    /// </summary>
+    public async Task<InventoryBalance> GetForUpdateWithLockByProductWarehouseAsync(
+        int productId,
+        int warehouseId,
+        CancellationToken cancellationToken)
+    {
+        var balance = await unitOfWork.Balances.GetByProductAndWarehouseAsync(productId, warehouseId, cancellationToken)
+            ?? throw new NotFoundException(
+                $"No inventory balance for product '{productId}' at warehouse '{warehouseId}'. Create balance first.");
+
+        return await unitOfWork.Balances.GetByIdForUpdateWithLockAsync(balance.Id, cancellationToken)
+            ?? throw new NotFoundException("Inventory balance was not found.");
+    }
+
     public async Task<InventoryBalance> GetOrCreateForUpdateAsync(
         int productId,
         int warehouseId,

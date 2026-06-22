@@ -106,78 +106,71 @@ public sealed class DeliveryNoteService(
 
     public async Task PostAsync(int deliveryNoteId, CancellationToken cancellationToken = default)
     {
-        var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, cancellationToken)
-            ?? throw new NotFoundException($"Delivery note '{deliveryNoteId}' was not found.");
-
-        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(
-            deliveryNote.SalesOrderId,
-            cancellationToken)
-            ?? throw new NotFoundException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
-
-        if (deliveryNote.Lines.Count == 0)
-            throw new BusinessException("Delivery note must have at least one line.");
-
-        // because reservation hold referenceId is SalesOrderLineId
-        var deliveryLineIds = deliveryNote.Lines.Select(l => l.SalesOrderLineId).ToHashSet();
-        var reservations = await inventoryReservations.GetActivesByReferencesAsync(
-            InventoryReferenceType.SalesOrder,
-            deliveryLineIds,
-            cancellationToken)
-            ?? [];
-
-        var salesOrderMap = salesOrder.Lines.ToDictionary(s => s.Id);
-
-        var reservationByLineId = reservations.ToDictionary(r => r.ReferenceId);
-        var fulfillLines = new List<FulfillReservationLine>(deliveryNote.Lines.Count);
-        var invocieLineRequests = new List<CreateInvoiceLineRequest>(deliveryNote.Lines.Count);
-
-        foreach (var line in deliveryNote.Lines)
+        await unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
         {
-            if (!reservationByLineId.TryGetValue(line.SalesOrderLineId, out var reservation))
+            // Reload all documents inside the transaction — every retry gets fresh committed data.
+            var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, ct)
+                ?? throw new NotFoundException($"Delivery note '{deliveryNoteId}' was not found.");
+
+            // Guard: two users posting the same DN → 409, no retry.
+            if (deliveryNote.Status != DeliveryNoteStatus.Draft)
+                throw new ConflictException(
+                    $"Delivery note '{deliveryNote.DeliveryNumber}' is already '{deliveryNote.Status}'. Refresh and try again.");
+
+            var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(deliveryNote.SalesOrderId, ct)
+                ?? throw new NotFoundException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
+
+            if (deliveryNote.Lines.Count == 0)
+                throw new BusinessException("Delivery note must have at least one line.");
+
+            // Load reservations INSIDE the transaction so we read the latest committed quantities,
+            // not the potentially stale snapshot that was fetched before the transaction began.
+            var deliveryLineIds = deliveryNote.Lines.Select(l => l.SalesOrderLineId).ToHashSet();
+            var reservations = await inventoryReservations.GetActivesByReferencesAsync(
+                InventoryReferenceType.SalesOrder,
+                deliveryLineIds,
+                ct) ?? [];
+
+            var salesOrderMap = salesOrder.Lines.ToDictionary(s => s.Id);
+            var reservationByLineId = reservations.ToDictionary(r => r.ReferenceId);
+            var fulfillLines = new List<FulfillReservationLine>(deliveryNote.Lines.Count);
+            var invoiceLineRequests = new List<CreateInvoiceLineRequest>(deliveryNote.Lines.Count);
+
+            foreach (var line in deliveryNote.Lines)
             {
-                throw new BusinessException(
-                    $"No active inventory reservation found for sales order line '{line.SalesOrderLineId}'.");
+                if (!reservationByLineId.TryGetValue(line.SalesOrderLineId, out var reservation))
+                    throw new BusinessException(
+                        $"No active inventory reservation found for sales order line '{line.SalesOrderLineId}'.");
+
+                if (line.QuantityDelivered > reservation.RemainingQuantity)
+                    throw new BusinessException(
+                        $"Delivery quantity '{line.QuantityDelivered}' exceeds remaining reservation '{reservation.RemainingQuantity}' for sales order line '{line.SalesOrderLineId}'.");
+
+                fulfillLines.Add(new FulfillReservationLine(
+                    reservation,
+                    line.QuantityDelivered,
+                    deliveryNote.DeliveryNumber,
+                    $"Delivery note {deliveryNote.DeliveryNumber}, SO line {line.SalesOrderLineId}"));
+
+                var sol = salesOrderMap[line.SalesOrderLineId];
+                invoiceLineRequests.Add(new CreateInvoiceLineRequest(
+                    line.ProductId, line.ProductName, "", line.QuantityDelivered,
+                    sol.UnitPrice, sol.VATRate, sol.DiscountPercent));
             }
 
-            if (line.QuantityDelivered > reservation.RemainingQuantity)
-            {
-                throw new BusinessException(
-                    $"Delivery quantity '{line.QuantityDelivered}' exceeds remaining reservation '{reservation.RemainingQuantity}' for sales order line '{line.SalesOrderLineId}'.");
-            }
-
-            // 1. Export
-            fulfillLines.Add(new FulfillReservationLine(
-                reservation,
-                line.QuantityDelivered,
-                deliveryNote.DeliveryNumber,
-                $"Delivery note {deliveryNote.DeliveryNumber}, SO line {line.SalesOrderLineId}"));
-
-            // 2. Create Invoice Line Request (AR flow)
-            var invocieLineRequest = new CreateInvoiceLineRequest(
-                line.ProductId, line.ProductName, "", line.QuantityDelivered
-                , salesOrderMap[line.SalesOrderLineId].UnitPrice
-                , salesOrderMap[line.SalesOrderLineId].VATRate
-                , salesOrderMap[line.SalesOrderLineId].DiscountPercent);
-            invocieLineRequests.Add(invocieLineRequest);
-        }
-        await unitOfWork.ExecuteInTransactionAsync(async ct =>
-        {
             await inventoryReservations.FulfillReservationsAsync(fulfillLines, ct);
             deliveryNote.Post(salesOrder);
             unitOfWork.DeliveryNotes.Update(deliveryNote);
             unitOfWork.SalesOrders.Update(salesOrder);
 
-            // Create Invoice (AR) for Accounting
-            var invoiceNumber = await invoiceService.GenerateInvoiceNumberAsync(cancellationToken);
-            var invoiceDto = await invoiceService.CreateAsync(
+            var invoiceNumber = await invoiceService.GenerateInvoiceNumberAsync(ct);
+            await invoiceService.CreateAsync(
                 new CreateInvoiceRequest(
                     invoiceNumber, InvoiceType.SalesInvoice, DateTime.UtcNow, null, deliveryNote.CustomerName, "",
-                    salesOrder.Id, deliveryNoteId, null, null, ""
-                    , invocieLineRequests), cancellationToken);
+                    salesOrder.Id, deliveryNoteId, null, null, "",
+                    invoiceLineRequests), ct);
 
-            // Update SalesOrder - InvoiceStatus
             salesOrder.UpdateInvoiceStatus();
-
             await unitOfWork.SaveChangesAsync(ct);
         }, cancellationToken);
     }

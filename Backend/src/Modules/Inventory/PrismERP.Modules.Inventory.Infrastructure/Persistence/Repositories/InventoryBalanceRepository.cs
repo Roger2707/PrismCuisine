@@ -13,6 +13,11 @@ internal sealed class InventoryBalanceRepository(PrismERPDbContext db) : IInvent
     public Task<InventoryBalance?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         db.InventoryBalances.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
+    public Task<InventoryBalance?> GetByIdForUpdateWithLockAsync(int id, CancellationToken cancellationToken = default) =>
+        db.InventoryBalances
+            .FromSqlInterpolated($"SELECT * FROM inventory.InventoryBalances WITH (UPDLOCK, ROWLOCK) WHERE Id = {id}")
+            .FirstOrDefaultAsync(cancellationToken);
+
     public async Task<IReadOnlyList<InventoryBalance>> GetByIdsForUpdateAsync(
         IReadOnlyCollection<int> ids,
         CancellationToken cancellationToken = default)
