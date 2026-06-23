@@ -12,8 +12,8 @@ using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 {
     [DbContext(typeof(PrismERPDbContext))]
-    [Migration("20260617061853_initDB1706")]
-    partial class initDB1706
+    [Migration("20260623083528_initialDB")]
+    partial class initialDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1481,7 +1481,8 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SalesOrderId");
+                    b.HasIndex("SalesOrderId", "ProductId")
+                        .IsUnique();
 
                     b.ToTable("SalesOrderLines", "sales_order");
                 });

@@ -8,7 +8,6 @@ namespace PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 
 public sealed class InventorySalesReservationWorkflowService(
     IInventoryUnitOfWork unitOfWork,
-    InventoryBalanceAccess balanceAccess,
     InventoryAvailabilityChecker availabilityChecker,
     InventoryFifoIssuer fifoIssuer) : IInventorySalesReservationWorkflowService
 {
@@ -17,34 +16,58 @@ public sealed class InventorySalesReservationWorkflowService(
         CancellationToken cancellationToken = default)
     {
         var reservations = new List<InventoryReservation>(reservationRequest.CreateReservationLines.Count);
+        var grpKeys = reservationRequest.CreateReservationLines.Select(l => (l.ProductId, l.WarehouseId)).ToList();
 
-        foreach (var request in reservationRequest.CreateReservationLines)
+        // 1. get all balances with keys (productId-warehouseId) - Tracking
+        var balances = await unitOfWork.Balances.GetByGroupProductAndWarehouseAsync(grpKeys, cancellationToken);
+        if (balances.Count < grpKeys.Count)
         {
-            // UPDLOCK serialises concurrent reserves for the same product/warehouse so that
-            // two simultaneous Approve calls cannot both see the same available quantity.
-            var balance = await balanceAccess.GetForUpdateWithLockByProductWarehouseAsync(
-                request.ProductId,
-                request.WarehouseId,
-                cancellationToken);
+            var foundKeys = balances.Select(b => (b.ProductId, b.WarehouseId)).ToHashSet();
+            var missingKeys = grpKeys.Where(k => !foundKeys.Contains(k)).ToList();
 
-            var existing = await unitOfWork.Reservations.GetActiveByReferenceAsync(
-                InventoryReferenceType.SalesOrder,
-                request.ReferenceId,
-                cancellationToken);
+            // throw first missingkeys
+            throw new BusinessException($"Not found keys ProductId_WarehouseId in Balance ${missingKeys[0].ProductId}_{missingKeys[0].WarehouseId}");
+        }
 
-            if (existing is not null)
-            {
-                throw new BusinessException("An active reservation already exists for this reference.");
-            }
+        if(balances.Count == 0 || balances == null)
+            throw new BusinessException($"Not found any balances !");
 
-            await availabilityChecker.EnsureAvailableAsync(balance.Id, request.Quantity, cancellationToken);
+        // 2. permistic locking
+        // need orderBy ASC: prevent deadlock SO1 (A,B) ; SO2(B,A) => when 2 complete first item
+        // because the other is holding lock => lock forever
+        var balanceIds = balances.Select(b => b.Id).ToHashSet();
+        await unitOfWork.Balances.PermisticLockingByBalanceIdsAsync(balanceIds, cancellationToken);
+
+        // 3. check reservation
+        // That's means: 1 SO line only has 1 Reservation Active 
+        var existings = await unitOfWork.Reservations.GetActivesByReferencesAsync(
+            InventoryReferenceType.SalesOrder,
+            reservationRequest.CreateReservationLines.Select(l => l.ReferenceId).ToHashSet(),
+            cancellationToken);
+
+        if (existings.Any())
+            throw new BusinessException("An active reservation already exists for this reference.");
+
+        // 4. Check Available in balances
+        var balanceMap = balances.ToDictionary(
+            b => b.Id,
+            b => reservationRequest.CreateReservationLines
+            .FirstOrDefault(r => r.ProductId == b.ProductId && r.WarehouseId == b.WarehouseId)
+        );
+        await availabilityChecker.EnsureAvailablesAsync(balances.Select(b => (b, balanceMap[b.Id]!.Quantity)).ToList(), cancellationToken);
+
+        // Insert Reservation
+        foreach(var item in balanceMap)
+        {
+            var key = item.Key; // balanceId
+            var value = item.Value ?? throw new BusinessException($"Not Found Request with balanceId : {key}");
 
             var reservation = InventoryReservation.Create(
-                balance.Id,
-                request.Quantity,
+                key,
+                value.Quantity,
                 InventoryReferenceType.SalesOrder,
-                request.ReferenceId,
-                request.Notes);
+                value.ReferenceId,
+                value.Notes);
 
             unitOfWork.Reservations.Add(reservation);
             reservations.Add(reservation);
@@ -53,7 +76,7 @@ public sealed class InventorySalesReservationWorkflowService(
         return reservations;
     }
 
-    public Task<List<InventoryReservation>?> GetActivesByReferencesAsync(
+    public Task<List<InventoryReservation>> GetActivesByReferencesAsync(
         InventoryReferenceType referenceType,
         HashSet<int> referenceIds,
         CancellationToken cancellationToken = default) =>

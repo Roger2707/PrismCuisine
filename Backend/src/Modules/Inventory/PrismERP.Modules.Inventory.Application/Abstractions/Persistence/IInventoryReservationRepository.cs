@@ -9,12 +9,16 @@ public interface IInventoryReservationRepository
     Task<decimal> GetActiveReservedQuantityAsync(
         int inventoryBalanceId,
         CancellationToken cancellationToken = default);
+
+    Task<Dictionary<int, decimal>> GetActiveReservedQuantityBalancesAsync(
+        HashSet<int> inventoryBalanceIds, CancellationToken cancellationToken = default);
+
     Task<InventoryReservation?> GetActiveByReferenceAsync(
         InventoryReferenceType referenceType,
         int referenceId,
         CancellationToken cancellationToken = default);
 
-    Task<List<InventoryReservation>?> GetActivesByReferencesAsync(
+    Task<List<InventoryReservation>> GetActivesByReferencesAsync(
         InventoryReferenceType referenceType,
         HashSet<int> referenceIds,
         CancellationToken cancellationToken = default);

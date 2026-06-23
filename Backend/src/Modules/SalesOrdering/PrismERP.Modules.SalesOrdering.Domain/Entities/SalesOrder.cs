@@ -66,6 +66,10 @@ public sealed class SalesOrder : AggregateRoot
         if (Status != SalesOrderStatus.Draft)
             throw new BusinessException("Cannot modify a non-draft sales order.");
 
+        bool existedProductId = _lines.Any(line => line.ProductId == productId);
+        if (existedProductId)
+            throw new BusinessException($"ProductId: {productId} has existed in this SO: {Id}");
+
         var line = SalesOrderLine.Create(productId, productName, quantityOrdered, unitPrice, discountPercent, vatRate);
         line.AssignToOrder(Id);
         _lines.Add(line);

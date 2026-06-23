@@ -1,3 +1,4 @@
+using LinqKit;
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Inventory.Application.Abstractions.Persistence;
@@ -15,8 +16,20 @@ internal sealed class InventoryBalanceRepository(PrismERPDbContext db) : IInvent
 
     public Task<InventoryBalance?> GetByIdForUpdateWithLockAsync(int id, CancellationToken cancellationToken = default) =>
         db.InventoryBalances
-            .FromSqlInterpolated($"SELECT * FROM inventory.InventoryBalances WITH (UPDLOCK, ROWLOCK) WHERE Id = {id}")
+            .FromSqlInterpolated($"SELECT * FROM [inventory].InventoryBalances WITH (UPDLOCK, ROWLOCK) WHERE Id = {id}")
             .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task PermisticLockingByBalanceIdsAsync(HashSet<int> balanceIds, CancellationToken cancellationToken = default)
+    {
+        if (balanceIds == null || !balanceIds.Any()) return;
+        var idsString = string.Join(",", balanceIds);
+        var sql = $@"
+                    SELECT 1 FROM [inventory].InventoryBalances WITH (ROWLOCK, UPDLOCK) 
+                    WHERE Id IN ({idsString})
+                    ORDER BY Id
+                    ";
+        await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+    }
 
     public async Task<IReadOnlyList<InventoryBalance>> GetByIdsForUpdateAsync(
         IReadOnlyCollection<int> ids,
@@ -37,6 +50,20 @@ internal sealed class InventoryBalanceRepository(PrismERPDbContext db) : IInvent
         db.InventoryBalances.FirstOrDefaultAsync(
             b => b.ProductId == productId && b.WarehouseId == warehouseId,
             cancellationToken);
+
+    public Task<List<InventoryBalance>> GetByGroupProductAndWarehouseAsync(
+        List<(int ProductId, int WarehouseId)> keys, CancellationToken cancellationToken = default)
+    {
+        var predicate = PredicateBuilder.New<InventoryBalance>(false);
+
+        foreach (var key in keys)
+            predicate = predicate.Or(b => b.ProductId == key.ProductId && b.WarehouseId == key.WarehouseId);
+
+        return db.InventoryBalances
+            .AsExpandable()
+            .Where(predicate)
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyCollection<InventoryBalance>> GetLowStockAsync(
         CancellationToken cancellationToken = default) =>

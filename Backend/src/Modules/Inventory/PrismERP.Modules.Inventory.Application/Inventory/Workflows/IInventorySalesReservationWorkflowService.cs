@@ -14,7 +14,7 @@ public interface IInventorySalesReservationWorkflowService
         CreateReservationRequest reservationRequest,
         CancellationToken cancellationToken = default);
 
-    Task<List<InventoryReservation>?> GetActivesByReferencesAsync(
+    Task<List<InventoryReservation>> GetActivesByReferencesAsync(
         InventoryReferenceType referenceType,
         HashSet<int> referenceIds,
         CancellationToken cancellationToken = default);

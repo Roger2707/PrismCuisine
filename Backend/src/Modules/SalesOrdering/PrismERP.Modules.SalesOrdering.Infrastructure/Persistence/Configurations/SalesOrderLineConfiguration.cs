@@ -46,5 +46,8 @@ public sealed class SalesOrderLineConfiguration : EntityConfiguration<SalesOrder
 
         builder.Property(l => l.QuantityDelivered)
             .HasPrecision(18, 4);
+
+        builder.HasIndex(l => new { l.SalesOrderId, l.ProductId })
+            .IsUnique();
     }
 }

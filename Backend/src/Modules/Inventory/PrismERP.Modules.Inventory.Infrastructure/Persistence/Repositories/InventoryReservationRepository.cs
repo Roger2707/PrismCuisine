@@ -18,6 +18,29 @@ internal sealed class InventoryReservationRepository(PrismERPDbContext db) : IIn
             .Where(r => r.InventoryBalanceId == inventoryBalanceId && r.Status == InventoryReservationStatus.Active)
             .SumAsync(r => r.Quantity - r.FulfilledQuantity, cancellationToken);
 
+    public async Task<Dictionary<int, decimal>> GetActiveReservedQuantityBalancesAsync(
+        HashSet<int> inventoryBalanceIds, CancellationToken cancellationToken = default)
+    {
+        if (inventoryBalanceIds == null || !inventoryBalanceIds.Any())
+            return new Dictionary<int, decimal>();
+
+        var groupedData = await db.InventoryReservations
+            .Where(r => inventoryBalanceIds.Contains(r.InventoryBalanceId)
+                     && r.Status == InventoryReservationStatus.Active)
+            .GroupBy(r => r.InventoryBalanceId)
+            .Select(g => new
+            {
+                InventoryBalanceId = g.Key,
+                TotalReservedQuantity = g.Sum(r => r.Quantity - r.FulfilledQuantity)
+            })
+            .ToListAsync(cancellationToken);
+
+        return groupedData.ToDictionary(
+            x => x.InventoryBalanceId,
+            x => x.TotalReservedQuantity
+        );
+    }
+
     public Task<InventoryReservation?> GetActiveByReferenceAsync(
         InventoryReferenceType referenceType,
         int referenceId,
@@ -28,7 +51,7 @@ internal sealed class InventoryReservationRepository(PrismERPDbContext db) : IIn
                 && r.Status == InventoryReservationStatus.Active,
             cancellationToken);
 
-    public async Task<List<InventoryReservation>?> GetActivesByReferencesAsync(
+    public async Task<List<InventoryReservation>> GetActivesByReferencesAsync(
         InventoryReferenceType referenceType,
         HashSet<int> referenceIds,
         CancellationToken cancellationToken = default) => await

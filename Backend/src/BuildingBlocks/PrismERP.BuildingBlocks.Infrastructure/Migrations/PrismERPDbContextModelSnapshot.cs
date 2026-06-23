@@ -1478,7 +1478,8 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SalesOrderId");
+                    b.HasIndex("SalesOrderId", "ProductId")
+                        .IsUnique();
 
                     b.ToTable("SalesOrderLines", "sales_order");
                 });

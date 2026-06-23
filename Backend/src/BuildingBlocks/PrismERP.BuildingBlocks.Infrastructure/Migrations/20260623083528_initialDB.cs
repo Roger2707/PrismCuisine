@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initDB1706 : Migration
+    public partial class initialDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -860,10 +860,11 @@ namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_SalesOrderLines_SalesOrderId",
+                name: "IX_SalesOrderLines_SalesOrderId_ProductId",
                 schema: "sales_order",
                 table: "SalesOrderLines",
-                column: "SalesOrderId");
+                columns: new[] { "SalesOrderId", "ProductId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalesOrders_OrderNumber",

@@ -14,6 +14,7 @@ public interface IInventoryBalanceRepository
     /// quantity and over-reserving.
     /// </summary>
     Task<InventoryBalance?> GetByIdForUpdateWithLockAsync(int id, CancellationToken cancellationToken = default);
+    Task PermisticLockingByBalanceIdsAsync(HashSet<int> balanceIds, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<InventoryBalance>> GetByIdsForUpdateAsync(
         IReadOnlyCollection<int> ids,
         CancellationToken cancellationToken = default);
@@ -21,6 +22,9 @@ public interface IInventoryBalanceRepository
         int productId,
         int warehouseId,
         CancellationToken cancellationToken = default);
+    Task<List<InventoryBalance>> GetByGroupProductAndWarehouseAsync(
+        List<(int ProductId, int WarehouseId)> keys, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<InventoryBalance>> GetLowStockAsync(CancellationToken cancellationToken = default);
     void Add(InventoryBalance balance);
     void Update(InventoryBalance balance);
