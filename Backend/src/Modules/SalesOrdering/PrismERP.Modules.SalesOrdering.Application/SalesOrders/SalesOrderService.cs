@@ -4,6 +4,7 @@ using PrismERP.Modules.SalesOrdering.Domain.Entities;
 using PrismERP.Modules.SalesOrdering.Domain.Enums;
 using PrismERP.Modules.Inventory.Application.Inventory;
 using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
+using PrismERP.Modules.Inventory.Domain.Enums;
 
 namespace PrismERP.Modules.SalesOrdering.Application.SalesOrders;
 public sealed class SalesOrderService(
@@ -132,12 +133,39 @@ public sealed class SalesOrderService(
 
     public async Task CancelAsync(int salesOrderId, CancellationToken cancellationToken = default)
     {
-        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, cancellationToken)
-            ?? throw new NotFoundException($"Sales order with id '{salesOrderId}' was not found.");
+        await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(salesOrderId, ct)
+                ?? throw new NotFoundException($"Sales order with id '{salesOrderId}' was not found.");
 
-        salesOrder.Cancel();
-        unitOfWork.SalesOrders.Update(salesOrder);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            if(salesOrder.Status == SalesOrderStatus.Confirmed)
+            {
+                // 1. Handle DeliveryNotes have been created
+                var deliveryNotes = await unitOfWork.DeliveryNotes.GetBySalesOrderIdAsync(salesOrderId, ct);
+                if(deliveryNotes != null && deliveryNotes.Count > 0)
+                {
+                    if (deliveryNotes.Any(d => d.Status == DeliveryNoteStatus.Posted))
+                        throw new BusinessException($"Posted DeliveryNote cannot be Cancel for this SalesOrder ! Please use Refund instead of it!");
+
+                    // delete all Deliverynote in DB if Draft status
+                    unitOfWork.DeliveryNotes.RemoveRange(deliveryNotes);
+                }
+
+                // 2. Check SO Line DeliveriedQty
+                if (salesOrder.Lines.Any(l => l.QuantityDelivered > 0))
+                    throw new BusinessException($"There are at least one SO Line has DelieveriedQty !");
+
+                // 3. Handle Reservations, if 1 DN created from SO and Posted, SO status surely changed to partial or full deliveried
+                // we block this case first so let's believe qty cannot be exported from CostLayer. Change status is enough
+                var referenceIds = salesOrder.Lines.Select(l => l.Id).ToHashSet();
+                await inventoryReservations.ReleaseReservationsAsync(referenceIds, ct);
+            }
+
+            salesOrder.Cancel();
+            unitOfWork.SalesOrders.Update(salesOrder);
+            await unitOfWork.SaveChangesAsync(ct);
+
+        }, cancellationToken);
     }
 
     #endregion

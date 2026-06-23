@@ -11,6 +11,8 @@ public sealed class InventorySalesReservationWorkflowService(
     InventoryAvailabilityChecker availabilityChecker,
     InventoryFifoIssuer fifoIssuer) : IInventorySalesReservationWorkflowService
 {
+    #region Reserve
+
     public async Task<List<InventoryReservation>> ReserveForSalesOrderAsync(
         CreateReservationRequest reservationRequest,
         CancellationToken cancellationToken = default)
@@ -39,7 +41,7 @@ public sealed class InventorySalesReservationWorkflowService(
         await unitOfWork.Balances.PermisticLockingByBalanceIdsAsync(balanceIds, cancellationToken);
 
         // 3. check reservation
-        // That's means: 1 SO line only has 1 Reservation Active 
+        // That's means: 1 SO line only has 1 Reservation Active
         var existings = await unitOfWork.Reservations.GetActivesByReferencesAsync(
             InventoryReferenceType.SalesOrder,
             reservationRequest.CreateReservationLines.Select(l => l.ReferenceId).ToHashSet(),
@@ -76,11 +78,9 @@ public sealed class InventorySalesReservationWorkflowService(
         return reservations;
     }
 
-    public Task<List<InventoryReservation>> GetActivesByReferencesAsync(
-        InventoryReferenceType referenceType,
-        HashSet<int> referenceIds,
-        CancellationToken cancellationToken = default) =>
-        unitOfWork.Reservations.GetActivesByReferencesAsync(referenceType, referenceIds, cancellationToken);
+    #endregion
+
+    #region FulFill
 
     public async Task<List<InventoryMovement>> FulfillReservationsAsync(
         IReadOnlyList<FulfillReservationLine> lines,
@@ -140,6 +140,39 @@ public sealed class InventorySalesReservationWorkflowService(
 
         return movements;
     }
+
+    #endregion
+
+    #region Release
+
+    public async Task ReleaseReservationAsync(int reservationId, CancellationToken cancellationToken = default)
+    {
+        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(reservationId, cancellationToken)
+            ?? throw new NotFoundException($"Reservation '{reservationId}' was not found.");
+
+        reservation.Release();
+        unitOfWork.Reservations.Update(reservation);
+    }
+
+    public async Task ReleaseReservationsAsync(HashSet<int> referenceIds, CancellationToken cancellationToken = default)
+    {
+        var reservations = await unitOfWork.Reservations.GetActivesByReferencesAsync(InventoryReferenceType.SalesOrder, referenceIds, cancellationToken);
+        if (reservations == null || reservations.Count == 0)
+            throw new BusinessException($"At least one Reservation is not found!");
+
+        if(reservations.Count != referenceIds.Count)
+            throw new BusinessException($"Found reservations are not equals expected reservations !");
+
+        foreach (var reservation in reservations)
+        {
+            reservation.Release();
+            unitOfWork.Reservations.Update(reservation);
+        }
+    }
+
+    #endregion
+
+    #region Return Delivery (fix later)
 
     public async Task ReturnDeliveryIssuesAsync(
         string deliveryNumber,
@@ -252,12 +285,15 @@ public sealed class InventorySalesReservationWorkflowService(
         }
     }
 
-    public async Task ReleaseReservationAsync(int reservationId, CancellationToken cancellationToken = default)
-    {
-        var reservation = await unitOfWork.Reservations.GetByIdForUpdateAsync(reservationId, cancellationToken)
-            ?? throw new NotFoundException($"Reservation '{reservationId}' was not found.");
+    #endregion
 
-        reservation.Release();
-        unitOfWork.Reservations.Update(reservation);
-    }
+    #region Read
+
+    public Task<List<InventoryReservation>> GetActivesByReferencesAsync(
+        InventoryReferenceType referenceType,
+        HashSet<int> referenceIds,
+        CancellationToken cancellationToken = default) 
+            => unitOfWork.Reservations.GetActivesByReferencesAsync(referenceType, referenceIds, cancellationToken);
+
+    #endregion
 }

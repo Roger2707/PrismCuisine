@@ -25,7 +25,7 @@ internal sealed class DeliveryNoteRepository(PrismERPDbContext db) : IDeliveryNo
         var delivery = await db.DeliveryNotes
             .AsNoTracking()
             .Include(d => d.Lines)
-            .FirstOrDefaultAsync(d => d.Id == id);
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
         return delivery is null ? null : Map(delivery);
     }
@@ -34,17 +34,30 @@ internal sealed class DeliveryNoteRepository(PrismERPDbContext db) : IDeliveryNo
     {
         var delivery = await db.DeliveryNotes
             .Include(d => d.Lines)
-            .FirstOrDefaultAsync(d => d.Id == id);
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
         return delivery;
+    }
+
+    public async Task<List<DeliveryNote>> GetBySalesOrderIdAsync(int salesOrderId, CancellationToken cancellationToken = default)
+    {
+        var deliveryNotes = await db.DeliveryNotes
+            .Include(d => d.Lines)
+            .Where(d => d.SalesOrderId == salesOrderId)
+            .ToListAsync(cancellationToken);
+
+        return deliveryNotes;
     }
 
     #endregion
 
     #region Write
 
-    public void Add(DeliveryNote order) => db.DeliveryNotes.Add(order);
+    public void Add(DeliveryNote deliveryNote) => db.DeliveryNotes.Add(deliveryNote);
 
-    public void Update(DeliveryNote order) => db.DeliveryNotes.Update(order);
+    public void Update(DeliveryNote deliveryNote) => db.DeliveryNotes.Update(deliveryNote);
+
+    public void Delete(DeliveryNote deliveryNote) => db.DeliveryNotes.Remove(deliveryNote);
+    public void RemoveRange(List<DeliveryNote> deliveryNotes) => db.DeliveryNotes.RemoveRange(deliveryNotes);
 
     #endregion
 

@@ -116,12 +116,13 @@ public sealed class SalesOrder : AggregateRoot
 
     public void Cancel()
     {
-        if (Status is SalesOrderStatus.Confirmed or SalesOrderStatus.Delivered or SalesOrderStatus.PartialDelivery)
-            throw new BusinessException("Only draft sales orders can be cancelled.");
+        if (Status is SalesOrderStatus.Delivered or SalesOrderStatus.PartialDelivery)
+            throw new BusinessException("Sales orders has partial delivery or full delivery cannot be cancelled.");
 
         if (Status == SalesOrderStatus.Cancelled)
             throw new BusinessException("Sales order is already cancelled.");
 
+        // Draft, Confirm can be Cancelled
         Status = SalesOrderStatus.Cancelled;
         Touch();
     }

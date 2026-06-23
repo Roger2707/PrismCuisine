@@ -29,4 +29,5 @@ public interface IInventorySalesReservationWorkflowService
         CancellationToken cancellationToken = default);
 
     Task ReleaseReservationAsync(int reservationId, CancellationToken cancellationToken = default);
+    Task ReleaseReservationsAsync(HashSet<int> referenceIds, CancellationToken cancellationToken = default);
 }
