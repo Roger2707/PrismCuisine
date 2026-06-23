@@ -1,10 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
-using PrismERP.Modules.Inventory.Application.Inventory;
-using PrismERP.Modules.Inventory.Application.Inventory.Admin;
 using PrismERP.Modules.Inventory.Domain.Entities;
 using PrismERP.Modules.Purchasing.Domain.Entities;
-using PrismERP.Modules.Purchasing.Domain.Enums;
 
 namespace PrismERP.Modules.Purchasing.Infrastructure.Persistence;
 
@@ -13,20 +10,32 @@ public interface IPurchasingDataSeeder
     Task SeedAsync(CancellationToken cancellationToken = default);
 }
 
-internal sealed class PurchasingDataSeeder(
-    PrismERPDbContext db,
-    IInventoryManualStockAdminService manualStockAdminService) : IPurchasingDataSeeder
+internal sealed class PurchasingDataSeeder(PrismERPDbContext db) : IPurchasingDataSeeder
 {
-    private const string SeedMarker = "PO-SEED-001";
+    private const string SeedMarker = "PO-ELE-001";
+    private const int WarehouseId = 1;
 
     private static readonly SupplierSeed[] Suppliers =
     [
-        new("NCC-RAU", "Hợp tác xã Rau sạch Đà Lạt", "0901000001", "rausach@example.com", "Chợ đầu mối Hóc Môn"),
-        new("NCC-THIT", "Công ty Thực phẩm An Bình", "0901000002", "anbinh@example.com", "KCN Bình Chánh"),
-        new("NCC-HAISAN", "Hải sản Nha Trang Fresh", "0901000003", "fresh@example.com", "Chợ Bình Đông"),
-        new("NCC-DOUONG", "Phân phối Coca & nước giải khát", "0901000004", "coca@example.com", "Quận 7, TP.HCM"),
-        new("NCC-GIAVI", "Gia vị Việt Nam Foods", "0901000005", "giaivi@example.com", "Bình Thạnh"),
-        new("NCC-BAOBI", "Bao bì Xanh Packaging", "0901000006", "pack@example.com", "Thủ Đức")
+        new("SUP-TECH", "TechSource Global Ltd.", "18005551234", "orders@techsource.example.com", "1200 Silicon Valley Blvd, San Jose, CA"),
+        new("SUP-GADGET", "GadgetHub Wholesale", "18005552345", "sales@gadgethub.example.com", "88 Harbor Road, Seattle, WA"),
+        new("SUP-DIGI", "DigiParts Distribution Inc.", "18005553456", "procurement@digiparts.example.com", "500 Innovation Park, Austin, TX"),
+        new("SUP-SMART", "SmartGear Supply Co.", "18005554567", "hello@smartgear.example.com", "77 Commerce Street, Dallas, TX"),
+        new("SUP-ACC", "Accessories Direct LLC", "18005555678", "buy@accessoriesdirect.example.com", "19 Warehouse Lane, Newark, NJ"),
+    ];
+
+    private static readonly PurchaseOrderSeed[] PurchaseOrders =
+    [
+        new("PO-ELE-001", "SUP-TECH", "Draft restock — audio & power", [("ELE-013", 40m, 68.00m), ("ELE-014", 30m, 42.00m), ("ELE-015", 25m, 210.00m)]),
+        new("PO-ELE-002", "SUP-GADGET", "Draft restock — input devices", [("ELE-016", 20m, 55.00m), ("ELE-017", 35m, 48.00m)]),
+        new("PO-ELE-003", "SUP-DIGI", "Draft restock — connectivity", [("ELE-018", 15m, 95.00m), ("ELE-019", 100m, 14.50m), ("ELE-020", 60m, 22.00m)]),
+        new("PO-ELE-004", "SUP-SMART", "Draft Q2 monitors & storage", [("ELE-004", 10m, 178.00m), ("ELE-005", 25m, 69.00m)]),
+        new("PO-ELE-005", "SUP-ACC", "Draft accessories bundle", [("ELE-007", 80m, 11.00m), ("ELE-008", 150m, 7.80m), ("ELE-009", 40m, 26.00m)]),
+        new("PO-ELE-006", "SUP-TECH", "Draft wearables replenishment", [("ELE-006", 20m, 125.00m), ("ELE-020", 50m, 21.00m)]),
+        new("PO-ELE-007", "SUP-GADGET", "Draft office peripherals", [("ELE-003", 15m, 43.00m), ("ELE-010", 30m, 33.00m)]),
+        new("PO-ELE-008", "SUP-DIGI", "Draft premium audio", [("ELE-001", 50m, 17.80m), ("ELE-011", 25m, 86.00m)]),
+        new("PO-ELE-009", "SUP-SMART", "Draft charging & power", [("ELE-002", 60m, 21.00m), ("ELE-012", 45m, 29.00m)]),
+        new("PO-ELE-010", "SUP-ACC", "Draft mixed electronics order", [("ELE-013", 12m, 70.00m), ("ELE-018", 8m, 98.00m), ("ELE-019", 40m, 15.00m)]),
     ];
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
@@ -39,29 +48,50 @@ internal sealed class PurchasingDataSeeder(
         }
 
         var products = await db.Products
-            .Where(p => p.Sku.StartsWith("P00"))
+            .Where(p => p.Sku.StartsWith("ELE-"))
             .ToDictionaryAsync(p => p.Sku, cancellationToken);
 
-        if (products.Count < 5)
+        if (products.Count < 20)
         {
             return;
         }
 
         var suppliers = await db.Suppliers.ToDictionaryAsync(s => s.Code, cancellationToken);
-        var warehouseId = await db.Warehouses
-            .Where(w => w.Code == "MAIN")
-            .Select(w => w.Id)
-            .FirstAsync(cancellationToken);
+        var warehouseId = await ResolveWarehouseIdAsync(cancellationToken);
 
-        await SeedPurchaseOrdersAsync(products, suppliers, warehouseId, cancellationToken);
+        var orders = PurchaseOrders.Select(seed =>
+        {
+            var po = PurchaseOrder.CreateDraft(
+                seed.OrderNumber,
+                suppliers[seed.SupplierCode].Id,
+                warehouseId,
+                seed.Notes);
+
+            foreach (var line in seed.Lines)
+            {
+                po.AddLine(products[line.Sku].Id, line.Qty, line.UnitPrice);
+            }
+
+            return po;
+        }).ToList();
+
+        db.PurchaseOrders.AddRange(orders);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<int> ResolveWarehouseIdAsync(CancellationToken cancellationToken)
+    {
+        var warehouse = await db.Warehouses
+            .FirstOrDefaultAsync(w => w.Id == WarehouseId || w.Code == "MAIN", cancellationToken);
+
+        return warehouse?.Id ?? WarehouseId;
     }
 
     private async Task SeedSuppliersAsync(CancellationToken cancellationToken)
     {
         foreach (var seed in Suppliers)
         {
-            var exists = await db.Suppliers.AnyAsync(s => s.Code == seed.Code, cancellationToken);
-            if (exists)
+            if (await db.Suppliers.AnyAsync(s => s.Code == seed.Code, cancellationToken))
             {
                 continue;
             }
@@ -78,109 +108,6 @@ internal sealed class PurchasingDataSeeder(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task SeedPurchaseOrdersAsync(
-        Dictionary<string, Product> products,
-        Dictionary<string, Supplier> suppliers,
-        int warehouseId,
-        CancellationToken cancellationToken)
-    {
-        var p = products;
-
-        var po1 = CreatePo("PO-SEED-001", suppliers["NCC-RAU"].Id, warehouseId, "Draft - rau & gia vị");
-        po1.AddLine(p["P001"].Id, 30m, 16_000m);
-        po1.AddLine(p["P005"].Id, 10m, 46_000m);
-
-        var po2 = CreatePo("PO-SEED-002", suppliers["NCC-THIT"].Id, warehouseId, "Draft - thịt");
-        po2.AddLine(p["P002"].Id, 20m, 122_000m);
-
-        var po3 = CreatePo("PO-SEED-003", suppliers["NCC-HAISAN"].Id, warehouseId, "Approved - tôm");
-        po3.AddLine(p["P003"].Id, 15m, 360_000m);
-        po3.Approve();
-
-        var po4 = CreatePo("PO-SEED-004", suppliers["NCC-DOUONG"].Id, warehouseId, "Approved - nước ngọt");
-        po4.AddLine(p["P004"].Id, 24m, 185_000m);
-        po4.Approve();
-
-        var po5 = CreatePo("PO-SEED-005", suppliers["NCC-RAU"].Id, warehouseId, "Partially received - rau");
-        po5.AddLine(p["P001"].Id, 10m, 17_000m);
-        po5.Approve();
-
-        var po6 = CreatePo("PO-SEED-006", suppliers["NCC-GIAVI"].Id, warehouseId, "Received - nước mắm");
-        po6.AddLine(p["P005"].Id, 8m, 47_000m);
-        po6.Approve();
-
-        var po7 = CreatePo("PO-SEED-007", suppliers["NCC-BAOBI"].Id, warehouseId, "Cancelled");
-        po7.AddLine(p["P004"].Id, 5m, 190_000m);
-        po7.Cancel();
-
-        var po8 = CreatePo("PO-SEED-008", suppliers["NCC-THIT"].Id, warehouseId, "Approved - thịt nhiều");
-        po8.AddLine(p["P002"].Id, 5m, 123_000m);
-        po8.AddLine(p["P003"].Id, 3m, 365_000m);
-        po8.Approve();
-
-        var orders = new[] { po1, po2, po3, po4, po5, po6, po7, po8 };
-        db.PurchaseOrders.AddRange(orders);
-        await db.SaveChangesAsync(cancellationToken);
-
-        await SeedGoodsReceiptsAsync(po5, po6, warehouseId, cancellationToken);
-    }
-
-    private async Task SeedGoodsReceiptsAsync(
-        PurchaseOrder partialPo,
-        PurchaseOrder receivedPo,
-        int warehouseId,
-        CancellationToken cancellationToken)
-    {
-        var partialLine = partialPo.Lines.First();
-        var grPartial = GoodsReceipt.CreateDraft(partialPo.Id, "GRN-SEED-001", "Nhận một phần rau");
-        grPartial.AddLine(partialLine.Id, partialLine.ProductId, 6m, 17_000m);
-        db.GoodsReceipts.Add(grPartial);
-        await db.SaveChangesAsync(cancellationToken);
-        await PostGoodsReceiptAsync(grPartial, partialPo, warehouseId, cancellationToken);
-
-        var receivedLine = receivedPo.Lines.First();
-        var grFull = GoodsReceipt.CreateDraft(receivedPo.Id, "GRN-SEED-002", "Nhận đủ nước mắm");
-        grFull.AddLine(receivedLine.Id, receivedLine.ProductId, receivedLine.QuantityOrdered, 47_000m);
-        db.GoodsReceipts.Add(grFull);
-        await db.SaveChangesAsync(cancellationToken);
-        await PostGoodsReceiptAsync(grFull, receivedPo, warehouseId, cancellationToken);
-    }
-
-    private async Task PostGoodsReceiptAsync(
-        GoodsReceipt receipt,
-        PurchaseOrder order,
-        int warehouseId,
-        CancellationToken cancellationToken)
-    {
-        foreach (var line in receipt.Lines)
-        {
-            order.RecordReceipt(line.PurchaseOrderLineId, line.Quantity);
-
-            await manualStockAdminService.ReceiveAsync(
-                new ReceiveInventoryRequest(
-                    line.ProductId,
-                    warehouseId,
-                    line.Quantity,
-                    line.UnitCost,
-                    receipt.ReceiptNumber,
-                    receipt.PurchaseOrderId,
-                    $"Seed GRN line {line.Id}"),
-                cancellationToken);
-        }
-
-        receipt.Post();
-        db.PurchaseOrders.Update(order);
-        db.GoodsReceipts.Update(receipt);
-        await db.SaveChangesAsync(cancellationToken);
-    }
-
-    private static PurchaseOrder CreatePo(
-        string orderNumber,
-        int supplierId,
-        int warehouseId,
-        string? notes) =>
-        PurchaseOrder.CreateDraft(orderNumber, supplierId, warehouseId, notes);
-
     private sealed record SupplierSeed(
         string Code,
         string Name,
@@ -188,4 +115,10 @@ internal sealed class PurchasingDataSeeder(
         string? Email,
         string? Address,
         string? TaxCode = null);
+
+    private sealed record PurchaseOrderSeed(
+        string OrderNumber,
+        string SupplierCode,
+        string Notes,
+        (string Sku, decimal Qty, decimal UnitPrice)[] Lines);
 }

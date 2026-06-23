@@ -1,9 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
-using PrismERP.Modules.Inventory.Application.Inventory;
-using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 using PrismERP.Modules.Inventory.Domain.Entities;
-using PrismERP.Modules.Inventory.Domain.Enums;
 using PrismERP.Modules.SalesOrdering.Domain.Entities;
 
 namespace PrismERP.Modules.SalesOrdering.Infrastructure.Persistence;
@@ -13,45 +10,77 @@ public interface ISalesOrderingDataSeeder
     Task SeedAsync(CancellationToken cancellationToken = default);
 }
 
-internal sealed class SalesOrderingDataSeeder(
-    PrismERPDbContext db,
-    IInventorySalesReservationWorkflowService inventoryReservations) : ISalesOrderingDataSeeder
+internal sealed class SalesOrderingDataSeeder(PrismERPDbContext db) : ISalesOrderingDataSeeder
 {
-    private const string SeedMarker = "SO-SEED-001";
-    private const int WarehouseId = 1;
+    private const string SeedMarker = "SO-ELE-001";
+
+    private static readonly CustomerSeed[] Customers =
+    [
+        new("CUS-RETAIL", "BrightTech Retail Chain", "18006661001"),
+        new("CUS-ONLINE", "ElectroMart Online Store", "18006661002"),
+        new("CUS-CORP", "Nexus Corporate IT Dept.", "18006661003"),
+        new("CUS-EDU", "Campus Electronics Store", "18006661004"),
+        new("CUS-RESELL", "Prime Gadget Resellers", "18006661005"),
+    ];
+
+    private static readonly SalesOrderSeed[] SalesOrders =
+    [
+        new("SO-ELE-001", "CUS-RETAIL", "Draft — store display refresh", [("ELE-001", 10m, 29.99m, 0m, 10m), ("ELE-007", 25m, 19.99m, 5m, 10m)]),
+        new("SO-ELE-002", "CUS-ONLINE", "Draft — flash sale bundle", [("ELE-002", 15m, 34.99m, 0m, 10m), ("ELE-012", 20m, 49.99m, 0m, 10m), ("ELE-008", 30m, 14.99m, 0m, 10m)]),
+        new("SO-ELE-003", "CUS-CORP", "Draft — office upgrade kit", [("ELE-003", 8m, 79.99m, 0m, 10m), ("ELE-004", 5m, 279.99m, 0m, 10m)]),
+        new("SO-ELE-004", "CUS-EDU", "Draft — student laptop accessories", [("ELE-005", 12m, 109.99m, 0m, 10m), ("ELE-009", 18m, 39.99m, 0m, 10m)]),
+        new("SO-ELE-005", "CUS-RESELL", "Draft — reseller pack A", [("ELE-006", 6m, 199.99m, 0m, 10m), ("ELE-011", 4m, 139.99m, 0m, 10m)]),
+        new("SO-ELE-006", "CUS-RETAIL", "Draft — home office promo", [("ELE-010", 10m, 59.99m, 0m, 10m), ("ELE-018", 5m, 149.99m, 0m, 10m)]),
+        new("SO-ELE-007", "CUS-ONLINE", "Draft — streaming starter set", [("ELE-017", 7m, 79.99m, 0m, 10m), ("ELE-010", 7m, 59.99m, 0m, 10m), ("ELE-016", 3m, 89.99m, 0m, 10m)]),
+        new("SO-ELE-008", "CUS-CORP", "Draft — meeting room equipment", [("ELE-004", 3m, 279.99m, 0m, 10m), ("ELE-011", 2m, 139.99m, 0m, 10m)]),
+        new("SO-ELE-009", "CUS-EDU", "Draft — lab peripherals", [("ELE-007", 40m, 19.99m, 10m, 10m), ("ELE-008", 50m, 14.99m, 0m, 10m)]),
+        new("SO-ELE-010", "CUS-RESELL", "Draft — mixed shelf replenishment", [("ELE-001", 20m, 29.99m, 0m, 10m), ("ELE-002", 20m, 34.99m, 0m, 10m), ("ELE-012", 15m, 49.99m, 0m, 10m)]),
+    ];
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        var customers = await SeedCustomersAsync(cancellationToken);
+
         if (await db.SalesOrders.AnyAsync(o => o.OrderNumber == SeedMarker, cancellationToken))
         {
             return;
         }
 
         var products = await db.Products
-            .Where(p => p.Sku.StartsWith("P00"))
+            .Where(p => p.Sku.StartsWith("ELE-"))
             .ToDictionaryAsync(p => p.Sku, cancellationToken);
 
-        if (products.Count < 5)
+        if (products.Count < 12)
         {
             return;
         }
 
-        var customers = await SeedCustomersAsync(cancellationToken);
+        var orders = SalesOrders.Select(seed =>
+        {
+            var customer = customers[seed.CustomerCode];
+            var order = SalesOrder.CreateDraft(
+                seed.OrderNumber,
+                customer.Id,
+                customer.Name,
+                seed.Notes);
 
-        await SeedSalesOrdersAsync(customers, products, cancellationToken);
+            foreach (var line in seed.Lines)
+            {
+                var product = products[line.Sku];
+                order.AddLine(product.Id, product.Name, line.Qty, line.UnitPrice, line.DiscountPercent, line.VatRate);
+            }
+
+            order.RecalculateTotals();
+            return order;
+        }).ToList();
+
+        db.SalesOrders.AddRange(orders);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<Dictionary<string, Customer>> SeedCustomersAsync(CancellationToken cancellationToken)
     {
-        var seeds =
-            new (string Code, string Name, string Phone)[]
-            {
-                ("KH-001", "Nhà hàng Sen Vàng", "0902000001"),
-                ("KH-002", "Quán Cơm Niêu", "0902000002"),
-                ("KH-003", "Khách sạn Riverside", "0902000003")
-            };
-
-        foreach (var seed in seeds)
+        foreach (var seed in Customers)
         {
             if (await db.Customers.AnyAsync(c => c.Code == seed.Code, cancellationToken))
             {
@@ -64,123 +93,15 @@ internal sealed class SalesOrderingDataSeeder(
         await db.SaveChangesAsync(cancellationToken);
 
         return await db.Customers
-            .Where(c => c.Code.StartsWith("KH-"))
+            .Where(c => Customers.Select(x => x.Code).Contains(c.Code))
             .ToDictionaryAsync(c => c.Code, cancellationToken);
     }
 
-    private async Task SeedSalesOrdersAsync(
-        Dictionary<string, Customer> customers,
-        Dictionary<string, Product> products,
-        CancellationToken cancellationToken)
-    {
-        var p = products;
-        var c = customers;
+    private sealed record CustomerSeed(string Code, string Name, string Phone);
 
-        var so1 = CreateSo("SO-SEED-001", c["KH-001"], "Đơn nháp - bàn tiệc nhiều");
-        AddLine(so1, p["P001"], 5m, 25_000m, 0m, 8m);
-        AddLine(so1, p["P002"], 3m, 150_000m, 5m, 8m);
-
-        var so2 = CreateSo("SO-SEED-002", c["KH-001"], "Đơn nháp - combo hải sản");
-        AddLine(so2, p["P003"], 2m, 400_000m, 0m, 8m);
-        AddLine(so2, p["P004"], 4m, 200_000m, 0m, 10m);
-        AddLine(so2, p["P005"], 2m, 50_000m, 0m, 8m);
-
-        var so3 = CreateSo("SO-SEED-003", c["KH-002"], "Đã xác nhận - buffet sáng");
-        AddLine(so3, p["P001"], 4m, 25_000m, 0m, 8m);
-        AddLine(so3, p["P003"], 2m, 400_000m, 10m, 8m);
-
-        var so4 = CreateSo("SO-SEED-004", c["KH-002"], "Đã xác nhận - tiệc công ty");
-        AddLine(so4, p["P002"], 2m, 150_000m, 0m, 8m);
-        AddLine(so4, p["P004"], 3m, 200_000m, 0m, 10m);
-        AddLine(so4, p["P005"], 1m, 50_000m, 0m, 8m);
-
-        var so5 = CreateSo("SO-SEED-005", c["KH-003"], "Giao một phần - sự kiện");
-        AddLine(so5, p["P001"], 5m, 25_000m, 0m, 8m);
-        AddLine(so5, p["P002"], 3m, 150_000m, 0m, 8m);
-
-        var orders = new[] { so1, so2, so3, so4, so5 };
-        db.SalesOrders.AddRange(orders);
-        await db.SaveChangesAsync(cancellationToken);
-
-        //await ApproveAndReserveAsync(so3, cancellationToken);
-        //await ApproveAndReserveAsync(so4, cancellationToken);
-        //await SeedPartialDeliveryAsync(so5, cancellationToken);
-    }
-
-    private static SalesOrder CreateSo(string orderNumber, Customer customer, string? notes) =>
-        SalesOrder.CreateDraft(orderNumber, customer.Id, customer.Name, notes);
-
-    private static void AddLine(
-        SalesOrder order,
-        Product product,
-        decimal qty,
-        decimal unitPrice,
-        decimal discountPercent,
-        decimal vatRate) =>
-        order.AddLine(product.Id, product.Name, qty, unitPrice, discountPercent, vatRate);
-
-    private async Task ApproveAndReserveAsync(SalesOrder salesOrder, CancellationToken cancellationToken)
-    {
-        await inventoryReservations.ReserveForSalesOrderAsync(
-                new CreateReservationRequest(
-                salesOrder.Lines.Select(l => new CreateReservationLine
-                (
-                    l.ProductId,
-                    WarehouseId,
-                    l.QuantityOrdered,
-                    l.Id,
-                    $"Seed reservation for {salesOrder.OrderNumber}, line {l.Id}")
-                ).ToList()),
-                cancellationToken);
-
-        salesOrder.Approve();
-        db.SalesOrders.Update(salesOrder);
-        await db.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task SeedPartialDeliveryAsync(SalesOrder salesOrder, CancellationToken cancellationToken)
-    {
-        await ApproveAndReserveAsync(salesOrder, cancellationToken);
-
-        var lines = salesOrder.Lines.OrderBy(l => l.Id).ToList();
-
-        var deliveryNote = DeliveryNote.CreateDraft(
-            "DN-SEED-001",
-            salesOrder.Id,
-            salesOrder.CustomerId,
-            salesOrder.CustomerName,
-            salesOrder.OrderNumber,
-            salesOrder.Status,
-            "Giao một phần - seed");
-
-        deliveryNote.AddLine(2m, lines[0]);
-        deliveryNote.AddLine(1m, lines[1]);
-
-        db.DeliveryNotes.Add(deliveryNote);
-        await db.SaveChangesAsync(cancellationToken);
-
-        var deliveryLineIds = deliveryNote.Lines.Select(l => l.SalesOrderLineId).ToHashSet();
-        var reservations = await inventoryReservations.GetActivesByReferencesAsync(
-            InventoryReferenceType.SalesOrder,
-            deliveryLineIds,
-            cancellationToken)
-            ?? [];
-
-        var fulfillLines = deliveryNote.Lines.Select(dnLine =>
-        {
-            var reservation = reservations.First(r => r.ReferenceId == dnLine.SalesOrderLineId);
-            return new FulfillReservationLine(
-                reservation,
-                dnLine.QuantityDelivered,
-                deliveryNote.DeliveryNumber,
-                $"Seed delivery {deliveryNote.DeliveryNumber}, line {dnLine.SalesOrderLineId}");
-        }).ToList();
-
-        await inventoryReservations.FulfillReservationsAsync(fulfillLines, cancellationToken);
-
-        deliveryNote.Post(salesOrder);
-        db.DeliveryNotes.Update(deliveryNote);
-        db.SalesOrders.Update(salesOrder);
-        await db.SaveChangesAsync(cancellationToken);
-    }
+    private sealed record SalesOrderSeed(
+        string OrderNumber,
+        string CustomerCode,
+        string Notes,
+        (string Sku, decimal Qty, decimal UnitPrice, decimal DiscountPercent, decimal VatRate)[] Lines);
 }
