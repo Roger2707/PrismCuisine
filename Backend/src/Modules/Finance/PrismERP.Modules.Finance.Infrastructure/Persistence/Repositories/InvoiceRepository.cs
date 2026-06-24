@@ -65,6 +65,7 @@ internal sealed class InvoiceRepository(PrismERPDbContext db) : IInvoiceReposito
     public void Add(Invoice invoice) => db.Invoices.Add(invoice);
 
     public void Update(Invoice invoice) => db.Invoices.Update(invoice);
+    public void Delete(Invoice invoice) => db.Remove(invoice);
 
     public Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default)
     {

@@ -176,7 +176,7 @@ public sealed class SalesOrderService(
     {
         var today = DateTime.UtcNow.Date;
         var count = await unitOfWork.SalesOrders.GetCountForDateAsync(today, cancellationToken);
-        return $"PO-{today:yyyyMMdd}-{(count + 1):D4}";
+        return $"SO-{today:yyyyMMdd}-{(count + 1):D4}";
     }
 
     #endregion

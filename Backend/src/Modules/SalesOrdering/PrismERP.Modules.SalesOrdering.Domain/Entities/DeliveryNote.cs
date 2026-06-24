@@ -143,7 +143,10 @@ public sealed class DeliveryNote : AggregateRoot
             orderLine.RollbackDelivery(line.QuantityDelivered);
         }
 
+        // update status
         salesOrder.UpdateDeliveryStatus();
+        salesOrder.UpdateInvoiceStatus();
+
         Status = DeliveryNoteStatus.Cancelled;
     }
 }

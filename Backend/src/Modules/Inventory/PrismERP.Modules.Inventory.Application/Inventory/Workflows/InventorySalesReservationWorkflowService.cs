@@ -180,14 +180,10 @@ public sealed class InventorySalesReservationWorkflowService(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deliveryNumber))
-        {
             throw new BusinessException("Delivery number is required.");
-        }
 
         if (lines.Count == 0)
-        {
             throw new BusinessException("At least one delivery line is required to return stock.");
-        }
 
         var referenceIds = lines.Select(l => l.SalesOrderLineId).ToHashSet();
         var issueMovements = await unitOfWork.Movements.GetIssuesByDeliveryReferenceAsync(
@@ -197,9 +193,7 @@ public sealed class InventorySalesReservationWorkflowService(
             cancellationToken);
 
         if (issueMovements.Count == 0)
-        {
             throw new BusinessException($"No issue movements found for delivery '{deliveryNumber}'.");
-        }
 
         var movementsByLine = issueMovements
             .GroupBy(m => m.ReferenceId!.Value)

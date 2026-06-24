@@ -14,5 +14,6 @@ public interface IInvoiceRepository
     Task<List<Invoice>> GetByPurchaseOrderAsync(int purchaseOrderId, CancellationToken cancellationToken = default);
     void Add(Invoice invoice);
     void Update(Invoice invoice);
+    void Delete(Invoice invoice);
     Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default);
 }

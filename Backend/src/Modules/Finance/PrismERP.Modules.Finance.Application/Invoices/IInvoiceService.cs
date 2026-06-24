@@ -9,6 +9,7 @@ public interface IInvoiceService
     Task<InvoiceDto?> GetByGoodsReceiptIdAsync(int goodsReceiptId, CancellationToken cancellationToken = default);
     Task<InvoiceDto?> GetByDeliveryNoteIdAsync(int deliveryNoteId, CancellationToken cancellationToken = default);
     Task<InvoiceDto> CreateAsync(CreateInvoiceRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int invoiceId, CancellationToken cancellationToken = default);
     Task CancelAsync(int id, CancellationToken cancellationToken = default);
     Task<string> GenerateInvoiceNumberAsync(CancellationToken cancellationToken);
 }

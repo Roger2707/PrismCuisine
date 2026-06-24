@@ -139,13 +139,18 @@ public sealed class SalesOrder : AggregateRoot
             Status = SalesOrderStatus.PartialDelivery;
         else if (allNotDelivered)
             Status = SalesOrderStatus.Confirmed;
+
+        Touch();
     }
 
     public void UpdateInvoiceStatus()
     {
-        bool fullInvoicing = _lines.All(line => line.QuantityRemaining <= 0);
-        
-        InvoiceStatus = fullInvoicing ? SalesOrderInvoicingStatus.FullyInvoiced : SalesOrderInvoicingStatus.PartiallyInvoiced;
+        if (_lines.All(l => l.QuantityDelivered == 0))
+            InvoiceStatus = SalesOrderInvoicingStatus.NotInvoiced;
+        else if (_lines.All(l => l.QuantityDelivered == l.QuantityOrdered))
+            InvoiceStatus = SalesOrderInvoicingStatus.FullyInvoiced;
+        else
+            InvoiceStatus = SalesOrderInvoicingStatus.PartiallyInvoiced;
 
         Touch();
     }

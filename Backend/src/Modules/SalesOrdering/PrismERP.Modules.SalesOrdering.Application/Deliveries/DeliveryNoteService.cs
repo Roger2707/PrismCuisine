@@ -177,28 +177,36 @@ public sealed class DeliveryNoteService(
 
     public async Task CancelAsync(int deliveryNoteId, CancellationToken cancellationToken = default)
     {
-        var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, cancellationToken)
-            ?? throw new NotFoundException($"Delivery note '{deliveryNoteId}' was not found.");
-
-        var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(
-            deliveryNote.SalesOrderId,
-            cancellationToken)
-            ?? throw new NotFoundException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
-
-        var returnLines = deliveryNote.Lines
-            .Select(l => new ReturnDeliveryLine(l.SalesOrderLineId, l.QuantityDelivered))
-            .ToList();
-
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
+            var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, ct)
+                ?? throw new NotFoundException($"Delivery note '{deliveryNoteId}' was not found.");
+
+            var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(
+                deliveryNote.SalesOrderId,
+                ct)
+                ?? throw new NotFoundException($"Sales order '{deliveryNote.SalesOrderId}' was not found.");
+
+            var returnLines = deliveryNote.Lines
+                .Select(l => new ReturnDeliveryLine(l.SalesOrderLineId, l.QuantityDelivered))
+                .ToList();
+
             await inventoryReservations.ReturnDeliveryIssuesAsync(
                 deliveryNote.DeliveryNumber,
                 returnLines,
                 ct);
 
             deliveryNote.Cancel(salesOrder);
+
+            var invoiceDto = await invoiceService.GetByDeliveryNoteIdAsync(deliveryNoteId, ct);
+            if (invoiceDto is null)
+                throw new BusinessException($"Invocie with deliveryNote ID : {deliveryNoteId} has not been created !");
+
+            await invoiceService.CancelAsync(invoiceDto.Id, ct);
+
             unitOfWork.DeliveryNotes.Update(deliveryNote);
             unitOfWork.SalesOrders.Update(salesOrder);
+
             await unitOfWork.SaveChangesAsync(ct);
         }, cancellationToken);
     }

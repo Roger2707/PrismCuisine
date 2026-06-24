@@ -6,6 +6,7 @@ namespace PrismERP.Modules.Finance.Application.Invoices;
 
 public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceService
 {
+    #region Read
     public async Task<IReadOnlyCollection<InvoiceDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var invoices = await unitOfWork.Invoices.GetAllAsync(cancellationToken);
@@ -41,6 +42,10 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         var invoices = await unitOfWork.Invoices.GetByPurchaseOrderAsync(purchaseOrderId, cancellationToken);
         return invoices.Select(Map).ToList();
     }
+
+    #endregion
+
+    #region Write
 
     public async Task<InvoiceDto> CreateAsync(CreateInvoiceRequest request, CancellationToken cancellationToken = default)
     {
@@ -83,6 +88,19 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         return Map(invoice);
     }
 
+    public async Task DeleteAsync(int invoiceId, CancellationToken cancellationToken = default)
+    {
+        var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(invoiceId);
+        if (invoice == null)
+            throw new NotFoundException($"Invoice ID: {invoiceId} is not found !");
+
+        unitOfWork.Invoices.Delete(invoice);
+    }
+
+    #endregion
+
+    #region Business
+
     public async Task CancelAsync(int id, CancellationToken cancellationToken = default)
     {
         var invoice = await unitOfWork.Invoices.GetByIdForUpdateAsync(id, cancellationToken)
@@ -92,6 +110,10 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
         unitOfWork.Invoices.Update(invoice);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
+
+    #endregion
+
+    #region Helper Methods
 
     private static InvoiceDto Map(Invoice invoice) =>
         new(
@@ -130,7 +152,6 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
             line.DiscountAmount,
             line.LineTotal);
 
-    #region Helper Methods
 
     public async Task<string> GenerateInvoiceNumberAsync(CancellationToken cancellationToken)
     {
