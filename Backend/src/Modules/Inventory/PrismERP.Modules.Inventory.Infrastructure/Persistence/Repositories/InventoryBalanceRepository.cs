@@ -1,4 +1,3 @@
-using LinqKit;
 using Microsoft.EntityFrameworkCore;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Inventory.Application.Abstractions.Persistence;
@@ -51,18 +50,23 @@ internal sealed class InventoryBalanceRepository(PrismERPDbContext db) : IInvent
             b => b.ProductId == productId && b.WarehouseId == warehouseId,
             cancellationToken);
 
-    public Task<List<InventoryBalance>> GetByGroupProductAndWarehouseAsync(
+    public async Task<List<InventoryBalance>> GetByGroupProductAndWarehouseAsync(
         List<(int ProductId, int WarehouseId)> keys, CancellationToken cancellationToken = default)
     {
-        var predicate = PredicateBuilder.New<InventoryBalance>(false);
+        if (keys.Count == 0)
+            return [];
 
-        foreach (var key in keys)
-            predicate = predicate.Or(b => b.ProductId == key.ProductId && b.WarehouseId == key.WarehouseId);
+        var productIds = keys.Select(k => k.ProductId).Distinct().ToList();
+        var warehouseIds = keys.Select(k => k.WarehouseId).Distinct().ToList();
+        var keySet = keys.ToHashSet();
 
-        return db.InventoryBalances
-            .AsExpandable()
-            .Where(predicate)
+        var candidates = await db.InventoryBalances
+            .Where(b => productIds.Contains(b.ProductId) && warehouseIds.Contains(b.WarehouseId))
             .ToListAsync(cancellationToken);
+
+        return candidates
+            .Where(b => keySet.Contains((b.ProductId, b.WarehouseId)))
+            .ToList();
     }
 
     public async Task<IReadOnlyCollection<InventoryBalance>> GetLowStockAsync(

@@ -33,7 +33,9 @@ public sealed class InventoryAvailabilityChecker(IInventoryUnitOfWork unitOfWork
         foreach(var item in request)
         {
             var balance = item.balance;
-            decimal reservedQty = balance_reservedQty[balance.Id];
+            decimal reservedQty = balance_reservedQty.TryGetValue(balance.Id, out var quantity)
+                ? quantity
+                : 0m;
             decimal available = balance.GetAvailable(reservedQty);
 
             if (item.requestedQty > available)

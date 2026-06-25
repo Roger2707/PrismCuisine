@@ -1,4 +1,3 @@
-using PrismERP.BuildingBlocks.Application.Abstractions.Messaging;
 using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.Purchasing.Application.Abstractions;
 using PrismERP.Modules.Purchasing.Domain.Entities;
