@@ -60,5 +60,14 @@ public sealed class PurchaseOrderLine : Entity
         QuantityReceived += quantity;
     }
 
+    internal void RollbackGoodsReceiptLine(decimal quantity)
+    {
+        if (quantity > QuantityReceived)
+            throw new BusinessException(
+                $"ProductID: {ProductId}: rollback quantity exceeds received ({QuantityReceived}).");
+
+        QuantityReceived -= quantity;
+    }
+
     internal bool IsFullyReceived() => QuantityReceived >= QuantityOrdered;
 }

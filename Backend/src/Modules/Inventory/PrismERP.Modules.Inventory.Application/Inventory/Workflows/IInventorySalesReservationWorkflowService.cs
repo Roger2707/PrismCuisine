@@ -5,9 +5,6 @@ namespace PrismERP.Modules.Inventory.Application.Inventory.Workflows;
 
 // DTOs: CreateReservationRequest, FulfillReservationLine, ReturnDeliveryLine in parent namespace
 
-/// <summary>
-/// Sales order approve, delivery post/cancel — caller owns SaveChanges inside module transaction.
-/// </summary>
 public interface IInventorySalesReservationWorkflowService
 {
     Task<List<InventoryReservation>> ReserveForSalesOrderAsync(

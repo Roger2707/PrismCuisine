@@ -172,12 +172,9 @@ public sealed class InventorySalesReservationWorkflowService(
 
     #endregion
 
-    #region Return Delivery (fix later)
+    #region Return Delivery
 
-    public async Task ReturnDeliveryIssuesAsync(
-        string deliveryNumber,
-        IReadOnlyList<ReturnDeliveryLine> lines,
-        CancellationToken cancellationToken = default)
+    public async Task ReturnDeliveryIssuesAsync(string deliveryNumber, IReadOnlyList<ReturnDeliveryLine> lines, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deliveryNumber))
             throw new BusinessException("Delivery number is required.");

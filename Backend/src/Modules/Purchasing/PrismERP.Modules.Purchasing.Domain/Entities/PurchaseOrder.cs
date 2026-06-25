@@ -189,6 +189,22 @@ public sealed class PurchaseOrder : AggregateRoot
         }
     }
 
+    public void UpdateReceiveStatus()
+    {
+        bool allReceived = _lines.All(l => l.QuantityOrdered == l.QuantityReceived);
+        bool anyReceived = _lines.Any(l => l.QuantityReceived > 0);
+        bool allNotReceived = _lines.All(l => l.QuantityReceived == 0);
+
+        if (allReceived)
+            Status = PurchaseOrderStatus.Received;
+        else if (anyReceived)
+            Status = PurchaseOrderStatus.PartiallyReceived;
+        else if (allNotReceived)
+            Status = PurchaseOrderStatus.Approved;
+
+        Touch();
+    }
+
     public void UpdateInvoiceStatus(PurchaseOrderInvoicingStatus status)
     {
         InvoiceStatus = status;

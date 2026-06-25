@@ -92,3 +92,7 @@ public sealed record FulfillReservationLine(
 public sealed record ReturnDeliveryLine(
     int SalesOrderLineId,
     decimal Quantity);
+
+public sealed record ReturnGoodsReceiptLine(
+    int PurchaseOrderLineId,
+    decimal Quantity);

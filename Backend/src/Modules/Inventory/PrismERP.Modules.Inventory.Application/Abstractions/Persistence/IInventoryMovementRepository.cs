@@ -13,5 +13,12 @@ public interface IInventoryMovementRepository
         string reference,
         IReadOnlyCollection<int> referenceIds,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<InventoryMovement>> GetReceiptByPurchaseOrderReferenceAsync(
+        InventoryReferenceType referenceType,
+        string reference,
+        IReadOnlyCollection<int> referenceIds,
+        CancellationToken cancellationToken = default);
+
     void Add(InventoryMovement movement);
 }

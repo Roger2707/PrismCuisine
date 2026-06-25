@@ -179,7 +179,7 @@ public sealed class DeliveryNoteService(
     {
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
-            var deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, ct)
+            DeliveryNote deliveryNote = await unitOfWork.DeliveryNotes.GetByIdWithLinesForUpdateAsync(deliveryNoteId, ct)
                 ?? throw new NotFoundException($"Delivery note '{deliveryNoteId}' was not found.");
 
             var salesOrder = await unitOfWork.SalesOrders.GetByIdWithLinesForUpdateAsync(

@@ -37,5 +37,25 @@ internal sealed class InventoryMovementRepository(PrismERPDbContext db) : IInven
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<InventoryMovement>> GetReceiptByPurchaseOrderReferenceAsync(
+        InventoryReferenceType referenceType,
+        string reference,
+        IReadOnlyCollection<int> referenceIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (referenceIds.Count == 0)
+            return [];
+
+        return await db.InventoryMovements
+            .AsNoTracking()
+            .Where(m => m.MovementType == InventoryMovementType.Receipt
+                && m.ReferenceType == referenceType
+                && m.Reference == reference
+                && m.ReferenceId != null
+                && referenceIds.Contains(m.ReferenceId.Value))
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public void Add(InventoryMovement movement) => db.InventoryMovements.Add(movement);
 }

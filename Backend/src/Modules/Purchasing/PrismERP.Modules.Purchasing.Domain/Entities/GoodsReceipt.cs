@@ -88,17 +88,54 @@ public sealed class GoodsReceipt : AggregateRoot
     public void Post()
     {
         if (Status != GoodsReceiptStatus.Draft)
-        {
             throw new BusinessException("Only draft goods receipts can be posted.");
-        }
 
         if (_lines.Count == 0)
-        {
             throw new BusinessException("Cannot post a goods receipt without lines.");
-        }
 
         Status = GoodsReceiptStatus.Posted;
         PostedAt = DateTime.UtcNow;
         Touch();
     }
+
+    public void Cancel(PurchaseOrder po)
+    {
+        if (Status != GoodsReceiptStatus.Posted)
+            throw new BusinessException("Only posted goods receipts can be cancel.");
+
+        // rollback qty each line
+        foreach(var line in _lines)
+        {
+            var poLine = po.Lines.First(pol => pol.Id == line.PurchaseOrderLineId);
+            poLine.RollbackGoodsReceiptLine(line.Quantity);
+        }
+
+        // update status
+        po.UpdateReceiveStatus();
+
+        Status = GoodsReceiptStatus.Cancelled;
+        Touch();
+    }
 }
+
+
+//public void Cancel(SalesOrder salesOrder)
+//    {
+//        if (Status != DeliveryNoteStatus.Posted)
+//            throw new BusinessException("Only Posted delivery notes can be cancelled.");
+
+//        // Rollback QuantityDelivered
+//        foreach (var line in _lines)
+//        {
+//            var orderLine = salesOrder.Lines
+//                .First(l => l.Id == line.SalesOrderLineId);
+
+//            orderLine.RollbackDelivery(line.QuantityDelivered);
+//        }
+
+//        // update status
+//        salesOrder.UpdateDeliveryStatus();
+//        salesOrder.UpdateInvoiceStatus();
+
+//        Status = DeliveryNoteStatus.Cancelled;
+//    }
