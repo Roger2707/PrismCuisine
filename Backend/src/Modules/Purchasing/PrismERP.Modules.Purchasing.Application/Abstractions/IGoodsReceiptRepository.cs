@@ -6,6 +6,7 @@ namespace PrismERP.Modules.Purchasing.Application.Abstractions;
 public interface IGoodsReceiptRepository
 {
     Task<GoodsReceipt?> GetByIdWithLinesForUpdateAsync(int id, CancellationToken cancellationToken = default);
+    Task<List<GoodsReceipt>> GetByPurchaseOrderIdForUpdateAsync(int purchaseOrderId, CancellationToken cancellationToken = default);
     Task<GoodsReceiptDto?> GetByIdWithLinesAsync(int id, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<GoodsReceiptSummaryDto>> GetByPurchaseOrderIdAsync(
         int purchaseOrderId,
@@ -13,4 +14,6 @@ public interface IGoodsReceiptRepository
     Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default);
     void Add(GoodsReceipt receipt);
     void Update(GoodsReceipt receipt);
+    void Delete(GoodsReceipt receipt);
+    void DeleteRange(List<GoodsReceipt> goodsReceipts);
 }

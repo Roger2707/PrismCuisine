@@ -7,12 +7,18 @@ namespace PrismERP.Modules.Purchasing.Application.PurchaseOrders;
 
 public sealed class PurchaseOrderService(IPurchasingUnitOfWork unitOfWork) : IPurchaseOrderService
 {
+    #region Read
+
     public Task<IReadOnlyCollection<PurchaseOrderSummaryDto>> GetAllAsync(
         CancellationToken cancellationToken = default) =>
         unitOfWork.PurchaseOrders.GetAllAsync(cancellationToken);
 
     public Task<PurchaseOrderDto?> GetByIdAsync(int purchaseOrderId, CancellationToken cancellationToken = default) =>
         unitOfWork.PurchaseOrders.GetByIdWithLinesAsync(purchaseOrderId, cancellationToken);
+
+    #endregion
+
+    #region Write
 
     public async Task<PurchaseOrderDto> CreateAsync(
         CreatePurchaseOrderRequest request,
@@ -69,10 +75,14 @@ public sealed class PurchaseOrderService(IPurchasingUnitOfWork unitOfWork) : IPu
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    #endregion
+
+    #region Amendment
+
     public async Task<PurchaseOrderDto> CreateAmendmentAsync(
-        int purchaseOrderId,
-        CreatePurchaseOrderAmendmentRequest request,
-        CancellationToken cancellationToken = default)
+    int purchaseOrderId,
+    CreatePurchaseOrderAmendmentRequest request,
+    CancellationToken cancellationToken = default)
     {
         var source = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
             ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
@@ -111,38 +121,68 @@ public sealed class PurchaseOrderService(IPurchasingUnitOfWork unitOfWork) : IPu
         return (await unitOfWork.PurchaseOrders.GetByIdWithLinesAsync(amendment.Id, cancellationToken))!;
     }
 
-    public async Task AddLineAsync(
-        int purchaseOrderId,
-        AddPurchaseOrderLineRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
+    #endregion
 
-        order.AddLine(request.ProductId, request.QuantityOrdered, request.UnitPrice);
-        unitOfWork.PurchaseOrders.Update(order);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
+    #region Approve
 
     public async Task ApproveAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
-        var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
+        await unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
+        {
+            var po = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, ct)
+                ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
-        order.Approve();
-        unitOfWork.PurchaseOrders.Update(order);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            // Rule: Only Draft status can be Approved 
+            // If double Approve this case show Approved => OK
+            if (po.Status != PurchaseOrderStatus.Draft)
+                throw new ConflictException(
+                    $"Sales order '{po.OrderNumber}' is already '{po.Status}'. Refresh and try again.");
+
+            po.Approve();
+            unitOfWork.PurchaseOrders.Update(po);
+            await unitOfWork.SaveChangesAsync(ct);
+        }, cancellationToken);
     }
+
+    #endregion
+
+    #region Cancel
 
     public async Task CancelAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
-        var order = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, cancellationToken)
-            ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
+        await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            var po = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(purchaseOrderId, ct)
+                ?? throw new NotFoundException($"Purchase order '{purchaseOrderId}' was not found.");
 
-        order.Cancel();
-        unitOfWork.PurchaseOrders.Update(order);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            // Draft => Cancel, PartialReceived or Received => cancel at GR
+            if(po.Status == PurchaseOrderStatus.Approved)
+            {
+                // 1. Find GRs
+                var goodReceipts = await unitOfWork.GoodsReceipts.GetByPurchaseOrderIdForUpdateAsync(purchaseOrderId, ct);
+                if(goodReceipts != null && goodReceipts.Count > 0)
+                {
+                    if (goodReceipts.Any(r => r.Status == GoodsReceiptStatus.Posted))
+                        throw new BusinessException("GoodsReceipt posted cannot be Cancel, let's handle in GR Cancel !");
+
+                    // delete all GoodsReceipts in DB if Draft status
+                    unitOfWork.GoodsReceipts.DeleteRange(goodReceipts);
+                }
+
+                // 2. Check PO Line 's ReceivedQty
+                if (po.Lines.Any(l => l.QuantityReceived > 0))
+                    throw new BusinessException($"There are at least 1 PO Line has receive qty ! this case have to no receivedQty");
+            }
+
+            po.Cancel();
+            unitOfWork.PurchaseOrders.Update(po);
+            await unitOfWork.SaveChangesAsync(ct);
+        }, cancellationToken);
     }
+
+    #endregion
+
+    #region Helpers
 
     private async Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken)
     {
@@ -150,4 +190,6 @@ public sealed class PurchaseOrderService(IPurchasingUnitOfWork unitOfWork) : IPu
         var count = await unitOfWork.PurchaseOrders.GetCountForDateAsync(today, cancellationToken);
         return $"PO-{today:yyyyMMdd}-{(count + 1):D4}";
     }
+
+    #endregion
 }

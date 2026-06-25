@@ -8,6 +8,8 @@ namespace PrismERP.Modules.Purchasing.Infrastructure.Persistence.Repositories;
 
 internal sealed class GoodsReceiptRepository(PrismERPDbContext db) : IGoodsReceiptRepository
 {
+    #region Read
+
     public Task<GoodsReceipt?> GetByIdWithLinesForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         db.GoodsReceipts
             .Include(r => r.Lines)
@@ -38,16 +40,28 @@ internal sealed class GoodsReceiptRepository(PrismERPDbContext db) : IGoodsRecei
                 r.PostedAt))
             .ToListAsync(cancellationToken);
 
-    public Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default)
+    public async Task<List<GoodsReceipt>> GetByPurchaseOrderIdForUpdateAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
-        var start = date.Date;
-        var end = start.AddDays(1);
-        return db.GoodsReceipts.CountAsync(r => r.CreatedAt >= start && r.CreatedAt < end, cancellationToken);
+        var goodsReceipts = await db.GoodsReceipts
+            .Include(r => r.Lines)
+            .Where(r => r.PurchaseOrderId == purchaseOrderId)
+            .ToListAsync(cancellationToken);
+
+        return goodsReceipts;
     }
 
-    public void Add(GoodsReceipt receipt) => db.GoodsReceipts.Add(receipt);
+    #endregion
 
+    #region Write
+
+    public void Add(GoodsReceipt receipt) => db.GoodsReceipts.Add(receipt);
     public void Update(GoodsReceipt receipt) => db.GoodsReceipts.Update(receipt);
+    public void Delete(GoodsReceipt receipt) => db.GoodsReceipts.Remove(receipt);
+    public void DeleteRange(List<GoodsReceipt> goodsReceipts) => db.RemoveRange(goodsReceipts);
+
+    #endregion
+
+    #region Helpers
 
     private static GoodsReceiptDto Map(GoodsReceipt receipt)
     {
@@ -69,4 +83,13 @@ internal sealed class GoodsReceiptRepository(PrismERPDbContext db) : IGoodsRecei
             receipt.Notes,
             lines);
     }
+
+    public Task<int> GetCountForDateAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        var start = date.Date;
+        var end = start.AddDays(1);
+        return db.GoodsReceipts.CountAsync(r => r.CreatedAt >= start && r.CreatedAt < end, cancellationToken);
+    }
+
+    #endregion
 }

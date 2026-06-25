@@ -10,4 +10,9 @@ public interface IPurchasingUnitOfWork : IUnitOfWork
     Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> action,
         CancellationToken cancellationToken = default);
+
+    Task ExecuteInTransactionWithRetryAsync(
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default
+    );
 }

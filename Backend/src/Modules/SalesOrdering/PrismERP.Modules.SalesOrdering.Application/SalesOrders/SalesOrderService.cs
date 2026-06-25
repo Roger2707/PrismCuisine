@@ -4,7 +4,6 @@ using PrismERP.Modules.SalesOrdering.Domain.Entities;
 using PrismERP.Modules.SalesOrdering.Domain.Enums;
 using PrismERP.Modules.Inventory.Application.Inventory;
 using PrismERP.Modules.Inventory.Application.Inventory.Workflows;
-using PrismERP.Modules.Inventory.Domain.Enums;
 
 namespace PrismERP.Modules.SalesOrdering.Application.SalesOrders;
 public sealed class SalesOrderService(

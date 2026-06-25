@@ -10,7 +10,6 @@ public interface IPurchaseOrderService
         int purchaseOrderId,
         CreatePurchaseOrderAmendmentRequest request,
         CancellationToken cancellationToken = default);
-    Task AddLineAsync(int purchaseOrderId, AddPurchaseOrderLineRequest request, CancellationToken cancellationToken = default);
     Task ApproveAsync(int purchaseOrderId, CancellationToken cancellationToken = default);
     Task CancelAsync(int purchaseOrderId, CancellationToken cancellationToken = default);
 }
