@@ -4,8 +4,16 @@ import { invoicesApi } from '../../../services/financeApi';
 import type { InvoiceDto } from '../../../services/types/finance.types';
 import type { SalesOrderDto, DeliveryNoteDto, DeliveryNoteSummaryDto } from '../../../services/types/salesOrdering.types';
 import { parseApiError, getToastMessage } from '../../../utils/errorHandler';
+import { confirmAction, ConfirmMessages } from '../../../utils/confirmAction';
 import type { DeliveryNoteLineEditable } from './types';
-import { isDeliveryNoteDraft, isDeliveryNotePosted, canOpenDeliveryNote, isSoDraftOrCancelled } from './statusHelpers';
+import {
+  isDeliveryNoteDraft,
+  isDeliveryNotePosted,
+  isDeliveryNoteCancelled,
+  canCancelDeliveryNote,
+  canOpenDeliveryNote,
+  isSoDraftOrCancelled,
+} from './statusHelpers';
 import { mapSoLineToDnLine, mapDeliveryLineToEditable, buildNewDraftDelivery, buildLinesForSave } from './mappers';
 
 interface UseDeliveryNoteFromSOOptions {
@@ -26,6 +34,7 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   const closeEditModal = useCallback(() => {
     setShowEditModal(false);
@@ -177,6 +186,7 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
       showToast('Enter quantity for at least one line before saving', 'error');
       return;
     }
+    if (!confirmAction(ConfirmMessages.saveDeliveryNote)) return;
     setSaving(true);
     try {
       if (deliveryNote.id === 0) {
@@ -204,6 +214,7 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
 
   const handlePost = useCallback(async () => {
     if (!deliveryNote || deliveryNote.id === 0) return;
+    if (!confirmAction(ConfirmMessages.postDeliveryNote)) return;
     setPosting(true);
     try {
       await deliveryNotesApi.post(deliveryNote.id);
@@ -214,6 +225,23 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
       showToast(getToastMessage(parseApiError(error)), 'error');
     } finally {
       setPosting(false);
+    }
+  }, [closeEditModal, deliveryNote, onSalesOrderChanged, showToast]);
+
+  const handleCancelDelivery = useCallback(async () => {
+    if (!deliveryNote || deliveryNote.id === 0) return;
+    if (!canCancelDeliveryNote(deliveryNote.status)) return;
+    if (!confirmAction(ConfirmMessages.cancelDeliveryNote)) return;
+    setCancelling(true);
+    try {
+      await deliveryNotesApi.cancel(deliveryNote.id);
+      showToast('Delivery note cancelled successfully!', 'success');
+      closeEditModal();
+      await onSalesOrderChanged?.();
+    } catch (error: unknown) {
+      showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setCancelling(false);
     }
   }, [closeEditModal, deliveryNote, onSalesOrderChanged, showToast]);
 
@@ -240,6 +268,9 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
     ? isDeliveryNotePosted(deliveryNote.status) && (linkedInvoice !== null || deliveryNote.id > 0)
     : false;
 
+  const isCancelledDelivery = deliveryNote ? isDeliveryNoteCancelled(deliveryNote.status) : false;
+  const canCancelDelivery = deliveryNote ? canCancelDeliveryNote(deliveryNote.status) : false;
+
   return {
     showEditModal,
     showSearchModal,
@@ -255,6 +286,7 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
     handleLineChange,
     handleSave,
     handlePost,
+    handleCancelDelivery,
     closeEditModal,
     closeSearchModal,
     setDeliveryNote,
@@ -264,8 +296,11 @@ export function useDeliveryNoteFromSO({ showToast, onSalesOrderChanged }: UseDel
     handleViewInvoice,
     closeInvoiceModal,
     canViewInvoice,
+    isCancelledDelivery,
+    canCancelDelivery,
     saving,
     posting,
+    cancelling,
   };
 }
 
@@ -279,4 +314,6 @@ export {
   canOpenDeliveryNote,
   isDeliveryNotePosted,
   isDeliveryNoteDraft,
+  isDeliveryNoteCancelled,
+  canCancelDeliveryNote,
 } from './statusHelpers';

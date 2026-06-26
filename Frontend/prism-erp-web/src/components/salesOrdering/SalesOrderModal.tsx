@@ -1,6 +1,12 @@
 import type { CustomerDto } from '../../services/types/salesOrdering.types';
 import type { ProductDto } from '../../services/types/inventory.types';
 import type { OrderDetail, OrderLineEditable } from '../../pages/salesOrdering/types';
+import {
+  canApproveSalesOrder,
+  canCancelSalesOrder,
+  canEditSalesOrder,
+} from '../../pages/salesOrdering/orderActionHelpers';
+import { canOpenDeliveryNote } from '../../pages/salesOrdering/delivery/statusHelpers';
 import { LoadingButton } from '../LoadingButton';
 import { SalesOrderCreateForm } from './SalesOrderCreateForm';
 import { SalesOrderEditForm } from './SalesOrderEditForm';
@@ -66,6 +72,11 @@ export function SalesOrderModal({
   if (!showModal) return null;
 
   const busy = submitting !== null;
+  const status = orderDetail?.status ?? '';
+  const showCancelOrder = orderDetail ? canCancelSalesOrder(status) : false;
+  const showApprove = orderDetail ? canApproveSalesOrder(status) : false;
+  const showSave = orderDetail ? canEditSalesOrder(status) : false;
+  const showDeliveryNote = orderDetail ? canOpenDeliveryNote(status) : false;
 
   return (
     <div className="modal-overlay">
@@ -85,7 +96,7 @@ export function SalesOrderModal({
         </div>
         {isCreating && (
           <div className="modal-footer">
-            <LoadingButton variant="secondary" onClick={onClose} disabled={busy}>Cancel</LoadingButton>
+            <LoadingButton variant="secondary" onClick={onClose} disabled={busy}>Close</LoadingButton>
             <LoadingButton variant="primary" onClick={onCreateSave} loading={submitting === 'create'} loadingText="Creating...">
               Create Order
             </LoadingButton>
@@ -93,32 +104,42 @@ export function SalesOrderModal({
         )}
         {orderDetail && (
           <div className="modal-footer">
-            <LoadingButton variant="secondary" onClick={onCancelOrder} loading={submitting === 'cancel'} loadingText="Cancelling...">
-              Cancel Order
-            </LoadingButton>
-            <LoadingButton
-              variant="action"
-              onClick={onOpenDeliveryNote}
-              disabled={isDeliveryNoteDisabled || busy}
-              title={isDeliveryNoteDisabled ? 'Sales order must be confirmed before creating delivery note' : 'Open delivery note'}
-            >
-              Delivery Note
-            </LoadingButton>
-            <LoadingButton
-              variant="approve"
-              onClick={onApprove}
-              disabled={orderDetail.status !== 'Draft'}
-              loading={submitting === 'approve'}
-              loadingText="Approving..."
-            >
-              Approve
-            </LoadingButton>
-            <LoadingButton variant="primary" onClick={onSave} loading={submitting === 'save'} loadingText="Saving...">
-              Save Changes
-            </LoadingButton>
+            <LoadingButton variant="secondary" onClick={onClose} disabled={busy}>Close</LoadingButton>
+            {showCancelOrder && (
+              <LoadingButton variant="danger" onClick={onCancelOrder} loading={submitting === 'cancel'} loadingText="Cancelling..." disabled={busy}>
+                Cancel Order
+              </LoadingButton>
+            )}
+            {showDeliveryNote && (
+              <LoadingButton
+                variant="action"
+                onClick={onOpenDeliveryNote}
+                disabled={isDeliveryNoteDisabled || busy}
+                title={isDeliveryNoteDisabled ? 'Sales order must be confirmed before creating delivery note' : 'Open delivery note'}
+              >
+                Delivery Note
+              </LoadingButton>
+            )}
+            {showApprove && (
+              <LoadingButton
+                variant="approve"
+                onClick={onApprove}
+                loading={submitting === 'approve'}
+                loadingText="Approving..."
+                disabled={busy}
+              >
+                Approve
+              </LoadingButton>
+            )}
+            {showSave && (
+              <LoadingButton variant="primary" onClick={onSave} loading={submitting === 'save'} loadingText="Saving..." disabled={busy}>
+                Save Changes
+              </LoadingButton>
+            )}
           </div>
         )}
       </div>
     </div>
   );
 }
+

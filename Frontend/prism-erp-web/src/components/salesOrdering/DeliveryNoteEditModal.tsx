@@ -14,10 +14,13 @@ interface DeliveryNoteEditModalProps {
   onNotesChange: (notes: string) => void;
   onSave: () => void;
   onPost: () => void;
+  onCancelDelivery?: () => void;
   onViewInvoice?: () => void;
   showViewInvoice?: boolean;
+  showCancelDelivery?: boolean;
   saving?: boolean;
   posting?: boolean;
+  cancelling?: boolean;
   viewingInvoice?: boolean;
 }
 
@@ -31,22 +34,26 @@ export function DeliveryNoteEditModal({
   onNotesChange,
   onSave,
   onPost,
+  onCancelDelivery,
   onViewInvoice,
   showViewInvoice,
+  showCancelDelivery,
   saving,
   posting,
+  cancelling,
   viewingInvoice,
 }: DeliveryNoteEditModalProps) {
   if (!isOpen) return null;
 
   const isDraft = deliveryNote?.status === 'Draft';
+  const busy = saving || posting || cancelling || viewingInvoice;
 
   return (
     <div className="modal-overlay">
       <div className="modal modal-large">
         <div className="modal-header">
           <h2>Delivery Note</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={onClose} disabled={busy}>×</button>
         </div>
         <div className="modal-body">
           {loading ? (
@@ -115,17 +122,22 @@ export function DeliveryNoteEditModal({
         </div>
         {deliveryNote && (
           <div className="modal-footer">
-            <LoadingButton variant="secondary" onClick={onClose} disabled={saving || posting}>Cancel</LoadingButton>
+            <LoadingButton variant="secondary" onClick={onClose} disabled={busy}>Close</LoadingButton>
             {showViewInvoice && onViewInvoice && (
-              <LoadingButton variant="action" onClick={onViewInvoice} loading={viewingInvoice} loadingText="Loading...">
+              <LoadingButton variant="action" onClick={onViewInvoice} loading={viewingInvoice} loadingText="Loading..." disabled={busy}>
                 View Invoice
               </LoadingButton>
             )}
+            {showCancelDelivery && onCancelDelivery && (
+              <LoadingButton variant="danger" onClick={onCancelDelivery} loading={cancelling} loadingText="Cancelling..." disabled={busy}>
+                Cancel Delivery
+              </LoadingButton>
+            )}
             {deliveryNote.id !== 0 && isDraft && (
-              <LoadingButton variant="approve" onClick={onPost} loading={posting} loadingText="Posting...">Post</LoadingButton>
+              <LoadingButton variant="approve" onClick={onPost} loading={posting} loadingText="Posting..." disabled={busy}>Post</LoadingButton>
             )}
             {isDraft && (
-              <LoadingButton variant="primary" onClick={onSave} loading={saving} loadingText="Saving...">Save</LoadingButton>
+              <LoadingButton variant="primary" onClick={onSave} loading={saving} loadingText="Saving..." disabled={busy}>Save</LoadingButton>
             )}
           </div>
         )}

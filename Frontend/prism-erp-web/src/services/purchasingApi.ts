@@ -93,4 +93,7 @@ export const goodsReceiptsApi = {
     const response = await apiClient.post<GoodsReceiptDto>(`/api/purchasing/goods-receipts/${id}/post`);
     return response.data;
   },
+  cancel: async (id: number): Promise<void> => {
+    await apiClient.post(`/api/purchasing/goods-receipts/${id}/cancel`);
+  },
 };

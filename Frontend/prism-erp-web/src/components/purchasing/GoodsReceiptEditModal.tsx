@@ -14,13 +14,16 @@ interface GoodsReceiptEditModalProps {
   onNotesChange: (notes: string) => void;
   onSave: () => void;
   onPost: () => void;
+  onCancelReceipt?: () => void;
   onViewInvoice?: () => void;
   onCreateInvoice?: () => void;
   showViewInvoice?: boolean;
   showCreateInvoice?: boolean;
+  showCancelReceipt?: boolean;
   creatingInvoice?: boolean;
   saving?: boolean;
   posting?: boolean;
+  cancelling?: boolean;
   viewingInvoice?: boolean;
 }
 
@@ -34,25 +37,29 @@ export function GoodsReceiptEditModal({
   onNotesChange,
   onSave,
   onPost,
+  onCancelReceipt,
   onViewInvoice,
   onCreateInvoice,
   showViewInvoice,
   showCreateInvoice,
+  showCancelReceipt,
   creatingInvoice,
   saving,
   posting,
+  cancelling,
   viewingInvoice,
 }: GoodsReceiptEditModalProps) {
   if (!isOpen) return null;
 
   const isDraft = goodsReceipt?.status === 'Draft';
+  const busy = saving || posting || cancelling || creatingInvoice || viewingInvoice;
 
   return (
     <div className="modal-overlay">
       <div className="modal modal-large">
         <div className="modal-header">
           <h2>Goods Receipt</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={onClose} disabled={busy}>×</button>
         </div>
         <div className="modal-body">
           {loading ? (
@@ -133,22 +140,27 @@ export function GoodsReceiptEditModal({
         </div>
         {goodsReceipt && (
           <div className="modal-footer">
-            <LoadingButton variant="secondary" onClick={onClose} disabled={saving || posting || creatingInvoice}>Cancel</LoadingButton>
+            <LoadingButton variant="secondary" onClick={onClose} disabled={busy}>Close</LoadingButton>
             {showCreateInvoice && onCreateInvoice && (
-              <LoadingButton variant="action" onClick={onCreateInvoice} loading={creatingInvoice} loadingText="Creating...">
+              <LoadingButton variant="action" onClick={onCreateInvoice} loading={creatingInvoice} loadingText="Creating..." disabled={busy}>
                 Create Invoice
               </LoadingButton>
             )}
             {showViewInvoice && onViewInvoice && (
-              <LoadingButton variant="action" onClick={onViewInvoice} loading={viewingInvoice} loadingText="Loading...">
+              <LoadingButton variant="action" onClick={onViewInvoice} loading={viewingInvoice} loadingText="Loading..." disabled={busy}>
                 View Invoice
               </LoadingButton>
             )}
+            {showCancelReceipt && onCancelReceipt && (
+              <LoadingButton variant="danger" onClick={onCancelReceipt} loading={cancelling} loadingText="Cancelling..." disabled={busy}>
+                Cancel Receipt
+              </LoadingButton>
+            )}
             {goodsReceipt.id !== 0 && isDraft && (
-              <LoadingButton variant="approve" onClick={onPost} loading={posting} loadingText="Posting...">Post</LoadingButton>
+              <LoadingButton variant="approve" onClick={onPost} loading={posting} loadingText="Posting..." disabled={busy}>Post</LoadingButton>
             )}
             {isDraft && (
-              <LoadingButton variant="primary" onClick={onSave} loading={saving} loadingText="Saving...">Save</LoadingButton>
+              <LoadingButton variant="primary" onClick={onSave} loading={saving} loadingText="Saving..." disabled={busy}>Save</LoadingButton>
             )}
           </div>
         )}

@@ -27,3 +27,12 @@ export function isDeliveryNotePosted(status: string): boolean {
 export function isDeliveryNoteDraft(status: string): boolean {
   return normalizeStatus(status) === 'draft';
 }
+
+export function isDeliveryNoteCancelled(status: string): boolean {
+  return normalizeStatus(status) === 'cancelled';
+}
+
+/** Backend only allows cancel on Posted delivery notes. */
+export function canCancelDeliveryNote(status: string): boolean {
+  return isDeliveryNotePosted(status);
+}

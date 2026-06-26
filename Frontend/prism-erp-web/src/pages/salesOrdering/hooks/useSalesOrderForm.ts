@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { customersApi, salesOrdersApi } from '../../../services/salesOrderingApi';
 import type { CustomerDto } from '../../../services/types/salesOrdering.types';
 import { parseApiError, getToastMessage } from '../../../utils/errorHandler';
+import { confirmAction, ConfirmMessages } from '../../../utils/confirmAction';
 import type { SalesOrder, OrderDetail, OrderLineEditable } from '../types';
 import { createEmptyLine } from '../types';
 
@@ -76,6 +77,7 @@ export function useSalesOrderForm({ showToast, refreshOrders }: UseSalesOrderFor
       showToast('Add at least one product line', 'error');
       return;
     }
+    if (!confirmAction(ConfirmMessages.createSalesOrder)) return;
     try {
       setSubmitting('create');
       await salesOrdersApi.create({
@@ -104,6 +106,7 @@ export function useSalesOrderForm({ showToast, refreshOrders }: UseSalesOrderFor
 
   const handleSave = async () => {
     if (!orderDetail) return;
+    if (!confirmAction(ConfirmMessages.saveSalesOrder)) return;
     setFieldErrors({});
     try {
       setSubmitting('save');
@@ -141,6 +144,7 @@ export function useSalesOrderForm({ showToast, refreshOrders }: UseSalesOrderFor
 
   const handleApprove = async () => {
     if (!orderDetail) return;
+    if (!confirmAction(ConfirmMessages.approveSalesOrder)) return;
     try {
       setSubmitting('approve');
       await salesOrdersApi.update(orderDetail.id, {
@@ -169,7 +173,7 @@ export function useSalesOrderForm({ showToast, refreshOrders }: UseSalesOrderFor
 
   const handleCancelOrder = async () => {
     if (!orderDetail) return;
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    if (!confirmAction(ConfirmMessages.cancelSalesOrder)) return;
     try {
       setSubmitting('cancel');
       await salesOrdersApi.cancel(orderDetail.id);

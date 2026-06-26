@@ -4,10 +4,13 @@ import { purchaseInvoicesApi } from '../../../services/financeApi';
 import type { InvoiceDto } from '../../../services/types/finance.types';
 import type { PurchaseOrderDto, GoodsReceiptDto, GoodsReceiptSummaryDto } from '../../../services/types/purchasing.types';
 import { parseApiError, getToastMessage } from '../../../utils/errorHandler';
+import { confirmAction, ConfirmMessages } from '../../../utils/confirmAction';
 import type { GoodsReceiptLineEditable } from './types';
 import {
   isGoodsReceiptDraft,
   isGoodsReceiptPosted,
+  isGoodsReceiptCancelled,
+  canCancelGoodsReceipt,
   canOpenGoodsReceipt,
   isPoApproved,
   isPoDraftOrCancelled,
@@ -38,6 +41,7 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
   const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [saving, setSaving] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   const closeEditModal = useCallback(() => {
     setShowEditModal(false);
@@ -197,12 +201,13 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
 
   const handleSave = useCallback(async () => {
     if (!goodsReceipt) return;
-    setSaving(true);
     const linesToSave = buildLinesForSave(goodsReceiptLines);
     if (goodsReceipt.id === 0 && linesToSave.length === 0) {
       showToast('Enter quantity for at least one line before saving', 'error');
       return;
     }
+    if (!confirmAction(ConfirmMessages.saveGoodsReceipt)) return;
+    setSaving(true);
     try {
       if (goodsReceipt.id === 0) {
         await goodsReceiptsApi.create({
@@ -230,6 +235,7 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
 
   const handlePost = useCallback(async () => {
     if (!goodsReceipt || goodsReceipt.id === 0) return;
+    if (!confirmAction(ConfirmMessages.postGoodsReceipt)) return;
     setPosting(true);
     try {
       await goodsReceiptsApi.post(goodsReceipt.id);
@@ -240,6 +246,23 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
       showToast(getToastMessage(parseApiError(error)), 'error');
     } finally {
       setPosting(false);
+    }
+  }, [closeEditModal, goodsReceipt, onPurchaseOrderChanged, showToast]);
+
+  const handleCancelReceipt = useCallback(async () => {
+    if (!goodsReceipt || goodsReceipt.id === 0) return;
+    if (!canCancelGoodsReceipt(goodsReceipt.status)) return;
+    if (!confirmAction(ConfirmMessages.cancelGoodsReceipt)) return;
+    setCancelling(true);
+    try {
+      await goodsReceiptsApi.cancel(goodsReceipt.id);
+      showToast('Goods receipt cancelled successfully!', 'success');
+      closeEditModal();
+      await onPurchaseOrderChanged?.();
+    } catch (error: unknown) {
+      showToast(getToastMessage(parseApiError(error)), 'error');
+    } finally {
+      setCancelling(false);
     }
   }, [closeEditModal, goodsReceipt, onPurchaseOrderChanged, showToast]);
 
@@ -262,6 +285,7 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
 
   const handleCreateInvoice = useCallback(async () => {
     if (!goodsReceipt || goodsReceipt.id === 0) return;
+    if (!confirmAction(ConfirmMessages.createPurchaseInvoice)) return;
     setCreatingInvoice(true);
     try {
       const invoice = await purchaseInvoicesApi.createFromGoodsReceipt({
@@ -281,6 +305,8 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
   const closeInvoiceModal = useCallback(() => setShowInvoiceModal(false), []);
 
   const isPostedReceipt = goodsReceipt ? isGoodsReceiptPosted(goodsReceipt.status) : false;
+  const isCancelledReceipt = goodsReceipt ? isGoodsReceiptCancelled(goodsReceipt.status) : false;
+  const canCancelReceipt = goodsReceipt ? canCancelGoodsReceipt(goodsReceipt.status) : false;
   const hasLinkedInvoice = linkedInvoice !== null;
 
   return {
@@ -298,6 +324,7 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
     handleLineChange,
     handleSave,
     handlePost,
+    handleCancelReceipt,
     closeEditModal,
     closeSearchModal,
     setGoodsReceipt,
@@ -309,9 +336,12 @@ export function useGoodsReceiptFromPO({ showToast, onPurchaseOrderChanged }: Use
     handleCreateInvoice,
     closeInvoiceModal,
     isPostedReceipt,
+    isCancelledReceipt,
+    canCancelReceipt,
     hasLinkedInvoice,
     saving,
     posting,
+    cancelling,
   };
 }
 
@@ -325,4 +355,6 @@ export {
   canOpenGoodsReceipt,
   isGoodsReceiptPosted,
   isGoodsReceiptDraft,
+  isGoodsReceiptCancelled,
+  canCancelGoodsReceipt,
 } from './statusHelpers';

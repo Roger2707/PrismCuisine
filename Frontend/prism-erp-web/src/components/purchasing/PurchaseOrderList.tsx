@@ -1,6 +1,10 @@
 import { formatCurrency } from '../../utils/formatters';
 import { StatusBadge } from '../../utils/statusBadge';
 import type { PurchaseOrder } from '../../pages/purchasing/types';
+import {
+  canApprovePurchaseOrder,
+  canCancelPurchaseOrder,
+} from '../../pages/purchasing/orderActionHelpers';
 
 interface PurchaseOrderListProps {
   orders: PurchaseOrder[];
@@ -23,26 +27,35 @@ export function PurchaseOrderList({ orders, onEdit, onApprove, onCancel }: Purch
         </tr>
       </thead>
       <tbody>
-        {orders.map((order) => (
-          <tr key={order.id}>
-            <td>{order.id}</td>
-            <td>{order.orderNumber}</td>
-            <td>{order.supplierId}</td>
-            <td>{formatCurrency(order.totalAmount)}</td>
-            <td><StatusBadge status={order.status} /></td>
-            <td>
-              <button className="action-btn edit" onClick={() => onEdit(order)}>Edit</button>
-              <button
-                className="action-btn approve"
-                onClick={() => onApprove(order.id)}
-                disabled={order.status !== 'Draft'}
-              >
-                Approve
-              </button>
-              <button className="action-btn delete" onClick={() => onCancel(order.id)}>Cancel</button>
-            </td>
-          </tr>
-        ))}
+        {orders.map((order) => {
+          const canApprove = canApprovePurchaseOrder(order.status);
+          const canCancel = canCancelPurchaseOrder(order.status);
+
+          return (
+            <tr key={order.id}>
+              <td>{order.id}</td>
+              <td>{order.orderNumber}</td>
+              <td>{order.supplierId}</td>
+              <td>{formatCurrency(order.totalAmount)}</td>
+              <td><StatusBadge status={order.status} /></td>
+              <td>
+                <button className="action-btn edit" onClick={() => onEdit(order)}>
+                  {canApprove ? 'Edit' : 'View'}
+                </button>
+                {canApprove && (
+                  <button className="action-btn approve" onClick={() => onApprove(order.id)}>
+                    Approve
+                  </button>
+                )}
+                {canCancel && (
+                  <button className="action-btn delete" onClick={() => onCancel(order.id)}>
+                    Cancel
+                  </button>
+                )}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

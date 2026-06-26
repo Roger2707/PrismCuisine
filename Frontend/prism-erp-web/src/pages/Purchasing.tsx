@@ -112,13 +112,16 @@ export default function Purchasing() {
         }}
         onSave={goodsReceipt.handleSave}
         onPost={goodsReceipt.handlePost}
+        onCancelReceipt={goodsReceipt.handleCancelReceipt}
         onViewInvoice={goodsReceipt.handleViewInvoice}
         onCreateInvoice={goodsReceipt.handleCreateInvoice}
         showViewInvoice={goodsReceipt.isPostedReceipt && goodsReceipt.hasLinkedInvoice}
         showCreateInvoice={goodsReceipt.isPostedReceipt && !goodsReceipt.hasLinkedInvoice}
+        showCancelReceipt={goodsReceipt.canCancelReceipt}
         creatingInvoice={goodsReceipt.creatingInvoice}
         saving={goodsReceipt.saving}
         posting={goodsReceipt.posting}
+        cancelling={goodsReceipt.cancelling}
         viewingInvoice={goodsReceipt.invoiceLoading}
       />
 

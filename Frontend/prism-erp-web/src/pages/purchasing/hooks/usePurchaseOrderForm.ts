@@ -3,6 +3,7 @@ import { suppliersApi, purchaseOrdersApi } from '../../../services/purchasingApi
 import { warehousesApi } from '../../../services/inventoryApi';
 import type { SupplierDto } from '../../../services/types/purchasing.types';
 import { parseApiError, getToastMessage } from '../../../utils/errorHandler';
+import { confirmAction, ConfirmMessages } from '../../../utils/confirmAction';
 import type { PurchaseOrder, OrderDetail, OrderLineEditable } from '../types';
 import {
   createEmptyLine,
@@ -102,6 +103,7 @@ export function usePurchaseOrderForm({ showToast, refreshOrders }: UsePurchaseOr
       showToast('Add at least one product line', 'error');
       return;
     }
+    if (!confirmAction(ConfirmMessages.createPurchaseOrder)) return;
     try {
       setSubmitting('create');
       await purchaseOrdersApi.create({
@@ -127,6 +129,7 @@ export function usePurchaseOrderForm({ showToast, refreshOrders }: UsePurchaseOr
 
   const handleSave = async () => {
     if (!orderDetail) return;
+    if (!confirmAction(ConfirmMessages.savePurchaseOrder)) return;
     setFieldErrors({});
     try {
       setSubmitting('save');
@@ -162,6 +165,7 @@ export function usePurchaseOrderForm({ showToast, refreshOrders }: UsePurchaseOr
 
   const handleApprove = async () => {
     if (!orderDetail) return;
+    if (!confirmAction(ConfirmMessages.approvePurchaseOrder)) return;
     try {
       setSubmitting('approve');
       await purchaseOrdersApi.update(orderDetail.id, {
@@ -187,7 +191,7 @@ export function usePurchaseOrderForm({ showToast, refreshOrders }: UsePurchaseOr
 
   const handleCancelOrder = async () => {
     if (!orderDetail) return;
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    if (!confirmAction(ConfirmMessages.cancelPurchaseOrder)) return;
     try {
       setSubmitting('cancel');
       await purchaseOrdersApi.cancel(orderDetail.id);

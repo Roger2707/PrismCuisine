@@ -113,10 +113,13 @@ export default function SalesOrdering() {
         }}
         onSave={deliveryNote.handleSave}
         onPost={deliveryNote.handlePost}
+        onCancelDelivery={deliveryNote.handleCancelDelivery}
         onViewInvoice={deliveryNote.handleViewInvoice}
         showViewInvoice={deliveryNote.canViewInvoice && deliveryNote.deliveryNote?.status === 'Posted'}
+        showCancelDelivery={deliveryNote.canCancelDelivery}
         saving={deliveryNote.saving}
         posting={deliveryNote.posting}
+        cancelling={deliveryNote.cancelling}
         viewingInvoice={deliveryNote.invoiceLoading}
       />
 

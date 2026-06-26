@@ -31,3 +31,12 @@ export function isGoodsReceiptPosted(status: string): boolean {
 export function isGoodsReceiptDraft(status: string): boolean {
   return normalizeStatus(status) === 'draft';
 }
+
+export function isGoodsReceiptCancelled(status: string): boolean {
+  return normalizeStatus(status) === 'cancelled';
+}
+
+/** Backend only allows cancel on Posted receipts (reverses inventory). */
+export function canCancelGoodsReceipt(status: string): boolean {
+  return isGoodsReceiptPosted(status);
+}
