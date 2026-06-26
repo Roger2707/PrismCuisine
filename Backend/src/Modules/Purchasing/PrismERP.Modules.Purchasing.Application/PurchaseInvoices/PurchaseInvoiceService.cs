@@ -97,8 +97,8 @@ public sealed class PurchaseInvoiceService(
                     invoiceNumber, InvoiceType.PurchaseInvoice, DateTime.UtcNow, null, supplier.Name, supplier?.Address ?? "",
                     null, null, purchaseOrderId, goodsReceiptId, "", invoiceLinesMap), cancellationToken);
 
-            // Update InvoiceStatus (in PurchaseOrder)
-            await UpdatePurchaseInvoiceStatus(purchaseOrder);
+            // Update PurchaseOrder.InvoiceStatus
+            purchaseOrder.UpdateInvoiceStatus();
 
             await unitOfWork.SaveChangesAsync(ct);
             purchaseInvoiceDto = Map(invoiceDto);
@@ -106,37 +106,6 @@ public sealed class PurchaseInvoiceService(
         }, cancellationToken);
 
         return purchaseInvoiceDto;
-    }
-
-    private async Task UpdatePurchaseInvoiceStatus(PurchaseOrder purchaseOrder)
-    {
-        var invoices = await invoiceService.GetInvoicesByPurchaseOrderAsync(purchaseOrder.Id);
-        if (invoices == null || !invoices.Any() || purchaseOrder.Lines == null || !purchaseOrder.Lines.Any())
-            return;
-
-        var totalInvoicedQtyByProduct = invoices
-                .SelectMany(inv => inv.Lines)
-                .GroupBy(invLine => invLine.ProductId)
-                .ToDictionary(
-                    group => group.Key,
-                    group => group.Sum(invLine => invLine.Quantity)
-                );
-
-        bool isAllLinesFullyInvoiced = true;
-        foreach (var pLine in purchaseOrder.Lines)
-        {
-            totalInvoicedQtyByProduct.TryGetValue(pLine.ProductId, out decimal totalInvoicedQty);
-            if (totalInvoicedQty != pLine.QuantityOrdered)
-            {
-                isAllLinesFullyInvoiced = false;
-                break;
-            }
-        }
-
-        purchaseOrder.UpdateInvoiceStatus(
-            isAllLinesFullyInvoiced ? 
-            PurchaseOrderInvoicingStatus.FullyInvoiced : PurchaseOrderInvoicingStatus.PartiallyInvoiced
-        );
     }
 
     private PurchaseInvoiceDto Map(InvoiceDto invoice)

@@ -15,11 +15,16 @@ public sealed class InventoryReceivingWorkflowService(IInventoryUnitOfWork unitO
             request.WarehouseId,
             cancellationToken);
 
+        if (balance.Id == 0)
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
         var layer = InventoryCostLayer.Create(balance.Id, request.Quantity, request.UnitCost);
         unitOfWork.CostLayers.Add(layer);
 
         balance.Increase(request.Quantity);
         unitOfWork.Balances.Update(balance);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var movement = InventoryMovement.Create(
             balance.Id,
@@ -29,7 +34,7 @@ public sealed class InventoryReceivingWorkflowService(IInventoryUnitOfWork unitO
             InventoryReferenceType.Manual,
             layer.Id,
             request.Reference,
-            request.ReferenceId,
+            request.ReferenceId, // PurchaseOrderLineId
             request.Notes);
 
         unitOfWork.Movements.Add(movement);
@@ -66,7 +71,7 @@ public sealed class InventoryReceivingWorkflowService(IInventoryUnitOfWork unitO
             if (!movementsByLine.TryGetValue(line.PurchaseOrderLineId, out var lineMovements))
             {
                 throw new BusinessException(
-                    $"No receipt movements found for purchase order line '{line.PurchaseOrderLineId}' on delivery '{goodsReceiptNumber}'.");
+                    $"No receipt movements found for purchase order line '{line.PurchaseOrderLineId}' on receipt '{goodsReceiptNumber}'.");
             }
 
             var issuedQty = lineMovements.Sum(m => m.Quantity);
@@ -115,11 +120,11 @@ public sealed class InventoryReceivingWorkflowService(IInventoryUnitOfWork unitO
                 InventoryMovementType.Return,
                 movement.Quantity,
                 movement.UnitCost,
-                InventoryReferenceType.PurchaseOrder,
+                InventoryReferenceType.Manual,
                 layer.Id,
                 goodsReceiptNumber.Trim(),
                 movement.ReferenceId,
-                $"Return from cancelled delivery {goodsReceiptNumber.Trim()}");
+                $"Return from cancelled GoodsReceipt {goodsReceiptNumber.Trim()}");
 
             unitOfWork.Movements.Add(returnMovement);
         }

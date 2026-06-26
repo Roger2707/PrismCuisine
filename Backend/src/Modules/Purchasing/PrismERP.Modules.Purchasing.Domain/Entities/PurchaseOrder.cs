@@ -205,9 +205,15 @@ public sealed class PurchaseOrder : AggregateRoot
         Touch();
     }
 
-    public void UpdateInvoiceStatus(PurchaseOrderInvoicingStatus status)
+    public void UpdateInvoiceStatus()
     {
-        InvoiceStatus = status;
+        if (_lines.All(l => l.QuantityReceived == 0))
+            InvoiceStatus = PurchaseOrderInvoicingStatus.NotInvoiced;
+        else if (_lines.All(l => l.QuantityReceived == l.QuantityOrdered))
+            InvoiceStatus = PurchaseOrderInvoicingStatus.FullyInvoiced;
+        else
+            InvoiceStatus = PurchaseOrderInvoicingStatus.PartiallyInvoiced;
+
         Touch();
     }
 }

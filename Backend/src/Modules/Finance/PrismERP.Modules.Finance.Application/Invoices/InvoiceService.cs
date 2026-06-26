@@ -108,7 +108,6 @@ public sealed class InvoiceService(IFinanceUnitOfWork unitOfWork) : IInvoiceServ
 
         invoice.Cancel();
         unitOfWork.Invoices.Update(invoice);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     #endregion

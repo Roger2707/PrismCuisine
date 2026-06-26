@@ -46,4 +46,11 @@ public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptSer
         var receipt = await goodsReceiptService.PostAsync(id, cancellationToken);
         return Ok(receipt);
     }
+
+    [HttpPost("{id:int}/cancel")]
+    public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken)
+    {
+        await goodsReceiptService.CancelAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

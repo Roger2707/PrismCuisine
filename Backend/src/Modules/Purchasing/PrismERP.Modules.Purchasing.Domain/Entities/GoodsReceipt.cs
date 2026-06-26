@@ -112,30 +112,9 @@ public sealed class GoodsReceipt : AggregateRoot
 
         // update status
         po.UpdateReceiveStatus();
+        po.UpdateInvoiceStatus();
 
         Status = GoodsReceiptStatus.Cancelled;
         Touch();
     }
 }
-
-
-//public void Cancel(SalesOrder salesOrder)
-//    {
-//        if (Status != DeliveryNoteStatus.Posted)
-//            throw new BusinessException("Only Posted delivery notes can be cancelled.");
-
-//        // Rollback QuantityDelivered
-//        foreach (var line in _lines)
-//        {
-//            var orderLine = salesOrder.Lines
-//                .First(l => l.Id == line.SalesOrderLineId);
-
-//            orderLine.RollbackDelivery(line.QuantityDelivered);
-//        }
-
-//        // update status
-//        salesOrder.UpdateDeliveryStatus();
-//        salesOrder.UpdateInvoiceStatus();
-
-//        Status = DeliveryNoteStatus.Cancelled;
-//    }

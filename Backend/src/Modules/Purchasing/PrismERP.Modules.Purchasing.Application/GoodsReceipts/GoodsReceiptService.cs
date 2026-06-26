@@ -143,7 +143,7 @@ public sealed class GoodsReceiptService(
                     line.Quantity,
                     line.UnitCost,
                     receipt.ReceiptNumber,
-                    receipt.PurchaseOrderId,
+                    line.PurchaseOrderLineId, // ReferenceId
                     $"GRN line {line.Id}"),
                 cancellationToken);
         }
@@ -164,8 +164,12 @@ public sealed class GoodsReceiptService(
             var purchaseOrder = await unitOfWork.PurchaseOrders.GetByIdWithLinesForUpdateAsync(goodsReceipt.PurchaseOrderId, ct)
                 ?? throw new NotFoundException($"PurchaseOrder with ID : {goodsReceipt.PurchaseOrderId} is not found !");
 
+            if (goodsReceipt.Status != GoodsReceiptStatus.Posted)
+                throw new ConflictException(
+                    $"GoodsReceipt '{goodsReceipt.ReceiptNumber}' is already '{goodsReceipt.Status}'. Refresh and try again.");
+
             var returnLines = goodsReceipt.Lines
-                    .Select(l => new ReturnGoodsReceiptLine(purchaseOrder.Id, l.Quantity))
+                    .Select(l => new ReturnGoodsReceiptLine(l.PurchaseOrderLineId, l.Quantity))
                     .ToList();
 
             // Return export stock ....
@@ -173,9 +177,6 @@ public sealed class GoodsReceiptService(
 
             // Cancel
             goodsReceipt.Cancel(purchaseOrder);
-
-            // update status
-            await UpdatePurchaseInvoiceStatus(purchaseOrder);
 
             // Cancel Invoice has been created
             var invoiceDto = await invoiceService.GetByGoodsReceiptIdAsync(goodsReceiptId, ct);
@@ -189,37 +190,6 @@ public sealed class GoodsReceiptService(
             await unitOfWork.SaveChangesAsync(ct);
 
         }, cancellationToken);
-    }
-
-    private async Task UpdatePurchaseInvoiceStatus(PurchaseOrder purchaseOrder)
-    {
-        var invoices = await invoiceService.GetInvoicesByPurchaseOrderAsync(purchaseOrder.Id);
-        if (invoices == null || !invoices.Any() || purchaseOrder.Lines == null || !purchaseOrder.Lines.Any())
-            return;
-
-        var totalInvoicedQtyByProduct = invoices
-                .SelectMany(inv => inv.Lines)
-                .GroupBy(invLine => invLine.ProductId)
-                .ToDictionary(
-                    group => group.Key,
-                    group => group.Sum(invLine => invLine.Quantity)
-                );
-
-        bool isAllLinesFullyInvoiced = true;
-        foreach (var pLine in purchaseOrder.Lines)
-        {
-            totalInvoicedQtyByProduct.TryGetValue(pLine.ProductId, out decimal totalInvoicedQty);
-            if (totalInvoicedQty != pLine.QuantityOrdered)
-            {
-                isAllLinesFullyInvoiced = false;
-                break;
-            }
-        }
-
-        purchaseOrder.UpdateInvoiceStatus(
-            isAllLinesFullyInvoiced ?
-            PurchaseOrderInvoicingStatus.FullyInvoiced : PurchaseOrderInvoicingStatus.PartiallyInvoiced
-        );
     }
 
     #endregion
