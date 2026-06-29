@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PrismERP.BuildingBlocks.Application.Abstractions.Caching;
 using PrismERP.BuildingBlocks.Infrastructure.Caching;
-using PrismERP.BuildingBlocks.Infrastructure.Messaging;
 using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 
 namespace PrismERP.BuildingBlocks.Infrastructure;
@@ -35,7 +34,6 @@ public static class DependencyInjection
         });
 
         services.AddSingleton<ICacheService, RedisCacheService>();
-        services.AddScoped<Application.Abstractions.Messaging.IIntegrationEventPublisher, IntegrationEventPublisher>();
 
         return services;
     }

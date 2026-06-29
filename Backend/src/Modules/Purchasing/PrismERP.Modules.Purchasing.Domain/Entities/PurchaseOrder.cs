@@ -1,7 +1,6 @@
 using PrismERP.BuildingBlocks.Domain.Aggregates;
 using PrismERP.BuildingBlocks.Domain.Exceptions;
 using PrismERP.Modules.Purchasing.Domain.Enums;
-using PrismERP.Modules.Purchasing.Domain.Events;
 
 namespace PrismERP.Modules.Purchasing.Domain.Entities;
 
@@ -140,8 +139,6 @@ public sealed class PurchaseOrder : AggregateRoot
         Status = PurchaseOrderStatus.Approved;
         ApprovedAt = DateTime.UtcNow;
         Touch();
-
-        RaiseDomainEvent(new PurchaseOrderApprovedEvent(Id, OrderNumber));
     }
 
     public void Cancel()

@@ -1,13 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismERP.Modules.Identity.Application.Authorization;
+using PrismERP.Modules.Identity.Infrastructure.Auth.Authrizations;
 using PrismERP.Modules.Inventory.Application.Warehouses;
 
 namespace PrismERP.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/inventory/warehouses")]
 public sealed class WarehousesController(IWarehouseService warehouseService) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(PermissionCodes.WarehouseRead)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var warehouses = await warehouseService.GetAllAsync(cancellationToken);
@@ -15,6 +20,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionCodes.WarehouseRead)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var warehouse = await warehouseService.GetByIdAsync(id, cancellationToken);
@@ -22,6 +28,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
     }
 
     [HttpPost]
+    [RequirePermission(PermissionCodes.WarehouseWrite)]
     public async Task<IActionResult> Create(
         [FromBody] CreateWarehouseRequest request,
         CancellationToken cancellationToken)
@@ -31,6 +38,7 @@ public sealed class WarehousesController(IWarehouseService warehouseService) : C
     }
 
     [HttpPut("{id}")]
+    [RequirePermission(PermissionCodes.WarehouseWrite)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdateWarehouseRequest request,

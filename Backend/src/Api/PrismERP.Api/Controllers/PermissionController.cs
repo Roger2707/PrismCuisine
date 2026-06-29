@@ -1,14 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismERP.Modules.Identity.Application.Authorization;
 using PrismERP.Modules.Identity.Application.Permissions;
+using PrismERP.Modules.Identity.Infrastructure.Auth.Authrizations;
 
 namespace PrismERP.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/identity/permissions")]
 public sealed class PermissionController(IPermissionService permissionService) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(PermissionCodes.RolesRead)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var permissions = await permissionService.GetPermissionsReadOnlyAsync(cancellationToken);
@@ -16,7 +20,7 @@ public sealed class PermissionController(IPermissionService permissionService) :
     }
 
     [HttpGet("{id}")]
-    [Authorize]
+    [RequirePermission(PermissionCodes.RolesRead)]
     public async Task<IActionResult> GetByCode(string id, CancellationToken cancellationToken)
     {
         var permission = await permissionService.GetPermissionReadOnlyByCodeAsync(id, cancellationToken);
@@ -24,7 +28,7 @@ public sealed class PermissionController(IPermissionService permissionService) :
     }
 
     [HttpPost]
-    [Authorize]
+    [RequirePermission(PermissionCodes.RolesWrite)]
     public async Task<IActionResult> Create(CreatePermissionRequest request, CancellationToken cancellationToken)
     {
         await permissionService.Add(request);
@@ -32,7 +36,7 @@ public sealed class PermissionController(IPermissionService permissionService) :
     }
 
     [HttpPut]
-    [Authorize]
+    [RequirePermission(PermissionCodes.RolesWrite)]
     public async Task<IActionResult> Update(UpdatePermissionRequest request, CancellationToken cancellationToken)
     {
         await permissionService.Update(request);
@@ -40,7 +44,7 @@ public sealed class PermissionController(IPermissionService permissionService) :
     }
 
     [HttpDelete]
-    [Authorize]
+    [RequirePermission(PermissionCodes.RolesWrite)]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
         var permission = await permissionService.GetPermissionByCodeAsync(id, cancellationToken);

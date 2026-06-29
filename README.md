@@ -52,7 +52,7 @@ cd Backend
 dotnet run --project src/Api/PrismERP.Api
 ```
 
-Requires SQL Server, Redis, and RabbitMQ (or use `docker compose up sqlserver redis rabbitmq`).
+Requires SQL Server and Redis (or use `docker compose up redis`).
 
 ### EF migrations
 

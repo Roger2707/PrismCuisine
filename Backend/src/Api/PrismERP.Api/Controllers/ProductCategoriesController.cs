@@ -1,13 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismERP.Modules.Identity.Application.Authorization;
+using PrismERP.Modules.Identity.Infrastructure.Auth.Authrizations;
 using PrismERP.Modules.Inventory.Application.ProductCategories;
 
 namespace PrismERP.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/inventory/product-categories")]
 public sealed class ProductCategoriesController(IProductCategoryService productCategoryService) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(PermissionCodes.ProductCategoryRead)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var categories = await productCategoryService.GetAllAsync(cancellationToken);
@@ -15,6 +20,7 @@ public sealed class ProductCategoriesController(IProductCategoryService productC
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionCodes.ProductCategoryRead)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var category = await productCategoryService.GetByIdAsync(id, cancellationToken);
@@ -22,6 +28,7 @@ public sealed class ProductCategoriesController(IProductCategoryService productC
     }
 
     [HttpPost]
+    [RequirePermission(PermissionCodes.ProductCategoryWrite)]
     public async Task<IActionResult> Create(
         [FromBody] CreateProductCategoryRequest request,
         CancellationToken cancellationToken)
@@ -31,6 +38,7 @@ public sealed class ProductCategoriesController(IProductCategoryService productC
     }
 
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.ProductCategoryWrite)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdateProductCategoryRequest request,
