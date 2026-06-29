@@ -9,6 +9,7 @@ using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 using PrismERP.Modules.Finance.Infrastructure;
 using PrismERP.Modules.Identity.Infrastructure;
 using PrismERP.Modules.Identity.Infrastructure.Auth;
+using PrismERP.Modules.Identity.Infrastructure.Auth.Authrizations;
 using PrismERP.Modules.Identity.Infrastructure.Persistence;
 using PrismERP.Modules.Inventory.Infrastructure;
 using PrismERP.Modules.Inventory.Infrastructure.Persistence;
@@ -122,9 +123,9 @@ builder.Services
                 var problem = new ProblemDetails
                 {
                     Type = "forbidden",
-                    Title = "Forbidden",
+                    Title = "Access Denied",
                     Status = StatusCodes.Status403Forbidden,
-                    Detail = "You do not have permission to access this resource."
+                    Detail = IdentityAuthorizationExtensions.ForbiddenMessage
                 };
 
                 await context.Response.WriteAsJsonAsync(problem);

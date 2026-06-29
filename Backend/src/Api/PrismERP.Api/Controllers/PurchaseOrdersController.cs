@@ -1,13 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismERP.Modules.Identity.Application.Authorization;
+using PrismERP.Modules.Identity.Infrastructure.Auth.Authrizations;
 using PrismERP.Modules.Purchasing.Application.PurchaseOrders;
 
 namespace PrismERP.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/purchasing/purchase-orders")]
 public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrderService) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(PermissionCodes.PurchaseRead)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var orders = await purchaseOrderService.GetAllAsync(cancellationToken);
@@ -15,6 +20,7 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
     }
 
     [HttpGet("{id:int}")]
+    [RequirePermission(PermissionCodes.PurchaseRead)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var order = await purchaseOrderService.GetByIdAsync(id, cancellationToken);
@@ -22,6 +28,7 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
     }
 
     [HttpPost]
+    [RequirePermission(PermissionCodes.PurchaseWrite)]
     public async Task<IActionResult> Create(
         [FromBody] CreatePurchaseOrderRequest request,
         CancellationToken cancellationToken)
@@ -31,6 +38,7 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
     }
 
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.PurchaseWrite)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdatePurchaseOrderRequest request,
@@ -41,6 +49,7 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
     }
 
     [HttpPost("{id:int}/amendment")]
+    [RequirePermission(PermissionCodes.PurchaseAmend)]
     public async Task<IActionResult> CreateAmendment(
         int id,
         [FromBody] CreatePurchaseOrderAmendmentRequest request,
@@ -51,6 +60,7 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
     }
 
     [HttpPost("{id:int}/approve")]
+    [RequirePermission(PermissionCodes.PurchaseApprove)]
     public async Task<IActionResult> Approve(int id, CancellationToken cancellationToken)
     {
         await purchaseOrderService.ApproveAsync(id, cancellationToken);
@@ -58,6 +68,7 @@ public sealed class PurchaseOrdersController(IPurchaseOrderService purchaseOrder
     }
 
     [HttpPost("{id:int}/cancel")]
+    [RequirePermission(PermissionCodes.PurchaseCancel)]
     public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken)
     {
         await purchaseOrderService.CancelAsync(id, cancellationToken);

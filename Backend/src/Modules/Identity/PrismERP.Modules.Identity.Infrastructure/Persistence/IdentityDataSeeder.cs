@@ -26,62 +26,73 @@ internal sealed class IdentityDataSeeder(PrismERPDbContext db, Pbkdf2PasswordHas
     {
         var permissionConfig = new[]
         {
-        // ==========================================
-        // CORE USER & ROLE MANAGEMENT
-        // ==========================================
-        new { Code = "users:read", Description = "View users list and details" },
-        new { Code = "users:write", Description = "Create, update, and manage users" },
-        new { Code = "roles:read", Description = "View roles and permissions" },
-        new { Code = "roles:write", Description = "Manage roles and assign permissions" },
-        
-        // ==========================================
-        // INVENTORY & MASTER DATA
-        // ==========================================
-        new { Code = "product:read", Description = "View product catalog and inventory levels" },
-        new { Code = "product:write", Description = "Create and update product master data" },
+            // Identity
+            new { Code = "users:read", Description = "View user profiles" },
+            new { Code = "roles:read", Description = "View roles and permission catalog" },
+            new { Code = "roles:write", Description = "Manage roles and permission assignments" },
 
-        new { Code = "warehouse:read", Description = "View warehouse locations and stock movements" },
-        new { Code = "warehouse:write", Description = "Manage warehouse configurations and stock adjustments" },
-        
-        // ==========================================
-        // SUPPLY CHAIN & TRANSACTIONAL WORKFLOWS
-        // ==========================================
-        
-        // Purchase Orders
-        new { Code = "purchase:read", Description = "View purchase orders" },
-        new { Code = "purchase:create", Description = "Create draft purchase orders" },
-        new { Code = "purchase:approve", Description = "Approve and authorize purchase orders" },
-        new { Code = "purchase:amend", Description = "Amend/Modify finalized or sent purchase orders" },
-        
-        // Receipts (Goods Receipt Note)
-        new { Code = "receipt:read", Description = "View goods receipt notes" },
-        new { Code = "receipt:process", Description = "Process and confirm incoming shipments from vendors" },
-        
-        // Sales Orders
-        new { Code = "salesorder:read", Description = "View sales orders" },
-        new { Code = "salesorder:create", Description = "Create and update standard sales orders" },
-        new { Code = "salesorder:approve", Description = "Approve credit limits and release sales orders for fulfillment" },
-        
-        // Delivery (Goods Issue / Outbound)
-        new { Code = "delivery:read", Description = "View delivery orders and shipments" },
-        new { Code = "delivery:process", Description = "Pick, pack, and confirm outbound deliveries" },
-        
-        // Invoices
-        new { Code = "invoice:read", Description = "View billing and invoices" },
-        new { Code = "invoice:create", Description = "Generate standard customer invoices" },
-        new { Code = "invoice:approve", Description = "Post invoices to accounting" },
-        new { Code = "invoice:void", Description = "Void or issue credit notes for finalized invoices" }
-    };
+            // Inventory — master data
+            new { Code = "product-category:read", Description = "View product categories" },
+            new { Code = "product-category:write", Description = "Create and update product categories" },
+            new { Code = "product:read", Description = "View products and SKU catalog" },
+            new { Code = "product:write", Description = "Create, update, and deactivate products" },
+            new { Code = "warehouse:read", Description = "View warehouses" },
+            new { Code = "warehouse:write", Description = "Create and update warehouses" },
+            new { Code = "supplier:read", Description = "View suppliers" },
+            new { Code = "supplier:write", Description = "Create, update, and deactivate suppliers" },
+            new { Code = "customer:read", Description = "View customers" },
+            new { Code = "customer:write", Description = "Create, update, and deactivate customers" },
+
+            // Inventory — stock operations
+            new { Code = "inventory:read", Description = "View balances, movements, reservations, and cost layers" },
+            new { Code = "inventory:adjust", Description = "Receive, issue, adjust stock, and manage reservations" },
+
+            // Purchasing — PO / GR / AP invoice
+            new { Code = "purchase:read", Description = "View purchase orders" },
+            new { Code = "purchase:write", Description = "Create and update draft purchase orders" },
+            new { Code = "purchase:approve", Description = "Approve purchase orders for receiving" },
+            new { Code = "purchase:amend", Description = "Amend approved purchase orders" },
+            new { Code = "purchase:cancel", Description = "Cancel draft or approved purchase orders" },
+            new { Code = "goods-receipt:read", Description = "View goods receipts" },
+            new { Code = "goods-receipt:write", Description = "Create and update draft goods receipts" },
+            new { Code = "goods-receipt:post", Description = "Post goods receipts into inventory" },
+            new { Code = "goods-receipt:cancel", Description = "Cancel posted goods receipts" },
+            new { Code = "purchase-invoice:read", Description = "View purchase invoices" },
+            new { Code = "purchase-invoice:write", Description = "Create purchase invoices from goods receipts" },
+
+            // Sales — SO / DN
+            new { Code = "salesorder:read", Description = "View sales orders" },
+            new { Code = "salesorder:write", Description = "Create and update draft sales orders" },
+            new { Code = "salesorder:approve", Description = "Approve sales orders and reserve inventory" },
+            new { Code = "salesorder:cancel", Description = "Cancel draft or confirmed sales orders" },
+            new { Code = "delivery:read", Description = "View delivery notes" },
+            new { Code = "delivery:write", Description = "Create and update draft delivery notes" },
+            new { Code = "delivery:post", Description = "Post delivery notes and issue inventory" },
+            new { Code = "delivery:cancel", Description = "Cancel posted delivery notes" },
+
+            // Finance — AR invoice & payments
+            new { Code = "invoice:read", Description = "View sales invoices" },
+            new { Code = "invoice:write", Description = "Create and cancel sales invoices" },
+            new { Code = "payment:read", Description = "View payments" },
+            new { Code = "payment:write", Description = "Create and update payments" },
+            new { Code = "payment:process", Description = "Complete, fail, cancel, or refund payments" }
+        };
 
         foreach (var config in permissionConfig)
         {
-            var exists = await db.Permissions
-                .AnyAsync(x => x.Code == config.Code, cancellationToken);
+            var normalizedCode = config.Code.Trim().ToLowerInvariant();
+            var existing = await db.Permissions
+                .FirstOrDefaultAsync(x => x.Code == normalizedCode, cancellationToken);
 
-            if (!exists)
+            if (existing is null)
             {
-                var permission = Permission.Create(config.Code, config.Description);
-                db.Permissions.Add(permission);
+                db.Permissions.Add(Permission.Create(config.Code, config.Description));
+                continue;
+            }
+
+            if (!string.Equals(existing.Description, config.Description, StringComparison.Ordinal))
+            {
+                existing.Update(config.Code, config.Description);
             }
         }
     }
@@ -141,7 +152,6 @@ internal sealed class IdentityDataSeeder(PrismERPDbContext db, Pbkdf2PasswordHas
 
     private async Task SeedRolePermissionsAsync(CancellationToken cancellationToken)
     {
-        // Look up all Roles and Permissions from DB to get their real IDs
         var allRoles = await db.Roles.ToListAsync(cancellationToken);
         var allPermissions = await db.Permissions.ToListAsync(cancellationToken);
 
@@ -150,76 +160,66 @@ internal sealed class IdentityDataSeeder(PrismERPDbContext db, Pbkdf2PasswordHas
         var leaderRole = allRoles.First(r => r.NormalizedName == "LEADER");
         var staffRole = allRoles.First(r => r.NormalizedName == "STAFF");
 
-        // Define which permission codes belong to which role
         var rolePermissionMapping = new Dictionary<int, List<string>>();
 
-        // -------------------------------------------------------------
-        // 1. Staff Permissions (Execution Only)
-        // -------------------------------------------------------------
+        // Staff — day-to-day data entry and posting (no approvals / cancel rollback)
         var staffPermissions = new List<string>
-    {
-        "product:read", "warehouse:read",
-        "purchase:read", "purchase:create",
-        "receipt:read", "receipt:process",
-        "salesorder:read", "salesorder:create",
-        "delivery:read", "delivery:process",
-        "invoice:read"
-    };
+        {
+            "product-category:read", "product:read", "warehouse:read",
+            "supplier:read", "customer:read", "inventory:read",
+            "purchase:read", "purchase:write",
+            "goods-receipt:read", "goods-receipt:write", "goods-receipt:post",
+            "purchase-invoice:read",
+            "salesorder:read", "salesorder:write",
+            "delivery:read", "delivery:write", "delivery:post",
+            "invoice:read", "payment:read"
+        };
         rolePermissionMapping.Add(staffRole.Id, staffPermissions);
 
-        // -------------------------------------------------------------
-        // 2. Leader Permissions (Execution + Basic Approvals)
-        // -------------------------------------------------------------
-        var leaderPermissions = new List<string>(staffPermissions) // Inherits all Staff permissions
-    {
-        "salesorder:approve" // Leaders can release sales orders for shipment
-    };
+        // Leader — staff + SO approval
+        var leaderPermissions = new List<string>(staffPermissions)
+        {
+            "salesorder:approve"
+        };
         rolePermissionMapping.Add(leaderRole.Id, leaderPermissions);
 
-        // -------------------------------------------------------------
-        // 3. Manager Permissions (Full Operational Control)
-        // -------------------------------------------------------------
+        // Manager — full operational control (except identity admin)
         var managerPermissions = new List<string>
-    {
-        "product:read", "product:write",
-        "warehouse:read", "warehouse:write",
-        "purchase:read", "purchase:create", "purchase:approve", "purchase:amend",
-        "receipt:read", "receipt:process",
-        "salesorder:read", "salesorder:create", "salesorder:approve",
-        "delivery:read", "delivery:process",
-        "invoice:read", "invoice:create", "invoice:approve", "invoice:void"
-    };
+        {
+            "product-category:read", "product-category:write",
+            "product:read", "product:write",
+            "warehouse:read", "warehouse:write",
+            "supplier:read", "supplier:write",
+            "customer:read", "customer:write",
+            "inventory:read", "inventory:adjust",
+            "purchase:read", "purchase:write", "purchase:approve", "purchase:amend", "purchase:cancel",
+            "goods-receipt:read", "goods-receipt:write", "goods-receipt:post", "goods-receipt:cancel",
+            "purchase-invoice:read", "purchase-invoice:write",
+            "salesorder:read", "salesorder:write", "salesorder:approve", "salesorder:cancel",
+            "delivery:read", "delivery:write", "delivery:post", "delivery:cancel",
+            "invoice:read", "invoice:write",
+            "payment:read", "payment:write", "payment:process"
+        };
         rolePermissionMapping.Add(managerRole.Id, managerPermissions);
 
-        // -------------------------------------------------------------
-        // 4. Super Admin Permissions (Everything)
-        // -------------------------------------------------------------
-        var adminPermissions = allPermissions.Select(p => p.Code).ToList();
-        rolePermissionMapping.Add(adminRole.Id, adminPermissions);
+        // Super admin — all permissions (also bypassed by IsSuperAdminAsync)
+        rolePermissionMapping.Add(adminRole.Id, allPermissions.Select(p => p.Code).ToList());
 
-        // -------------------------------------------------------------
-        // Process and Seed to DB
-        // -------------------------------------------------------------
         foreach (var mapping in rolePermissionMapping)
         {
             var roleId = mapping.Key;
-            var allowedCodes = mapping.Value;
-
-            // Filter the actual permission entities matching the codes allowed for this role
+            var allowedCodes = mapping.Value.ToHashSet(StringComparer.OrdinalIgnoreCase);
             var targetPermissions = allPermissions.Where(p => allowedCodes.Contains(p.Code));
 
             foreach (var permission in targetPermissions)
             {
-                // Avoid duplicates check
                 var exists = await db.RolePermissions.AnyAsync(
                     rp => rp.RoleId == roleId && rp.PermissionId == permission.Id,
                     cancellationToken);
 
                 if (!exists)
                 {
-                    // Adjust this line to match your exact RolePermission constructor / factory method
-                    var rolePermission = RolePermission.Create(roleId, permission.Id);
-                    db.RolePermissions.Add(rolePermission);
+                    db.RolePermissions.Add(RolePermission.Create(roleId, permission.Id));
                 }
             }
         }

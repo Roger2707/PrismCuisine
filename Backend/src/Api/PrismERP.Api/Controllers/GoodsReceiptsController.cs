@@ -1,13 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismERP.Modules.Identity.Application.Authorization;
+using PrismERP.Modules.Identity.Infrastructure.Auth.Authrizations;
 using PrismERP.Modules.Purchasing.Application.GoodsReceipts;
 
 namespace PrismERP.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/purchasing/goods-receipts")]
 public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptService) : ControllerBase
 {
     [HttpGet("by-purchase-order/{purchaseOrderId:int}")]
+    [RequirePermission(PermissionCodes.GoodsReceiptRead)]
     public async Task<IActionResult> GetByPurchaseOrder(int purchaseOrderId, CancellationToken cancellationToken)
     {
         var receipts = await goodsReceiptService.GetByPurchaseOrderIdAsync(purchaseOrderId, cancellationToken);
@@ -15,6 +20,7 @@ public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptSer
     }
 
     [HttpGet("{id:int}")]
+    [RequirePermission(PermissionCodes.GoodsReceiptRead)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var receipt = await goodsReceiptService.GetByIdAsync(id, cancellationToken);
@@ -22,6 +28,7 @@ public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptSer
     }
 
     [HttpPost]
+    [RequirePermission(PermissionCodes.GoodsReceiptWrite)]
     public async Task<IActionResult> Create(
         [FromBody] CreateGoodsReceiptRequest request,
         CancellationToken cancellationToken)
@@ -31,6 +38,7 @@ public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptSer
     }
 
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.GoodsReceiptWrite)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdateGoodsReceiptRequest request,
@@ -41,6 +49,7 @@ public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptSer
     }
 
     [HttpPost("{id:int}/post")]
+    [RequirePermission(PermissionCodes.GoodsReceiptPost)]
     public async Task<IActionResult> Post(int id, CancellationToken cancellationToken)
     {
         var receipt = await goodsReceiptService.PostAsync(id, cancellationToken);
@@ -48,6 +57,7 @@ public sealed class GoodsReceiptsController(IGoodsReceiptService goodsReceiptSer
     }
 
     [HttpPost("{id:int}/cancel")]
+    [RequirePermission(PermissionCodes.GoodsReceiptCancel)]
     public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken)
     {
         await goodsReceiptService.CancelAsync(id, cancellationToken);

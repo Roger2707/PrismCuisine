@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initDB : Migration
+    public partial class initDbNew : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -14,11 +14,12 @@ export interface ApiError {
   code?: string;
 }
 
+const FORBIDDEN_MESSAGE = 'You do not have permission to perform this action.';
+
 export const parseApiError = (error: unknown): ApiError => {
-  // Network error (no response)
   if (error instanceof Error && 'isAxiosError' in error) {
     const axiosError = error as AxiosError;
-    
+
     if (!axiosError.response) {
       return {
         type: 'network-error',
@@ -28,17 +29,17 @@ export const parseApiError = (error: unknown): ApiError => {
     }
 
     const response = axiosError.response;
-    const data = response.data as any;
+    const data = response.data as Record<string, unknown> | undefined;
     const statusCode = response.status;
 
-    // Parse ProblemDetails response from backend
     if (data && typeof data === 'object') {
-      const type = data.type as string;
-      const title = data.title as string;
-      const errors = data.errors as Record<string, string[]>;
-      const code = data.code as string;
+      const type = (data.type ?? data.Type) as string | undefined;
+      const title = (data.title ?? data.Title) as string | undefined;
+      const detail = (data.detail ?? data.Detail) as string | undefined;
+      const errors = (data.errors ?? data.Errors) as Record<string, string[]> | undefined;
+      const code = (data.code ?? data.Code) as string | undefined;
+      const problemMessage = detail || title;
 
-      // Validation errors (400)
       if (statusCode === 400 && type === 'validation-error') {
         const fieldErrors: FieldError[] = [];
         if (errors) {
@@ -55,54 +56,49 @@ export const parseApiError = (error: unknown): ApiError => {
         };
       }
 
-      // Not found errors (404)
       if (statusCode === 404 && type === 'not-found') {
         return {
           type: 'not-found',
           title: 'Not Found',
-          message: title || 'The requested resource was not found.',
+          message: problemMessage || 'The requested resource was not found.',
           statusCode,
         };
       }
 
-      // Business errors (422)
       if (statusCode === 422 && type === 'business-error') {
         return {
           type: 'business-error',
           title: 'Business Rule Violation',
-          message: title || 'A business rule was violated.',
+          message: problemMessage || 'A business rule was violated.',
           statusCode,
           code,
         };
       }
 
-      // Unauthorized (401)
       if (statusCode === 401 && type === 'unauthorized') {
         return {
           type: 'unauthorized',
           title: 'Unauthorized',
-          message: title || 'You are not authorized to perform this action.',
+          message: problemMessage || 'You are not authorized to perform this action.',
           statusCode,
         };
       }
 
-      // Forbidden (403)
       if (statusCode === 403 && type === 'forbidden') {
         return {
           type: 'forbidden',
-          title: 'Forbidden',
-          message: title || 'You do not have permission to access this resource.',
+          title: 'Access Denied',
+          message: problemMessage || FORBIDDEN_MESSAGE,
           statusCode,
         };
       }
     }
 
-    // Generic error based on status code
     if (statusCode === 400) {
       return {
         type: 'validation-error',
         title: 'Bad Request',
-        message: data?.message || 'The request was invalid.',
+        message: (data?.message as string) || 'The request was invalid.',
         statusCode,
       };
     }
@@ -111,7 +107,7 @@ export const parseApiError = (error: unknown): ApiError => {
       return {
         type: 'not-found',
         title: 'Not Found',
-        message: data?.message || 'The requested resource was not found.',
+        message: (data?.message as string) || 'The requested resource was not found.',
         statusCode,
       };
     }
@@ -120,7 +116,7 @@ export const parseApiError = (error: unknown): ApiError => {
       return {
         type: 'business-error',
         title: 'Business Rule Violation',
-        message: data?.message || 'A business rule was violated.',
+        message: (data?.message as string) || 'A business rule was violated.',
         statusCode,
       };
     }
@@ -129,7 +125,7 @@ export const parseApiError = (error: unknown): ApiError => {
       return {
         type: 'unauthorized',
         title: 'Unauthorized',
-        message: data?.message || 'You are not authorized to perform this action.',
+        message: (data?.detail as string) || (data?.message as string) || 'You are not authorized to perform this action.',
         statusCode,
       };
     }
@@ -137,22 +133,20 @@ export const parseApiError = (error: unknown): ApiError => {
     if (statusCode === 403) {
       return {
         type: 'forbidden',
-        title: 'Forbidden',
-        message: data?.message || 'You do not have permission to access this resource.',
+        title: 'Access Denied',
+        message: (data?.detail as string) || (data?.message as string) || FORBIDDEN_MESSAGE,
         statusCode,
       };
     }
 
-    // Server error (500+)
     return {
       type: 'server-error',
       title: 'Server Error',
-      message: data?.message || 'An unexpected error occurred on the server.',
+      message: (data?.message as string) || 'An unexpected error occurred on the server.',
       statusCode,
     };
   }
 
-  // Generic error fallback
   return {
     type: 'server-error',
     title: 'Error',

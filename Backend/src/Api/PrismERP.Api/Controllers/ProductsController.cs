@@ -1,13 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismERP.Modules.Identity.Application.Authorization;
+using PrismERP.Modules.Identity.Infrastructure.Auth.Authrizations;
 using PrismERP.Modules.Inventory.Application.Products;
 
 namespace PrismERP.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/inventory/products")]
 public sealed class ProductsController(IProductService productService) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(PermissionCodes.ProductRead)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var products = await productService.GetAllAsync(cancellationToken);
@@ -15,6 +20,7 @@ public sealed class ProductsController(IProductService productService) : Control
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionCodes.ProductRead)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var product = await productService.GetByIdAsync(id, cancellationToken);
@@ -22,6 +28,7 @@ public sealed class ProductsController(IProductService productService) : Control
     }
 
     [HttpGet("by-sku/{sku}")]
+    [RequirePermission(PermissionCodes.ProductRead)]
     public async Task<IActionResult> GetBySku(string sku, CancellationToken cancellationToken)
     {
         var product = await productService.GetBySkuAsync(sku, cancellationToken);
@@ -29,6 +36,7 @@ public sealed class ProductsController(IProductService productService) : Control
     }
 
     [HttpPost]
+    [RequirePermission(PermissionCodes.ProductWrite)]
     public async Task<IActionResult> Create(
         [FromBody] CreateProductRequest request,
         CancellationToken cancellationToken)
@@ -38,6 +46,7 @@ public sealed class ProductsController(IProductService productService) : Control
     }
 
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.ProductWrite)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdateProductRequest request,
@@ -48,6 +57,7 @@ public sealed class ProductsController(IProductService productService) : Control
     }
 
     [HttpPost("{id}/deactivate")]
+    [RequirePermission(PermissionCodes.ProductWrite)]
     public async Task<IActionResult> Deactivate(int id, CancellationToken cancellationToken)
     {
         await productService.DeactivateAsync(id, cancellationToken);
