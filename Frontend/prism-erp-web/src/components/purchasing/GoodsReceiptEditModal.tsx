@@ -1,6 +1,6 @@
 import type { GoodsReceiptDto } from '../../services/types/purchasing.types';
 import type { GoodsReceiptLineEditable } from '../../pages/purchasing/goodsReceipt/types';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatProductLabel } from '../../utils/formatters';
 import { StatusBadge } from '../../utils/statusBadge';
 import { LoadingButton } from '../LoadingButton';
 
@@ -103,7 +103,7 @@ export function GoodsReceiptEditModal({
                   <tbody>
                     {lines.map((line, index) => (
                       <tr key={line.id || index}>
-                        <td>{line.productName}</td>
+                        <td>{formatProductLabel(line.productName, line.productId)}</td>
                         <td>{line.quantityOrdered}</td>
                         <td>{line.quantityRemaining}</td>
                         <td>

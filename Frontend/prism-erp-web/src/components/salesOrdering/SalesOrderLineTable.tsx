@@ -1,5 +1,5 @@
 import ProductSearch from '../ProductSearch';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatProductLabel } from '../../utils/formatters';
 import type { OrderLineEditable } from '../../pages/salesOrdering/types';
 import type { ProductDto } from '../../services/types/inventory.types';
 
@@ -28,7 +28,7 @@ export function SalesOrderLineTable({
             {useProductSearch ? (
               <ProductSearch value={line.productData ?? null} onChange={(p) => onProductChange(index, p)} />
             ) : (
-              line.productName
+              formatProductLabel(line.productName, line.productId)
             )}
           </td>
           <td>

@@ -2,7 +2,7 @@ import type { DeliveryNoteDto } from '../../services/types/salesOrdering.types';
 import type { DeliveryNoteLineEditable } from '../../pages/salesOrdering/delivery/types';
 import { StatusBadge } from '../../utils/statusBadge';
 import { LoadingButton } from '../LoadingButton';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, formatProductLabel } from '../../utils/formatters';
 
 interface DeliveryNoteEditModalProps {
   isOpen: boolean;
@@ -97,7 +97,7 @@ export function DeliveryNoteEditModal({
                   <tbody>
                     {lines.map((line, index) => (
                       <tr key={line.id || index}>
-                        <td>{line.productName}</td>
+                        <td>{formatProductLabel(line.productName, line.productId)}</td>
                         <td>{line.quantityOrdered}</td>
                         <td>{line.quantityRemaining}</td>
                         <td>

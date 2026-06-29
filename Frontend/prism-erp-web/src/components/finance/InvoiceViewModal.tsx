@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatDate, formatProductLabel } from '../../utils/formatters';
 import type { InvoiceDto } from '../../services/types/finance.types';
 import { formatFinanceInvoiceStatus, formatInvoiceType } from '../../services/types/finance.types';
 import { StatusBadge } from '../../utils/statusBadge';
@@ -73,7 +73,7 @@ export function InvoiceViewModal({ isOpen, invoice, loading, onClose }: InvoiceV
                   <tbody>
                     {invoice.lines.map((line) => (
                       <tr key={line.id}>
-                        <td>{line.productName || `Product ${line.productId}`}</td>
+                        <td>{formatProductLabel(line.productName, line.productId)}</td>
                         <td>{line.quantity}</td>
                         <td>{formatCurrency(line.unitPrice)}</td>
                         <td>{formatCurrency(line.taxAmount)}</td>

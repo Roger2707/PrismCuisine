@@ -201,30 +201,32 @@ export function PaymentFormModal({
         </div>
         <div className="modal-footer">
           <LoadingButton variant="secondary" onClick={onClose} disabled={anyLoading}>Close</LoadingButton>
-          {isEditable && (
-            <LoadingButton variant="primary" onClick={handleSave} loading={saving} loadingText="Saving...">
-              {isCreate ? 'Create Payment' : 'Save Changes'}
-            </LoadingButton>
-          )}
-          {!isCreate && payment && isPendingStatus(payment.status) && (
-            <>
-              {onComplete && (
-                <LoadingButton variant="approve" onClick={() => runAction(setCompleting, onComplete)} loading={completing} loadingText="Completing...">
-                  Complete
-                </LoadingButton>
-              )}
-              {onFail && (
-                <LoadingButton variant="danger" onClick={() => runAction(setFailing, onFail)} loading={failing} loadingText="Processing...">
-                  Fail
-                </LoadingButton>
-              )}
-              {onCancel && (
-                <LoadingButton variant="danger" onClick={() => runAction(setCancelling, onCancel)} loading={cancelling} loadingText="Cancelling...">
-                  Cancel Payment
-                </LoadingButton>
-              )}
-            </>
-          )}
+          <div className="modal-footer-actions">
+            {isEditable && (
+              <LoadingButton variant="primary" onClick={handleSave} loading={saving} loadingText="Saving...">
+                {isCreate ? 'Create Payment' : 'Save Changes'}
+              </LoadingButton>
+            )}
+            {!isCreate && payment && isPendingStatus(payment.status) && (
+              <>
+                {onComplete && (
+                  <LoadingButton variant="approve" onClick={() => runAction(setCompleting, onComplete)} loading={completing} loadingText="Completing...">
+                    Complete
+                  </LoadingButton>
+                )}
+                {onFail && (
+                  <LoadingButton variant="danger" onClick={() => runAction(setFailing, onFail)} loading={failing} loadingText="Processing...">
+                    Fail
+                  </LoadingButton>
+                )}
+                {onCancel && (
+                  <LoadingButton variant="danger" onClick={() => runAction(setCancelling, onCancel)} loading={cancelling} loadingText="Cancelling...">
+                    Cancel Payment
+                  </LoadingButton>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

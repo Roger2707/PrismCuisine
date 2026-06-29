@@ -12,8 +12,8 @@ using PrismERP.BuildingBlocks.Infrastructure.Persistence;
 namespace PrismERP.BuildingBlocks.Infrastructure.Migrations
 {
     [DbContext(typeof(PrismERPDbContext))]
-    [Migration("20260623083528_initialDB")]
-    partial class initialDB
+    [Migration("20260629015505_initDB")]
+    partial class initDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

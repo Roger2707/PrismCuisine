@@ -15,3 +15,10 @@ export function formatDate(date: string | Date | null | undefined): string {
     day: '2-digit',
   }).format(new Date(date));
 }
+
+/** Display product for line tables: "Name (#id)" or fallback when name missing. */
+export function formatProductLabel(productName: string | undefined | null, productId: number): string {
+  const name = productName?.trim();
+  if (name) return `${name} (#${productId})`;
+  return `Product #${productId}`;
+}

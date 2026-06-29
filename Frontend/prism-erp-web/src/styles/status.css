@@ -85,6 +85,31 @@
   box-shadow: none !important;
 }
 
+.actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.modal-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.modal-footer-actions .action-btn,
+.modal-footer-actions .approve-button,
+.modal-footer-actions .save-button,
+.modal-footer-actions .cancel-button {
+  margin: 0;
+}
+
+.payment-summary-row .status {
+  vertical-align: middle;
+}
+
 .payment-form-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;

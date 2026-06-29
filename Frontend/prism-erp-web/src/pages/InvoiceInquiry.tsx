@@ -106,11 +106,10 @@ export default function InvoiceInquiry() {
                   <td>{formatCurrency(inv.paidAmount)}</td>
                   <td>{formatDate(inv.invoiceDate)}</td>
                   <td className="actions-cell">
-                    <button className="action-btn edit" onClick={() => handleView(inv.id)}>View</button>
+                    <button type="button" className="action-btn edit" onClick={() => handleView(inv.id)}>View</button>
                     {String(inv.status) !== 'Paid' && inv.status !== 2 && (
                       <LoadingButton
                         variant="approve"
-                        className="action-btn approve"
                         onClick={() => handleCreatePayment(inv)}
                         loading={openingPaymentId === inv.id}
                         loadingText="..."

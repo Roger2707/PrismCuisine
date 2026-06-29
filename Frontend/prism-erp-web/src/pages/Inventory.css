@@ -233,6 +233,8 @@
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .cancel-button {

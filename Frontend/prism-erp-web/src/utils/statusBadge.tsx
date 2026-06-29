@@ -5,7 +5,8 @@ export function getStatusClass(status: string | number): string {
 
 export function StatusBadge({ status, label }: { status: string | number; label?: string }) {
   const text = label ?? String(status);
+  const classSource = label ?? String(status);
   return (
-    <span className={`status ${getStatusClass(status)}`}>{text}</span>
+    <span className={`status ${getStatusClass(classSource)}`}>{text}</span>
   );
 }
